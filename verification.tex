@@ -1,0 +1,43 @@
+\documentclass[12pt]{report}
+
+% =====================================================================
+% PREAMBLE (Configuration and Packages)
+% =====================================================================
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel} 
+\usepackage{graphicx}       % Per inserire immagini e loghi
+\usepackage{geometry}       % Per i margini
+\geometry{a4paper, top=3cm, bottom=3cm, left=3cm, right=3cm}
+
+% Eventuali altri pacchetti (es. per il codice sorgente o formule matematiche)
+% \usepackage{listings}
+% \usepackage{amsmath}
+
+% =====================================================================
+% MAIN DOCUMENT
+% =====================================================================
+\begin{document}
+
+% 1. Title page
+\input{title_page/Frontespizio} % include the translated title page
+\clearpage
+
+% 2. Indice (Table of Contents)
+\tableofcontents
+\clearpage
+
+% 3. Corpo del documento
+\chapter{Introduction}
+This is the introduction of your report. Here you can describe the background, objectives, and structure of your project.
+
+\chapter{Methodology and Implementation}
+This chapter covers the technical details, algorithms, and design choices.
+
+\section{Analysis of the Algorithms}
+You can use sections to divide your chapters into smaller, readable chunks.
+
+% Se vuoi includere il testo da file separati per mantenere l'ordine:
+% \input{chapters/chapter_1}
+
+\end{document}

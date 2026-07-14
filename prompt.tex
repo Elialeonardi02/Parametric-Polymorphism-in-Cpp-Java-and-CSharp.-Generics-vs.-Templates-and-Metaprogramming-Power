@@ -1,0 +1,123 @@
+\documentclass[12pt]{report}
+
+% =====================================================================
+% PREAMBLE (Configuration and Packages)
+% =====================================================================
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel} 
+\usepackage{graphicx}       % Per inserire immagini e loghi
+\usepackage{geometry}       % Per i margini
+\geometry{a4paper, top=3cm, bottom=3cm, left=3cm, right=3cm}
+
+% Eventuali altri pacchetti (es. per il codice sorgente o formule matematiche)
+% \usepackage{listings}
+% \usepackage{amsmath}
+
+% =====================================================================
+% MAIN DOCUMENT
+% =====================================================================
+\begin{document}
+
+% 1. Title page
+% \input{title_page/Frontespizio} % include the translated title page
+\clearpage
+
+% 2. Indice (Table of Contents)
+\tableofcontents
+\clearpage
+
+% 3. Corpo del documento
+\chapter{AI Prompt Engineering}
+For the tecnical accurancy of the output, following the guierdeline of to the project guidelines,
+the report is generate using \textbf{Two-phase prompt strategy}: prompt improvement and prompt execution.
+\section{Prompt Engineering Phases}
+\subsection[short]{Prompt Improvement}
+The first phase is the prompt improvement, where the initial prompt is redefined and improve the given prompt
+following the project guidelines and a rigorous accademic approach. Every prompt improvement is indipendent 
+from the previous prompt, and the output is generated using the improved prompt. 
+\subsection{Prompt Execution}
+The second phase is the prompt execution, where the improved prompt is used to generate the final output.
+In this phase, the chat is invited to also give the source reference use to generate the output.
+
+\chapter{Prompts}
+
+\section{Prompt 0: configure prompt engineering}
+\textbf{Model}: Gemini 3.1 Pro extended reasoning
+\vspace{0.3cm}
+\\ \textbf{Prompt}:
+\begin{verbatim}
+System Persona: Act as a Senior Prompt Engineer specializing in
+constructing technical prompts for academic writing and code-generation
+tasks.
+ 
+Goal: Given, as input, a task specification (persona, goal,
+requirements, writing-style constraints, output structure) for
+producing a technical-academic report, produce a single, self-contained
+master prompt -- ready to be pasted into a new conversation with a
+language model -- which, when executed, will generate that report.
+ 
+Requirements:
+ 
+Task 1: Extraction & Preservation. Parse the input specification and
+identify its persona/role, goal (including title), all requested tasks
+with their respective details, writing-style constraints, and required
+output structure. Preserve the full content and intent of the original
+specification: do not add requirements, do not omit any, and do not
+alter their meaning.
+ 
+Task 2: Correction & Structuring. Correct any ambiguities, grammatical
+errors, or malformed formatting present in the input (e.g., improperly
+nested quotation marks). Reorganize the extracted elements into a
+clear, logically structured master prompt, using the same section
+labels as the input where applicable (e.g., Persona, Goal,
+Requirements, Writing Style Constraint, Output Structure).
+ 
+Writing Style Constraint (STRICT): Do not execute the input
+specification and do not produce the report itself. Do not include
+placeholders, editorial notes, comments, or meta-commentary addressed
+to the user. Do not use first-person forms ("I," "we") anywhere in the
+generated master prompt unless they were already required by the input
+specification's own writing-style constraints.
+ 
+Output Structure: Return only the generated master prompt, formatted as
+ready-to-use text, structured under the same section headings as the
+input (System Persona / Goal / Requirements / Writing Style Constraint
+/ Output Structure), with no additional text before or after it.
+\end{verbatim}
+
+\textbf{Output}:
+Add to the context of the model the persona, formatting constrainghts and the goal of the report.
+
+\section{Prompt 1: overview of the Parametric Polymorphism}
+\textbf{Model}: Gemini 3.1 Pro extended reasoning.
+\\
+\textbf{Goal}: Generate an overview of the Parametric Polymorphism and ad-hoc polymorphism.
+Giving details of type erasure, compared with generics, and monomorphization. Also compared differences between
+source code, byte code and binary code.
+\textbf{Prompt}:\\
+- Provide an exhaustive theoretical background on parametric polymorphism.
+\\
+- Define and thoroughly explain Christopher Strachey's distinction between parametric polymorphism and ad-hoc polymorphism.
+\\
+- Detail the two primary implementation strategies discussed in the literature:
+ \\
+ 1. Homogeneous translation (type erasure), detailing how it results  in one compiled representation for all instantiations.
+ \\
+ 2. Heterogeneous translation (reification/monomorphization), detailing how it results in separate code generated per instantiated type.
+\\
+- Analyze type erasure versus reified generics as the core axis of comparison.
+\\
+- Analyze compile-time versus runtime characteristics as the second axis of comparison, specifically examining when instantiation happens  and what type information survives into the compiled binary or bytecode.
+\\
+- The entire document must be written in professional, compilation-ready LaTeX code.
+\chapter{Methodology and Implementation}
+This chapter covers the technical details, algorithms, and design choices.
+
+\section{Analysis of the Algorithms}
+You can use sections to divide your chapters into smaller, readable chunks.
+
+% Se vuoi includere il testo da file separati per mantenere l'ordine:
+% \input{chapters/chapter_1}
+
+\end{document}
