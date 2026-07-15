@@ -1,43 +1,539 @@
 \documentclass[12pt]{report}
 
 % =====================================================================
-% PREAMBLE (Configuration and Packages)
+% PREAMBLE
 % =====================================================================
+
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage[english]{babel} 
-\usepackage{graphicx}       % Per inserire immagini e loghi
-\usepackage{geometry}       % Per i margini
-\geometry{a4paper, top=3cm, bottom=3cm, left=3cm, right=3cm}
+\usepackage[english]{babel}
 
-% Eventuali altri pacchetti (es. per il codice sorgente o formule matematiche)
-% \usepackage{listings}
-% \usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{amsmath}
+
+% Code listings
+\usepackage{listings}
+\usepackage{xcolor}
+
+\usepackage{mdframed}
+
+% Page geometry
+\geometry{
+    a4paper,
+    top=3cm,
+    bottom=3cm,
+    left=3cm,
+    right=3cm
+}
+
+
+% =====================================================================
+% CODE LISTING STYLE
+% =====================================================================
+
+\definecolor{codebackground}{RGB}{245,245,245}
+
+\lstdefinestyle{cppstyle}{
+    language=C++,
+    backgroundcolor=\color{codebackground},
+    basicstyle=\ttfamily\small,
+    keywordstyle=\bfseries,
+    commentstyle=\itshape,
+    numbers=left,
+    numberstyle=\tiny,
+    numbersep=10pt,
+    frame=single,
+    framesep=6pt,
+    breaklines=true,
+    tabsize=4,
+    showstringspaces=false,
+    columns=fullflexible
+}
+
+\lstset{style=cppstyle}
+
+% =====================================================================
+% EXAMPLE BOX STYLE
+% =====================================================================
+
+\newmdenv[
+    leftline=true,
+    rightline=false,
+    topline=false,
+    bottomline=false,
+    linecolor=black,
+    linewidth=2pt,
+    innerleftmargin=12pt,
+    innerrightmargin=8pt,
+    innertopmargin=8pt,
+    innerbottommargin=8pt
+]{examplebox}
+
 
 % =====================================================================
 % MAIN DOCUMENT
 % =====================================================================
+
 \begin{document}
 
-% 1. Title page
-%\input{title_page/Frontespizio} % include the translated title page
-\clearpage
 
-% 2. Indice (Table of Contents)
+% ---------------------------------------------------------------------
+% Table of contents
+% ---------------------------------------------------------------------
+
+\clearpage
 \tableofcontents
 \clearpage
 
-% 3. Corpo del documento
-\chapter{Introduction}
-This is the introduction of your report. Here you can describe the background, objectives, and structure of your project.
 
-\chapter{Methodology and Implementation}
-This chapter covers the technical details, algorithms, and design choices.
+
+% =====================================================================
+% INTRODUCTION
+% =====================================================================
+
+\chapter{Introduction}
+
+
+Parametric polymorphism provides a language-independent abstraction, its
+implementation varies considerably among programming languages and compiler
+architectures.
+
+The principal design choice concerns how generic types are represented after
+compilation and when concrete type instantiations are produced.
+
+These implementation strategies influence several aspects of the execution
+model, including runtime representation, reflection capabilities, performance,
+and binary size.
+
+
+The following dimensions constitute the primary axes along which implementations
+of parametric polymorphism are typically compared.
+
+
+
+% ---------------------------------------------------------------------
+
+\section{Instantiation Time}
+
+
+A first distinguishing characteristic is the stage at which generic definitions
+are instantiated.
+
+Some implementations perform instantiation entirely during compilation.
+
+In this approach, each concrete use of a generic function or data structure is
+expanded into a specialized implementation before executable code is generated.
+
+Since all specializations already exist in the final binary, runtime execution
+incurs no additional generic instantiation cost.
+
+
+Other implementations compile generic definitions only once.
+
+Generic type parameters are verified during type checking and subsequently
+removed or replaced by a common representation.
+
+Consequently, no additional executable code is generated for different type
+arguments, and all instantiations share the same compiled implementation.
+
+
+
+% ---------------------------------------------------------------------
+
+\section{Runtime Representation}
+
+
+Implementations also differ in how generic types are represented after
+compilation.
+
+\emph{Type erasure} removes generic type parameters, producing a homogeneous
+representation where different instantiations share the same executable code.
+
+The runtime system therefore treats different generic instantiations as
+equivalent representations.
+
+
+Conversely, \emph{reified generics} preserve concrete type information by
+generating distinct specialized code for each instantiated type.
+
+Each generic instantiation may therefore possess its own runtime
+representation, memory layout, and executable instructions.
+
+
+
+% ---------------------------------------------------------------------
+
+\section{Reflection and Runtime Type Information}
+
+
+The availability of generic type information at runtime depends directly on the
+chosen representation strategy.
+
+
+When type erasure is employed, generic parameters are generally unavailable after
+compilation.
+
+Reflection mechanisms therefore provide limited access to instantiated generic
+types because most type information has been discarded.
+
+
+Conversely, implementations based on reified generics preserve concrete type
+information throughout compilation.
+
+\emph{Runtime reflection or runtime type identification (RTTI)} may therefore
+recover the actual instantiated types, enabling operations such as generic type
+inspection, specialized serialization, and runtime metadata analysis.
+
+
+
+% ---------------------------------------------------------------------
+
+\section{Type Safety}
+
+
+Both implementation strategies preserve static type safety, although they
+achieve this objective differently.
+
+
+In implementations based on type erasure, generic correctness is verified
+entirely during compilation.
+
+Although type parameters disappear from the generated executable,
+compiler-inserted casts preserve the guarantees established by the static type
+system.
+
+
+Implementations based on reified generics retain complete type information
+throughout compilation and generate type-specific implementations directly.
+
+Since each specialization corresponds to a concrete type, correctness is
+preserved without requiring erased representations or implicit runtime casts.
+
+
+
+% ---------------------------------------------------------------------
+
+\section{Performance}
+
+
+The implementation strategy significantly influences both compilation and
+execution performance.
+
+
+Homogeneous implementations generally produce smaller binaries and reduce
+compilation time because generic definitions are compiled only once.
+
+However, the shared representation may require additional indirections,
+boxing, or runtime casts, limiting optimization opportunities.
+
+
+Heterogeneous implementations incur greater compilation cost and larger
+executables because every instantiated type generates a distinct implementation.
+
+Nevertheless, the compiler can aggressively optimize each specialization,
+exploiting concrete type information for improved instruction selection, memory
+layout, inlining, and register allocation.
+
+
+Consequently, runtime performance often approaches that of manually specialized
+code.
+
+
+
+% ---------------------------------------------------------------------
+
+\section{Summary}
+
+
+The implementation of parametric polymorphism is primarily characterized by five
+orthogonal dimensions:
+
+\begin{enumerate}
+    \item the stage at which generic instantiation occurs;
+    \item the runtime representation of generic types;
+    \item the availability of runtime type information and reflection;
+    \item the trade-off between compilation cost, binary size, and execution
+          performance;
+    \item the mechanisms through which static type safety is preserved.
+\end{enumerate}
+
+
+These dimensions form the basis for comparing homogeneous implementations based
+on type erasure with heterogeneous implementations based on reification or
+monomorphization.
+
+
+
+
+\chapter{Instantiation Time}
+
+
+\section{Instantiation Time in C++ Templates}
+
+
+C++ implements parametric polymorphism through the \emph{template} mechanism,
+which adopts a purely compile-time instantiation model.
+
+Unlike languages that compile a generic definition only once, a C++ template is
+not itself an executable entity. Instead, it represents a parameterized program definition that serves as a
+blueprint from which the compiler generates independent concrete
+implementations.
+
+% ---------------------------------------------------------------------
+
+From the perspective of instantiation time, the defining characteristic of C++
+is that executable code is generated only after the compiler knows the complete
+set of template arguments.
+
+Consequently, all template instantiations are resolved entirely during static
+compilation, and no template instantiation mechanism exists during program
+execution.
+
+
+The complete instantiation process can be understood by following the template
+through the compilation pipeline.
+
+% ---------------------------------------------------------------------
+
+\subsection{Template Definition}
+
+When the compiler encounters a template definition, it first performs the
+ordinary front-end compilation stages, including lexical analysis, parsing,
+and semantic analysis that can be performed without knowledge of future
+template arguments.
+
+
+For example:
+
+\begin{lstlisting}
+template<typename T>
+T get_max(T a, T b)
+{
+    return (a > b) ? a : b;
+}
+\end{lstlisting}
+
+
+The compiler parses the template syntax, builds the corresponding Abstract
+Syntax Tree (AST), checks syntactic correctness, and stores an internal
+parameterized representation.
+
+At this stage, the compiler does not generate executable machine code.
+
+The reason is straightforward: the compiler still ignores the concrete meaning
+of the template parameter \texttt{T}, and therefore cannot determine the exact
+operations, object layout, calling convention, or generated instructions
+required by the final implementation.
+
+Consequently, the template definition remains a generic blueprint waiting for
+future instantiation.
+
+% ---------------------------------------------------------------------
+
+\subsection{Instantiation Trigger}
+
+The instantiation process begins only when the compiler encounters a concrete
+use of the template, either through an explicit specification of the template
+argument or through implicit type deduction.
+
+\begin{examplebox}
+
+\textbf{Example.}
+
+Consider the following template invocations:
+
+\begin{lstlisting}
+int i = get_max(3, 7);
+double d = get_max<double>(2.5, 4.8);
+\end{lstlisting}
+
+
+The first invocation relies on template argument deduction: 
+\[
+T = int
+\]
+
+
+whereas the second invocation explicitly specifies the template argument:
+
+\[
+T = double
+\]
+
+
+Therefore, the compiler generates two different template instantiations:
+\texttt{get\_max<int>} and \texttt{get\_max<double>}
+
+\end{examplebox}
+Each unique set of template arguments constitutes a distinct template
+instantiation.
+Instantiation may occur through:
+
+\begin{itemize}
+    \item \texttt{implicit instantiation}, automatically performed whenever a
+          specialization is required by the program;
+
+    \item \texttt{explicit instantiation}, requested directly by the programmer through
+          an explicit instantiation declaration or definition;
+
+    \item \texttt{explicit specialization}, where an entirely different implementation
+          is provided for a specific combination of template arguments.
+\end{itemize}
+
+Regardless of how instantiation is initiated, executable code generation begins
+only after the complete set of template arguments is known.
+
+% ---------------------------------------------------------------------
+
+\subsection{Template Argument Substitution}
+
+
+Once instantiation has been triggered, the compiler performs template argument
+substitution.
+
+
+During this phase, every formal template parameter is replaced by its
+corresponding concrete argument.
+
+\begin{examplebox}
+\textbf{From previous example.}
+
+\[
+T \rightarrow int
+\]
+
+
+produces the specialization:
+
+\begin{lstlisting}
+int get_max(int a, int b)
+{
+    return (a > b) ? a : b;
+}
+\end{lstlisting}
+
+
+whereas:
+
+\[
+T \rightarrow double
+\]
+
+
+produces:
+
+\begin{lstlisting}
+double get_max<double>(double a, double b)
+{
+    return (a > b) ? a : b;
+}
+\end{lstlisting}
+\end{examplebox}
+
+Conceptually, the compiler now treats each specialization as if it had been
+written explicitly by the programmer.
+
+From this point onward, the specialization behaves as an ordinary non-template
+function.
+
+% ---------------------------------------------------------------------
+
+\subsection{Semantic Analysis of the Specialization}
+
+Instantiation does not immediately produce executable code.
+
+Instead, each generated specialization undergoes the normal semantic analysis
+performed for ordinary C++ program entities.
+
+Depending on the specialization, the compiler performs activities such as: type checking, overload resolution, name lookup, constraint verification for constrained templates,
+constant expression evaluation, instantiation of nested templates and verification of language rules required by the selected template arguments.
+
+This step is fundamental because many semantic properties cannot be verified
+before template parameters have been substituted.
+
+
+Consequently, a template definition that is syntactically correct may still
+produce compilation errors if one of its concrete instantiations violates the
+requirements imposed by the template body.
+
+% ---------------------------------------------------------------------
+
+\subsection{Intermediate Representation and Code Generation}
+
+Once semantic analysis has successfully completed, the specialization enters
+the compiler back-end.
+
+The compiler generates an Intermediate Representation (IR) specifically for the
+instantiated specialization.
+
+Subsequently, the specialization undergoes the standard optimization pipeline,
+which may include: constant propagation, dead-code elimination, function inlining, loop optimizations, register allocation,
+instruction selection and target-specific optimizations.
+
+Finally, the compiler emits native machine code corresponding exclusively to
+that specialization.
+
+Importantly, this process is repeated independently for every distinct template
+instantiation.
+
+Consequently, each specialization owns an independent executable
+implementation. Infact, the compiler does not produce a single shared executable representation capable
+of serving multiple template arguments.
+
+% ---------------------------------------------------------------------
+
+\subsection{Completion of the Instantiation Process}
+
+The instantiation process terminates entirely before linking.
+
+By the time object files are generated, every template specialization required
+by the translation unit already exists as ordinary compiled code.
+
+After linking, the final executable therefore contains every specialization
+required by the program.
+
+From the perspective of executable code generation, the lifecycle of a C++
+template can be summarized as follows:
+
+\begin{enumerate}
+    \item The compiler parses the template definition.
+    
+    \item The template is stored as a parameterized internal representation.
+
+    \item A concrete template use triggers instantiation.
+
+    \item Template parameters are substituted with concrete arguments.
+
+    \item The generated specialization undergoes complete semantic analysis.
+
+    \item The compiler produces a specialization-specific intermediate
+          representation.
+
+    \item Optimization passes are applied.
+
+    \item Native machine code is emitted.
+
+    \item The specialization is included in the final executable before program
+          execution begins.
+\end{enumerate}
+
+Therefore, the defining characteristic of C++ parametric polymorphism is that
+the entire instantiation process is completed during static compilation.
+
+When execution begins, no template instantiation mechanism remains active.
+
+The runtime simply executes machine code that has already been generated for
+every required specialization during compilation.
+
+% =====================================================================
+% FUTURE SECTIONS
+% =====================================================================
 
 \section{Analysis of the Algorithms}
+
+
 You can use sections to divide your chapters into smaller, readable chunks.
 
-% Se vuoi includere il testo da file separati per mantenere l'ordine:
-% \input{chapters/chapter_1}
 
 \end{document}

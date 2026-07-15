@@ -111,13 +111,39 @@ source code, byte code and binary code.
 - Analyze compile-time versus runtime characteristics as the second axis of comparison, specifically examining when instantiation happens  and what type information survives into the compiled binary or bytecode.
 \\
 - The entire document must be written in professional, compilation-ready LaTeX code.
-\chapter{Methodology and Implementation}
-This chapter covers the technical details, algorithms, and design choices.
+\\
+\textbf{Resources}:
+The generation of the technical report was supported by the following
+academic and technical references. The selected resources provide the
+theoretical foundations of parametric polymorphism, the classification of
+polymorphic systems, and the implementation techniques adopted by modern
+programming languages.
 
-\section{Analysis of the Algorithms}
-You can use sections to divide your chapters into smaller, readable chunks.
+The theoretical background was derived from foundational works on type
+systems and polymorphism, including Strachey's original classification of
+polymorphism, Cardelli and Wegner's analysis of type abstraction and
+polymorphism, and Pierce's formal treatment of parametric polymorphism and
+type systems
+\cite{strachey1967,cardelli1985,pierce2002,pierce2009}.
 
-% Se vuoi includere il testo da file separati per mantenere l'ordine:
-% \input{chapters/chapter_1}
+The analysis of generic implementation strategies, including homogeneous
+translation, type erasure, heterogeneous translation, reification, and
+monomorphization, was based on research concerning generic programming
+implementations and runtime systems, including the .NET Common Language
+Runtime and Java generic mechanisms
+\cite{kennedy2001,bracha2004,ecma335_2024,jvm_generics2020}.
+
+The comparison between compile-time and runtime characteristics, including
+instantiation time, runtime representation, reflection capabilities,
+runtime type information, optimization opportunities, performance trade-offs,
+and type safety guarantees, was supported by compiler literature and modern
+programming language implementation documentation
+\cite{cooper2022,appel2022,aho2022,rust2024,rust_monomorphization,
+cpp_templates2017,swift_generics2019}.
+
+% Include all bibliography entries even if not explicitly cited
+\nocite{*}
+\bibliographystyle{plain}
+\bibliography{references}
 
 \end{document}
