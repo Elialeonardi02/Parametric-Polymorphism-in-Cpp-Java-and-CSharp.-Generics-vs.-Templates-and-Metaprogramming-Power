@@ -639,6 +639,210 @@ compilation \cite{warburton_generics}.
 
 \end{itemize}
 
+\section{Prompt 6: Runtime Representation of C\# Generics}
+\noindent \textbf{goal}: Generate a detailed academic section of runtime representation of C\# generics
+with explicit example and comparison with C++ template and Java generics.
+\noindent\textbf{prompt}:
+\textbf{System Persona} \\
+You are a Principal Software Engineer and Researcher specializing in programming language theory, virtual machine implementation, and compiler design. 
+You possess deep academic and industry knowledge of the .NET Common Language Runtime (CLR), the Java Virtual Machine (JVM), and C++ compilation pipelines.
+
+\vspace{0.5cm}
+
+\textbf{Goal} \\
+Write a rigorous, publication-quality technical-academic report section analyzing the runtime representation of C\# generics. 
+Your analysis must contrast the C\# implementation with the runtime representations of C++ templates and Java generics to highlight the structural trade-offs, architectural differences, and design philosophies inherent to each approach.
+
+\vspace{0.5cm}
+
+\textbf{Requirements} \\
+\begin{itemize}
+    \item \textbf{Core Topic Analysis:} Detail the runtime representation of C\# generics, specifically focusing on how the .NET Common Language Runtime (CLR) handles reification. 
+    Explain how the compiler emits Common Intermediate Language (CIL) metadata and how the Just-In-Time (JIT) compiler dynamically instantiates generic classes and methods at runtime.
+
+    \item \textbf{Mechanisms of C\# Reification:} Analyze the differing runtime behaviors of C\# generics when instantiated with value types (which generate specialized machine code per type) versus reference types (which share a single native implementation using pointer representations, mitigated by runtime dictionary passing or execution-engine tables).
+
+    \item \textbf{Contrast with Java Generics (Type Erasure):} Contrast C\# runtime reification with Java's runtime representation. 
+    Explain how Java's compile-time Type Erasure removes generic type arguments, resulting in a shared runtime representation with no generic metadata, casting overhead, and the inability to instantiate generic types directly.
+
+    \item \textbf{Contrast with C++ Templates (Monomorphization):} Contrast C\# runtime reification with C++ template instantiation. 
+    Explain how C++ utilizes a heterogeneous translation model where templates are fully resolved and expanded at compile-time into distinct machine code artifacts. 
+    Highlight that C++ executables lack formal runtime template representation, metadata, or dynamic generic instantiation capabilities.
+
+    \item \textbf{Theoretical vs. Implementation Distinction:} Clearly distinguish between the theoretical paradigms of generics and their underlying machine/virtual-machine implementations (e.g., virtual method tables, metadata, dictionary passing, memory layouts).
+
+    \item \textbf{Academic References:} Rely on authoritative sources (e.g., official language specifications like ECMA-335, peer-reviewed publications). Use consistent citation formatting and include a final bibliography section.
+\end{itemize}
+
+\vspace{0.5cm}
+
+\textbf{Writing Style Constraint} \\
+\begin{itemize}
+    \item Maintain a formal, objective, and authoritative academic tone.
+    \item Produce a complete technical-academic report, providing a logical progression from foundations to analysis.
+    \item Use precise technical terminology (e.g., \emph{parametric polymorphism}, \emph{reification}, \emph{type erasure}, \emph{monomorphization}, \emph{JIT specialization}).
+    \item Avoid colloquial language or unsupported generalizations.
+    \item Format technical variables or formal representations using LaTeX notation (e.g., $T\langle U \rangle$).
+
+    \item \textbf{STRICT SCOPE CONTROL:} Confine the analysis strictly to the runtime representation, metadata structures, compilation pipelines, and execution engine mechanics. 
+    Actively avoid tangential subjects such as application benchmarks, hardware performance, unrelated garbage collection, or general syntax ergonomics.
+    
+    \item Begin directly with the technical content. Do not include conversational filler.
+\end{itemize}
+
+\vspace{0.5cm}
+
+\textbf{Output Structure} \\
+Structure the report logically using the following exact headers:
+\begin{enumerate}
+    \item Introduction to C\# Generic Reification
+    \item CLR Execution Engine and Runtime Representation
+    \item Comparative Runtime Paradigm: C\# vs. Java Generics
+    \item Comparative Runtime Paradigm: C\# vs. C++ Templates
+    \item Architectural Synthesis
+    \item References
+\end{enumerate}
+Under "Architectural Synthesis", include a concise comparison table summarizing the features, metadata presence, compilation model, and representation strategy across C\#, Java, and C++.
+
+\noindent{primary references}
+\noindent\textbf{Primary references}
+
+\begin{itemize}
+
+\item 
+\textbf{ECMA International, \emph{ECMA-335: Common Language Infrastructure (CLI)}.}
+Used as the primary reference for the CLR execution model, CIL metadata structures, 
+generic parameter representation, and runtime reification mechanisms.
+
+\item 
+\textbf{Andrew Kennedy and Don Syme, 
+\emph{Design and Implementation of Generics for the .NET Common Language Runtime}.}
+Used for the analysis of CLR generic implementation strategies, including JIT 
+specialization, code sharing, and runtime generic dictionaries.
+
+\item 
+\textbf{Jeffrey Richter, \emph{CLR via C\#: The Definitive Guide to the Common Language Runtime}.}
+Used to describe CLR internal execution mechanisms, generic instantiation, and the 
+difference between value-type specialization and reference-type sharing.
+
+\item 
+\textbf{James Gosling et al., \emph{The Java Language Specification}.}
+Used for the comparison with Java generics, especially type erasure and the loss of 
+generic runtime information.
+
+\item 
+\textbf{Tim Lindholm et al., \emph{The Java Virtual Machine Specification}.}
+Used for the analysis of JVM runtime representation and bytecode execution model.
+
+\item 
+\textbf{David Vandevoorde, Nicolai M. Josuttis, and Douglas Gregor, 
+\emph{C++ Templates: The Complete Guide}.}
+Used for the comparison with C++ templates, compile-time instantiation, and 
+monomorphization.
+
+\end{itemize}
+
+\section{prompt 6: Reflection of C++ templates}
+\noindent \textbf{goal}: Generate a detailed academic section of reflection and runtime type information of C++ templates, 
+with explicit example.
+\noindent\textbf{prompt}:
+\begin{verbatim}
+System Persona
+
+Act as an expert computer scientist and technical-academic writer 
+specializing in programming language theory, compiler design, and 
+C++ software engineering.
+
+Goal
+
+Generate a rigorous, technical-academic report section written in 
+compilation-ready LaTeX that analyzes Reflection and Runtime Type 
+Information (RTTI) specifically within the context of C++ templates, 
+utilizing the provided theoretical framework regarding generic type 
+representation.
+
+Requirements
+
+* Use the following theoretical text as the foundation for the analysis: 
+"The availability of generic type information at runtime depends 
+directly on the chosen representation strategy. When type erasure is 
+employed, generic parameters are generally unavailable after compilation. 
+Reflection mechanisms therefore provide limited access to instantiated 
+generic types because most type information has been discarded. 
+Conversely, implementations based on reified generics preserve concrete 
+type information throughout compilation. \emph{Runtime reflection or 
+runtime type identification (RTTI)} may therefore recover the actual 
+instantiated types, enabling operations such as generic type inspection, 
+specialized serialization, and runtime metadata analysis."
+
+* Analyze how C++ templates align with the concepts of type preservation 
+and reification, detailing how C++ generates specific instantiations 
+(monomorphization) that preserve concrete type information.
+
+* Detail the application and behavior of standard C++ RTTI mechanisms 
+(e.g., `typeid`, `std::type_info`, `dynamic_cast`) when applied to 
+instantiated template classes and functions.
+
+* Distinguish clearly between compile-time type information (available 
+during template instantiation and metaprogramming) and runtime 
+reflection mechanisms.
+
+* ENFORCE STRICT SCOPE CONTROL: Confine the generated text strictly 
+to the topic of Reflection and RTTI in C++ templates. Actively avoid 
+tangential subjects such as memory footprint, hardware performance, 
+code bloat, garbage collection overhead, or broader language comparisons 
+unless explicitly demanded to illustrate the C++ mechanism.
+
+* Provide a logical progression from the theoretical foundations of 
+type representation strategies to the specific technical mechanisms 
+implemented in the C++ compiler.
+
+Writing Style Constraint
+
+* Produce a complete, academically rigorous technical report section 
+rather than a short summary.
+
+* Maintain a formal, objective, and scientific writing style.
+
+* Use precise terminology appropriate for computer science literature 
+and official C++ standard specifications.
+
+* Avoid unsupported claims and clearly identify technical assumptions.
+
+* Do not use first-person forms ("I", "we").
+
+Output Structure
+
+* The output must consist entirely of perfectly formatted, 
+compilation-ready LaTeX code.
+
+* Begin the output with an appropriate section heading 
+(e.g., \section{Reflection and Runtime Type Information in C++ Templates}).
+
+* Include appropriate LaTeX structural elements, such as subsections 
+(\subsection), text formatting commands (\emph, \texttt), and paragraphs 
+to organize the logical flow of the technical analysis.
+
+* Do not output a full document preamble (e.g., \documentclass or 
+\begin{document}); provide only the self-contained section content 
+ready to be included in a larger academic LaTeX document.
+\end{verbatim}
+
+\noindent\textbf{Primary resources}
+\noindent\begin{itemize}
+
+\item \textbf{Bjarne Stroustrup, \emph{The C++ Programming Language}, 4th Edition, Addison-Wesley Professional, 2013.}
+This reference provides the general description of C++ templates, template instantiation, and the standard RTTI mechanisms used in the analysis \cite{stroustrup2013cpp}.
+
+\item \textbf{David Vandevoorde, Nicolai M. Josuttis, and Douglas Gregor, \emph{C++ Templates: The Complete Guide}, 2nd Edition, Addison-Wesley Professional, 2017.}
+This reference provides the theoretical and technical foundation for template instantiation, specialization, and compile-time preservation of template type information \cite{vandevoorde2017templates}.
+
+\item \textbf{cppreference.com, \emph{C++ Language Reference: RTTI and typeid}, 2025.}
+This reference was used for the description of the standard RTTI facilities, including \texttt{typeid}, \texttt{std::type\_info}, and \texttt{dynamic\_cast} behavior \cite{cppreference}.
+
+\end{itemize}
+\end{document}
+
 
 % =====================================================================
 % BIBLIOGRAPHY
