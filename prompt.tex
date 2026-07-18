@@ -742,7 +742,7 @@ monomorphization.
 
 \end{itemize}
 
-\section{prompt 6: Reflection of C++ templates}
+\section{prompt 7: Reflection of C++ templates}
 \noindent \textbf{goal}: Generate a detailed academic section of reflection and runtime type information of C++ templates, 
 with explicit example.
 \noindent\textbf{prompt}:
@@ -841,9 +841,138 @@ This reference provides the theoretical and technical foundation for template in
 This reference was used for the description of the standard RTTI facilities, including \texttt{typeid}, \texttt{std::type\_info}, and \texttt{dynamic\_cast} behavior \cite{cppreference}.
 
 \end{itemize}
-\end{document}
+
+\section{Prompt 8: Reflection Java Generics}
+
+\noindent \textbf{goal}: Generate a detailed academic section of reflection and runtime type information of Java generics,
+with explicit example and comparison with C++ templates.
+
+\noindent\textbf{prompt}:
+\begin{verbatim}
+System Persona
+
+Act as a Senior Academic Writer and Expert in programming language theory, compiler design, and software engineering. You possess deep technical expertise in the implementation mechanics of parametric polymorphism, reflection mechanisms, and runtime type identification (RTTI) across both managed environments (such as the Java Virtual Machine) and unmanaged environments (such as C++).
+
+Goal
+
+Generate a formal, technical-academic report section focusing on "Reflection and Runtime Type Information (RTTI) in Java Generics". The generated text must serve as a rigorous academic analysis, focusing primarily on Java Generics while utilizing C++ templates exclusively as a comparative baseline to contrast differences in runtime type visibility and RTTI capabilities.
+
+Requirements
+* Theoretical Analysis of Java Generics: Explain the mechanics of type erasure within the Java Virtual Machine (JVM). Detail how the Java compiler replaces generic type parameters with their upper bounds (or the Object class if unbounded) and inserts the necessary type casts. Thoroughly analyze dynamic metadata stripping.
+* Reflection and RTTI Limitations: Evaluate how type erasure constrains standard Java RTTI and reflection mechanisms. Specifically address why operations such as instanceof queries against parameterized generic instantiations are disallowed by the type system, how the getClass() method yields an identical class reference across structurally distinct generic instances, and how developers bypass these limitations using type tokens (e.g., Class).
+* Comparative Analysis (Java vs. C++): Contrast Java's type-erased reflection semantics directly with the C++ template specialization (monomorphization) model. Articulate how C++ establishes independent runtime type metadata for each specialization (exploitable via typeid and dynamic_cast), whereas Java maps all parameterized variations back to a single shared runtime java.lang.Class object.
+* Explanatory Code Examples: Provide precise, compilation-ready Java code snippets wrapped in standard LaTeX verbatim environments to illustrate:
+1. A scenario showcasing the runtime uniformity of getClass() and the compilation failure of parameterized instanceof checks.
+2. The explicit type token pattern used as an implementation workaround to reintroduce type awareness at runtime.
 
 
+* Strict Scope Control: Confine the generated text strictly to the requested core topics: type systems, compiler mechanics, reflection APIs, and RTTI constructs. Actively avoid tangential subjects such as garbage collection overhead, hardware execution metrics, memory consumption footprints, binary code bloat, or general syntactic evaluations.
+* Authoritative Grounding: Rely strictly on authoritative academic or technical sources. Ensure all architectural and behavioral claims are rigorously aligned with the official Java Language Specification (JLS) and the ISO C++ Standard. Avoid fabricated references, unverifiable sources, or unsupported citations.
+
+Writing Style Constraint
+
+* Produce a complete technical-academic report section rather than a short summary.
+* Maintain a formal, objective, and highly scientific academic tone appropriate for peer-reviewed computer science literature.
+* Provide a logical progression from theoretical foundations to technical analysis, clearly distinguishing between theoretical concepts and implementation mechanisms.
+* Utilize precise domain terminology (e.g., type erasure, monomorphization, reification, parametric polymorphism, type tokens, RTTI).
+* Avoid subjective commentary, casual filler text, conversational transitions, and unsupported claims.
+* Do not use first-person pronouns ("I", "we", "our").
+
+Output Structure
+
+* The output must consist exclusively of complete, compilation-ready LaTeX syntax.
+* Structure the document appropriately using standard LaTeX commands for sections, subsections, and code blocks.
+* Do not include any markdown wrappers (such as ```latex), introductory greetings, concluding remarks, meta-commentary, or explanatory text outside of the raw LaTeX code block.
+* Start the response immediately with the first LaTeX command.
+
+\end{verbatim}
+
+\noindent\textbf{Primary references}
+\begin{itemize}
+
+\item \textbf{Oracle Corporation,
+\emph{The Java Language Specification}.}
+Provides the formal definition of Java generics, type erasure,
+generic type restrictions in RTTI operations, and the semantics of
+casts and \texttt{instanceof} with parameterized types \cite{jls}.
+
+\item \textbf{Oracle Corporation,
+\emph{The Java Virtual Machine Specification}.}
+Provides the JVM-level description of class metadata, generic
+signatures, and the separation between compile-time generic
+information and runtime type representation \cite{jvms}.
+
+\item \textbf{ISO/IEC,
+\emph{Programming Languages -- C++ (ISO/IEC 14882:2024)}.}
+Provides the formal basis for C++ template instantiation, RTTI,
+\texttt{typeid}, and \texttt{dynamic\_cast} used for comparison with
+Java's erased generic model \cite{cppstandard}.
+
+\end{itemize}
+\section{Prompt 9: reflection for C\# Generics}
+\noindent\textbf{goal}: Generate a detailed academic section of reflection and runtime type information of C\# generics,
+with explicit example and comparison with C++ templates and Java generics.
+\noindent\textbf{prompt}:
+\begin{verbatim}
+System Persona
+W
+Act as a Senior Research Scientist in Programming Language Theory, Compiler Architecture, and Type Systems.
+
+Goal
+
+Generate a rigorous, formal technical-academic report section focusing on the runtime reflection mechanics of C# generics, providing an illustrative code example, and executing a precise comparative analysis of reflection capabilities against C++ templates and Java generics.
+
+Requirements
+
+* **Theoretical Foundation of C# Reflection**: Analyze the structural mechanics of reified generics within the Common Language Runtime (CLR). Explain how type metadata is preserved through compilation into Common Intermediate Language (CIL) and maintained at execution time, allowing full runtime introspection of both open and closed generic types.
+* **Explicative Code Example**: Provide a clear, production-grade programmatic example demonstrating the usage of `System.Reflection` to inspect generic types at runtime. The example must explicitly showcase how to evaluate generic conditions (such as `IsGenericType`) and extract concrete type arguments dynamically using methods like `GetGenericArguments()`.
+* **Targeted Reflection Comparison**: Conduct a rigorous comparative analysis contrasting the reflection capabilities of C# generics against:
+1. C++ Templates: Analyze the constraints imposed by compile-time monomorphization and the limitations of standard Runtime Type Information (RTTI) via `typeid` and `std::type_info`.
+2. Java Generics: Analyze the constraints imposed by compile-time type erasure and the nature of residual type metadata, detailing why concrete type parameters cannot be directly introspected at runtime.
+
+
+* **Strict Reflection Isolation**: Focus the comparative analysis exclusively on runtime reflection, metadata availability, and type introspection capabilities.
+* **Strict Scope Control**: Actively exclude any discussion regarding memory footprint optimizations, hardware performance metrics, code bloat, execution speed, compilation times, garbage collection overhead, or general language ergonomics.
+* **LaTeX Formatting**: Format the complete output as a clean, compilation-ready LaTeX document fragment. Use structural commands (`\section`, `\subsection`), semantic markup (`\texttt`, `\emph`), and verbatim blocks (`\begin{verbatim}`) aligned with the structural style of the provided text.
+
+Writing Style Constraint
+
+* Maintain an objective, academic, and authoritative scientific writing style standard for computer science literature.
+* Use precise, domain-specific terminology (e.g., *reification*, *monomorphization*, *type erasure*, *open/closed constructed types*, *intrinsic type identity*).
+* Establish a logical progression from foundational runtime mechanics to code verification and comparative analysis.
+* Do not use first-person pronouns ("I", "we", "our").
+* Avoid speculative claims, casual expressions, or unsupported assertions.
+
+Output Structure
+
+The output must consist solely of the compilation-ready LaTeX code fragment containing the requested sections. Do not include conversational text, introductory greetings, concluding remarks, Markdown code blocks, or meta-commentary.
+\end{verbatim}
+\noindent\textbf{Primary references}
+\begin{itemize}
+
+\item \textbf{Jeffrey Richter,
+\emph{CLR via C\#: A Developer's Tour of the Common Language Runtime},
+4th Edition, Microsoft Press, 2012.}
+This reference provides the technical foundation for the analysis of CLR
+reification, CIL metadata preservation, generic type representation, and runtime
+reflection mechanisms through the \texttt{System.Type} and
+\texttt{System.Reflection} APIs~\cite{richter2012clr}.
+
+\item \textbf{David Vandevoorde, Nicolai M. Josuttis, and Douglas Gregor,
+\emph{C++ Templates: The Complete Guide},
+2nd Edition, Addison-Wesley Professional, 2017.}
+This reference is used to verify the description of C++ template
+instantiation, compile-time monomorphization, and the limitations of standard
+RTTI facilities such as \texttt{typeid} and \texttt{std::type\_info} for
+recovering template parameter information~\cite{vandevoorde2017cpp}.
+
+\item \textbf{Gilad Bracha,
+\emph{The Java Language Specification, Java SE 5.0 Edition},
+Addison-Wesley Professional, 2004.}
+This reference supports the discussion of Java generic type erasure, residual
+generic metadata, and the distinction between declaration-level generic
+information and runtime type identity~\cite{bracha2004generics}.
+\end{itemize}
 % =====================================================================
 % BIBLIOGRAPHY
 % =====================================================================
