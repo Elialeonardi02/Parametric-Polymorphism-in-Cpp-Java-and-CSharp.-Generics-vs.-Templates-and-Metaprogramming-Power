@@ -973,6 +973,197 @@ This reference supports the discussion of Java generic type erasure, residual
 generic metadata, and the distinction between declaration-level generic
 information and runtime type identity~\cite{bracha2004generics}.
 \end{itemize}
+
+\section{Prompt 10: ++ templates performance}
+\noindent\textbf{goal}: Generate a detailed academic section of performance analysis of C++ templates,
+with explicit example.
+
+\noindent\textbf{prompt}:
+\begin{verbatim}
+System Persona
+
+Act as a Senior Computer Science Researcher and Expert in Programming Language Theory, Compiler Design, and C++ System Architecture.
+
+Goal
+
+Generate a formal, compilation-ready LaTeX section analyzing the performance characteristics of C++ templates, designed to seamlessly follow a theoretical discussion on type safety, type erasure, and reified generics.
+
+Requirements
+
+* Draft a complete technical-academic section detailing the execution performance implications of C++ templates and monomorphization.
+* Establish a logical and cohesive continuation from the following preceding context: "Both implementation strategies preserve static type safety, although they achieve this objective differently. In implementations based on type erasure, generic correctness is verified entirely during compilation. Although type parameters disappear from the generated executable, compiler-inserted casts preserve the guarantees established by the static type system. Implementations based on reified generics retain complete type information throughout compilation and generate type-specific implementations directly. Since each specialization corresponds to a concrete type, correctness is preserved without requiring erased representations or implicit runtime casts."
+* Detail the runtime performance advantages of reified generics in C++, specifically focusing on static dispatch, the elimination of boxing/unboxing overhead, and the facilitation of aggressive compiler optimizations such as function inlining.
+* Clearly distinguish between the theoretical concepts of reification and the low-level implementation mechanisms of C++ templates.
+* Explicitly confine the scope of the generated text to the performance characteristics of C++ templates. Actively avoid tangential subjects (e.g., garbage collection overhead, memory footprint, code bloat, or broader language comparisons) unless they strictly and directly impact the execution performance (e.g., instruction cache pressure resulting from binary size expansion).
+* Produce complete, compilation-ready LaTeX code utilizing appropriate structural commands (e.g., \section, \subsection) and formatting.
+
+Writing Style Constraint
+
+* Maintain a formal, objective, and rigorous scientific writing style appropriate for computer science literature.
+* Do not use first-person pronouns ("I", "we").
+* Avoid unsupported claims; ground all performance characteristics in established compiler theory and C++ language mechanics.
+* Do not include explanatory text, conversational filler, placeholders, or meta-commentary outside of the requested LaTeX source code.
+
+Output Structure
+
+Return only the raw, compilation-ready LaTeX code block containing the requested section, with no surrounding text or conversational framing.
+\end{verbatim}
+\noindent\textbf{Primary references}
+\begin{itemize}
+
+\item \textbf{David Vandevoorde, Nicolai M. Josuttis, and Douglas Gregor,
+\emph{C++ Templates: The Complete Guide}, 2nd Edition, Addison-Wesley
+Professional, 2017.}
+This reference provides the technical foundation for template instantiation,
+specialization, and monomorphization in C++, supporting the discussion of
+static dispatch, direct type-specific code generation, and zero-overhead
+template abstractions \cite{vandevoorde2017templates}.
+
+\item \textbf{Steven S. Muchnick,
+\emph{Advanced Compiler Design and Implementation}, Morgan Kaufmann, 1997.}
+This reference provides the compiler optimization background used to describe
+inlining, constant propagation, constant folding, loop optimization, and other
+compile-time transformations enabled by specialized template code
+\cite{muchnick1997compiler}.
+\end{itemize}
+
+\section{Prompt 11: performance Java generics}
+
+\noindent\textbf{goal}: Generate a detailed academic section of performance analysis of Java generics,
+with explicit example and comparison with C++ templates.
+\noindent\textbf{prompt}:
+\begin{verbatim}
+## System Persona
+
+Act as a Senior Computer Science Researcher and Expert in Programming Language Theory, JVM Architecture, and Compiler Design.
+
+## Goal
+
+Generate a comprehensive, technically rigorous academic report analyzing the execution and runtime performance characteristics of Java Generics, specifically contrasting its performance profile with that of C++ templates.
+
+## Requirements
+
+* **Theoretical Core:** Analyze the execution performance implications of the type erasure model employed by Java Generics versus the compile-time monomorphization (template instantiation) model utilized by C++ templates.
+* **Performance Breakdown:** Detail the specific runtime overheads introduced by Java Generics, focusing on pointer indirection, the necessity of object boxing and unboxing for primitive types, impacts on heap allocation, data locality, and instruction/data cache efficiency.
+* **Comparative Analysis:** Contrast these characteristics directly with C++ templates, detailing how C++ achieves static dispatch, eliminates runtime boxing, optimizes memory locality through contiguous array layouts of value types, and enables aggressive Ahead-Of-Time (AOT) compiler optimizations such as function inlining.
+* **Mitigation Mechanisms:** Discuss how the Java Virtual Machine (JVM) and Just-In-Time (JIT) compilers attempt to mitigate generic overhead via runtime optimizations, including escape analysis, inline caching, and devirtualization.
+* **Strict Scope Control:** Confine the analysis entirely to execution performance, runtime throughput, memory layout, and cache behavior. Actively avoid tangential topics such as language ergonomics, compilation times, or general garbage collection mechanics unless they directly and demonstrably impact the execution throughput of generic structures.
+* **References and Citations:** Rely on authoritative technical and academic sources, such as the Java Language Specification (JLS), the ISO C++ Standard, JVM architecture documentation, and peer-reviewed programming language literature. Include consistent in-text citations and a final bibliography section.
+
+## Writing Style Constraint
+
+* Maintain a formal, objective, and rigorous scientific writing style appropriate for computer science literature.
+* Do not use first-person pronouns ("I", "we").
+* Ground all claims and performance characteristics in established compiler theory, JVM specifications, and hardware interaction mechanics; avoid unsupported assertions.
+* Use precise technical terminology (e.g., type erasure, monomorphization, boxing overhead, data locality, static dispatch, cache lines).
+
+## Output Structure
+
+Return only complete, compilation-ready LaTeX code utilizing appropriate structural commands (`\section`, `\subsection`), code formatting environments, mathematical notation where applicable, and a bibliography environment. Do not include any surrounding conversational text or meta-commentary.
+\end{verbatim}
+\noindent\textbf{Primary resources:}
+
+\begin{itemize}
+
+\item \textbf{James Gosling, Bill Joy, Guy Steele, Gilad Bracha, and Alex
+Buckley, \emph{The Java Language Specification, Java SE 21 Edition},
+Oracle, 2023.}
+This reference provides the formal definition of Java Generics, including type
+erasure, generic translation rules, inserted casts, and bridge methods
+\cite{jls_generics}.
+
+\item \textbf{Tim Lindholm, Frank Yellin, Gilad Bracha, and Alex Buckley,
+\emph{The Java Virtual Machine Specification, Java SE 21 Edition},
+Oracle, 2023.}
+This reference supports the analysis of JVM runtime representation, object
+references, bytecode execution model, and runtime mechanisms relevant to
+generic execution overhead
+\cite{jvm_specification}.
+
+\item \textbf{David Vandevoorde, Nicolai M. Josuttis, and Douglas Gregor,
+\emph{C++ Templates: The Complete Guide}, 2nd Edition,
+Addison-Wesley Professional, 2017.}
+This reference provides the technical foundation for C++ template
+instantiation, monomorphization, specialization, and the performance
+implications of compile-time generated code
+\cite{cpp_templates_complete}.
+
+\item \textbf{Martin Paleczny, Christopher Vick, and Cliff Click,
+\emph{The Java HotSpot Server Compiler}, JVM Research and Technology Symposium,
+2001.}
+This reference supports the discussion of HotSpot JIT optimizations, including
+runtime profiling, devirtualization, inlining, and adaptive compilation
+techniques used to reduce generic execution overhead
+\cite{paleczny2001hotspot}.
+
+\end{itemize}
+\section{Prompt 12: C\# performance}
+\noindent\textbf{goal}: Generate a detailed academic section of performance analysis of C\# generics,
+with explicit example and comparison with C++ templates and java generics.
+\noindent\textbf{prompt}:
+\begin{verbatim}
+System Persona
+
+Act as a Senior Computer Science Researcher and Expert in Programming Language Theory, .NET CLR Architecture, and Compiler Design.
+
+Goal
+
+Generate a comprehensive, technically rigorous academic section analyzing the runtime execution performance of C# Generics, providing direct code examples, and explicitly contrasting its performance profile with both C++ templates and Java Generics. This section is intended for inclusion in the academic report "Parametric Polymorphism in C++, Java, and C#: Generics vs. Templates and Metaprogramming Power (C07)".
+
+Requirements
+
+* Theoretical Foundation: Explain the runtime reification mechanism of C# Generics within the .NET Common Language Runtime (CLR) and the role of Just-In-Time (JIT) specialization.
+* Performance Analysis: Detail the specific runtime performance characteristics of C# Generics, focusing heavily on the distinct handling of value types (structs) versus reference types (classes). Analyze the resulting impacts on memory locality, cache efficiency, and execution speed.
+* Comparative Analysis: Directly contrast C# generic performance with C++ templates (Ahead-Of-Time monomorphization, complete static dispatch, contiguous memory layouts) and Java Generics (type erasure, mandatory boxing/unboxing overhead for primitives, pointer indirection).
+* Concrete Code Examples: Provide precise, comparative code examples demonstrating a generic algorithm or data structure in C# to illustrate the performance divergence between value-type and reference-type instantiations.
+* Strict Scope Control: Confine the analysis entirely to execution performance, runtime throughput, memory layout, and cache behavior. Actively avoid tangential subjects such as language ergonomics, pure compilation times, or garbage collection algorithms, unless they strictly and demonstrably impact the execution throughput of generic structures.
+* References and Citations: Rely on authoritative technical and academic sources, such as the ECMA-335 (Common Language Infrastructure) specification, the C# Language Specification, the ISO C++ Standard, and the Java Language Specification. Include consistent in-text citations and format a final bibliography section.
+
+Writing Style Constraint
+
+* Maintain a formal, objective, and rigorous scientific writing style appropriate for computer science literature.
+* Do not use first-person pronouns ("I", "we").
+* Ground all claims and performance characteristics in established compiler theory, VM specifications, and hardware interaction mechanics; avoid unsupported assertions.
+* Use precise technical terminology (e.g., reification, JIT specialization, type erasure, monomorphization, boxing overhead, data locality).
+
+Output Structure
+
+Return only complete, compilation-ready LaTeX code utilizing appropriate structural commands (\section, \subsection), code formatting environments for the examples, mathematical notation where applicable, and a bibliography environment. Do not include any surrounding conversational text, explanations, or meta-commentary. 
+\end{verbatim}
+
+\noindent\textbf{Primary resources:}
+\noindent\textbf{Primary references}
+\begin{itemize}
+
+\item \textbf{ECMA International,
+\emph{ECMA-335: Common Language Infrastructure (CLI)}, 2012.}
+Provides the technical foundation for the CLR generic execution model,
+including reification, metadata representation, runtime generic handling,
+and the distinction between value-type and reference-type instantiations
+\cite{ECMA335}.
+
+\item \textbf{Microsoft Corporation,
+\emph{C\# Language Specification}, 2023.}
+Provides the formal definition of C\# generics and their runtime semantics,
+used to describe generic type behavior and execution rules
+\cite{CSharpSpec}.
+
+\item \textbf{David Vandevoorde, Nicolai M. Josuttis, Douglas Gregor,
+\emph{C++ Templates: The Complete Guide}, 2nd Edition, 2017.}
+Provides the theoretical basis for C++ template instantiation,
+compile-time monomorphization, and the performance consequences of static
+template specialization compared with runtime generic systems
+\cite{CPPTemplates}.
+
+\item \textbf{James Gosling et al.,
+\emph{The Java Language Specification}, Java SE 21 Edition, 2023.}
+Provides the formal description of Java generic type erasure and was used
+to analyze the runtime limitations of erased generics, including boxing,
+reference indirection, and the absence of primitive specialization
+\cite{JavaLanguageSpecification}.
+
+\end{itemize}
+
 % =====================================================================
 % BIBLIOGRAPHY
 % =====================================================================

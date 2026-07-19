@@ -993,7 +993,229 @@ RTTI, in contrast, represents a restricted runtime mechanism. It operates only o
 
 Therefore, C++ templates preserve generic type information through compile-time monomorphization rather than through runtime reification. Standard RTTI mechanisms provide runtime access to the identity of concrete instantiated types, but they do not constitute a complete reflection system capable of exposing the full structure of template-generated types.
 
+\section{Performance Characteristics of C++ Templates}
 
+The preservation of complete type information through template instantiation
+has direct consequences for execution performance.
+Although \emph{reification} describes the conceptual property of retaining
+type information throughout compilation, the performance characteristics of
+C++ templates derive from the concrete implementation mechanism of
+\emph{template monomorphization}.
+
+During compilation, every template instantiation is transformed into an
+independent specialization operating on a specific concrete type.
+Therefore, the generated executable contains ordinary statically typed
+functions and classes rather than a generic runtime representation.
+The compiler does not generate a universal implementation capable of
+handling arbitrary types; instead, it produces optimized versions tailored
+to each instantiated type.
+
+For example, the following template function:
+
+\begin{lstlisting}[language=C++]
+template<typename T>
+T max(T a, T b) {
+    return (a > b) ? a : b;
+}
+\end{lstlisting}
+
+when instantiated with different types, can generate specialized functions
+equivalent to:
+
+\begin{lstlisting}[language=C++]
+int max(int a, int b) {
+    return (a > b) ? a : b;
+}
+
+double max(double a, double b) {
+    return (a > b) ? a : b;
+}
+\end{lstlisting}
+
+The resulting machine code operates directly on concrete data types,
+without requiring runtime mechanisms for interpreting or resolving the
+generic type parameter.
+
+\subsection{Static Dispatch and Elimination of Runtime Overhead}
+
+One of the main performance advantages introduced by template
+monomorphization is static dispatch.
+Since the concrete type of every template parameter is known during
+compilation, function calls can be resolved before execution.
+This eliminates the runtime indirections required by dynamic dispatch
+mechanisms and allows the compiler to directly generate the target
+function call.
+
+For example:
+
+\begin{lstlisting}[language=C++]
+template<typename T>
+void process(T& object) {
+    object.compute();
+}
+\end{lstlisting}
+
+with a concrete type:
+
+\begin{lstlisting}[language=C++]
+Matrix m;
+process(m);
+\end{lstlisting}
+
+allows the compiler to resolve the call directly to
+\texttt{Matrix::compute()}.
+The absence of runtime dispatch reduces execution overhead and exposes
+additional opportunities for optimization.
+
+Another direct consequence of template specialization is the elimination of
+boxing and unboxing operations.
+Template-generated code operates directly on the native representation of
+objects and primitive values, avoiding additional conversions or wrapper
+objects.
+
+For example:
+
+\begin{lstlisting}[language=C++]
+std::vector<int> values;
+values.push_back(10);
+\end{lstlisting}
+
+stores integer values using their native representation.
+The generated implementation does not require conversion of the integer into
+a generic object representation before storage or computation.
+
+\subsection{Compiler Optimization Opportunities}
+
+Because every template specialization is fully typed, optimizing compilers
+can apply the same optimization techniques used for manually written
+specialized code.
+The availability of concrete types, sizes, and operations enables more
+aggressive analysis and transformation of the generated machine code.
+
+A fundamental optimization enabled by template specialization is function
+inlining.
+Since both the function implementation and the argument types are known at
+compile time, the compiler can replace a function call with the corresponding
+function body.
+
+For example:
+
+\begin{lstlisting}[language=C++]
+template<typename T>
+inline T square(T x) {
+    return x * x;
+}
+
+int result = square(5);
+\end{lstlisting}
+
+can be transformed into code equivalent to:
+
+\begin{lstlisting}[language=C++]
+int result = 5 * 5;
+\end{lstlisting}
+
+removing the function call overhead and enabling further optimizations.
+
+Inlining enlarges the optimization scope available to the compiler,
+allowing additional transformations such as:
+
+\begin{itemize}
+    \item constant propagation;
+    \item constant folding;
+    \item dead-code elimination;
+    \item loop optimization;
+    \item strength reduction.
+\end{itemize}
+
+Template parameters can also represent compile-time constants.
+When values such as array sizes or loop bounds are known during compilation,
+the compiler can simplify control flow and remove unnecessary runtime
+operations.
+
+For example:
+
+\begin{lstlisting}[language=C++]
+template<int N>
+int sum(const int* data) {
+    int result = 0;
+
+    for(int i = 0; i < N; i++)
+        result += data[i];
+
+    return result;
+}
+\end{lstlisting}
+
+allows the compiler to know the exact iteration count.
+Consequently, loop unrolling can be applied, replacing repeated loop
+iterations with explicit instructions and reducing loop-control overhead.
+
+Similarly, compile-time specialization facilitates branch elimination through
+features such as \texttt{if constexpr}:
+
+\begin{lstlisting}[language=C++]
+template<typename T>
+void process(T value) {
+
+    if constexpr(std::is_integral_v<T>)
+        integer_algorithm(value);
+    else
+        generic_algorithm(value);
+}
+\end{lstlisting}
+
+Only the branch corresponding to the selected type is generated in the final
+code, eliminating unnecessary runtime condition checks.
+
+The availability of concrete types and memory layouts also improves the
+ability of compilers to perform automatic vectorization.
+For numerical templates, the compiler can recognize regular memory access
+patterns and generate SIMD instructions when applicable.
+
+\begin{lstlisting}[language=C++]
+template<typename T>
+void add(const T* a,
+         const T* b,
+         T* result,
+         int n)
+{
+    for(int i = 0; i < n; i++)
+        result[i] = a[i] + b[i];
+}
+\end{lstlisting}
+
+When instantiated with numerical types, the generated code can be optimized
+using vector instructions, allowing multiple operations to be executed
+simultaneously.
+
+\subsection{Zero-Overhead Abstraction and Performance Trade-offs}
+
+The combination of static dispatch, direct data representation, and compiler
+optimization enables C++ templates to follow the
+\emph{zero-overhead abstraction} principle.
+According to this principle, abstractions introduced at the source level
+should not impose additional runtime costs compared with an equivalent
+manually specialized implementation.
+
+Template-based abstractions can therefore provide generic programming
+capabilities while maintaining execution efficiency comparable to explicitly
+written type-specific code.
+
+The main performance limitation associated with template monomorphization is
+related to the expansion of generated code.
+Since every specialization produces an independent implementation,
+extensive template usage may increase executable size.
+A larger instruction footprint can negatively affect instruction cache
+locality, increasing instruction cache misses in performance-critical
+applications.
+
+This effect does not originate from additional runtime computation introduced
+by templates, but from the interaction between generated specialized code and
+the processor memory hierarchy.
+Therefore, template performance is generally dominated by the benefits of
+compile-time specialization, while instruction cache behavior represents the
+main architectural factor capable of reducing these advantages.
 
 % =====================================================================
 % CHAPTER: JAVA GENERICS
@@ -1725,6 +1947,445 @@ These contrasting implementation strategies illustrate the fundamental
 trade-off between preserving runtime type identity through reification,
 as in C++, and reducing runtime type diversity through type erasure, as
 adopted by the Java Virtual Machine.
+
+\section{Performance}
+
+The execution performance of generic programming is strongly determined by the
+translation strategy adopted by the language implementation. Java Generics and
+C++ templates represent two fundamentally different approaches: Java employs a
+\emph{type erasure} model, whereas C++ relies on compile-time instantiation and
+\emph{monomorphization}. These strategies produce different runtime
+representations and consequently different execution characteristics.
+
+Java Generics are implemented through type erasure, as specified by the Java
+Language Specification. During compilation, generic type parameters are removed
+from the generated bytecode and replaced by their upper bounds, typically
+\texttt{Object}. Generic information is preserved only in metadata attributes
+used by the compiler and runtime tools, but it does not determine the actual
+machine representation of executed objects.
+
+For example, the generic class:
+
+\begin{lstlisting}[language=Java]
+class Container<T> {
+
+    T value;
+
+    T get() {
+        return value;
+    }
+}
+\end{lstlisting}
+
+is translated approximately into:
+
+\begin{lstlisting}[language=Java]
+class Container {
+
+    Object value;
+
+    Object get() {
+        return value;
+    }
+}
+\end{lstlisting}
+
+Consequently, the JVM executes a single implementation shared by all generic
+instantiations. A \texttt{Container<String>} and a
+\texttt{Container<Integer>} therefore use the same erased runtime
+representation.
+
+C++ templates follow a different execution model. Template instantiation occurs
+during compilation, and the compiler generates a specialized version of the
+code for every concrete type used by the program. For example:
+
+\begin{lstlisting}[language=C++]
+template <typename T>
+class Container {
+
+    T value;
+
+public:
+
+    T get() {
+        return value;
+    }
+};
+\end{lstlisting}
+
+instantiated as:
+
+\begin{lstlisting}[language=C++]
+Container<int> a;
+Container<double> b;
+\end{lstlisting}
+
+produces two independent implementations specialized for
+\texttt{int} and \texttt{double}. This process, known as monomorphization,
+allows the compiler to exploit complete type information during optimization.
+
+Therefore, Java preserves a uniform runtime representation by removing generic
+type information, while C++ exchanges additional generated code for
+type-specific machine implementations.
+
+\subsection{Memory Representation and Pointer Indirection}
+
+The main performance consequence of Java type erasure is that generic
+structures operate primarily on object references rather than direct values.
+In the JVM object model, reference variables contain pointers to heap objects,
+requiring additional memory accesses compared with direct value storage.
+
+For example:
+
+\begin{lstlisting}[language=Java]
+ArrayList<Integer> values = new ArrayList<>();
+
+values.add(10);
+
+int x = values.get(0);
+\end{lstlisting}
+
+does not store the integer value directly inside the container. Instead, the
+runtime representation consists of a reference to an \texttt{Integer} object:
+
+\[
+\text{Array reference}
+\rightarrow
+\text{Object reference}
+\rightarrow
+\text{Heap object containing value}
+\]
+
+Accessing an element therefore requires additional pointer dereferencing and
+memory accesses.
+
+In contrast, C++ templates combined with value semantics allow direct storage of
+objects inside contiguous memory regions. For example:
+
+\begin{lstlisting}[language=C++]
+std::vector<int> values;
+\end{lstlisting}
+
+stores integer values directly:
+
+\[
+\text{int}
+\rightarrow
+\text{int}
+\rightarrow
+\text{int}
+\rightarrow
+\text{int}
+\]
+
+The absence of intermediate references reduces memory latency and improves the
+ability of the processor to exploit cache locality.
+
+It is important to note that the advantage comes from the combination of
+template specialization and value representation. C++ containers storing
+pointers, such as:
+
+\begin{lstlisting}[language=C++]
+std::vector<Object*>
+\end{lstlisting}
+
+present similar indirection problems to Java reference-based structures.
+
+\subsection{Boxing and Unboxing Overhead}
+
+A significant limitation of Java Generics is the inability to directly
+instantiate generic types with primitive values. Generic parameters must always
+refer to object types; therefore primitive values require wrapper objects.
+
+For example:
+
+\begin{lstlisting}[language=Java]
+ArrayList<Integer> values = new ArrayList<>();
+
+values.add(5);
+\end{lstlisting}
+
+requires automatic boxing:
+
+\[
+int \rightarrow Integer
+\]
+
+while retrieving the value requires unboxing:
+
+\[
+Integer \rightarrow int
+\]
+
+The boxing process introduces additional execution costs:
+
+\begin{itemize}
+
+    \item creation of wrapper objects when values are not reused;
+    \item additional memory accesses caused by object references;
+    \item increased memory footprint due to object metadata;
+    \item conversion operations during boxing and unboxing.
+
+\end{itemize}
+
+These overheads are particularly relevant for numerical workloads, where large
+collections of primitive values are processed repeatedly.
+
+C++ templates avoid this limitation because specialization occurs before
+execution. A template instantiated with a primitive type directly manipulates
+the native representation:
+
+\begin{lstlisting}[language=C++]
+std::vector<int> values;
+\end{lstlisting}
+
+No wrapper objects, conversions, or additional indirections are required.
+
+\subsection{Runtime Effects of Type Erasure: Casts and Bridge Methods}
+
+Type erasure also requires Java to preserve type safety through inserted casts.
+Since the JVM executes erased bytecode, the compiler introduces runtime checks
+when retrieving values from generic structures.
+
+For example:
+
+\begin{lstlisting}[language=Java]
+String value = list.get(0);
+\end{lstlisting}
+
+is internally equivalent to:
+
+\begin{lstlisting}[language=Java]
+String value = (String) list.get(0);
+\end{lstlisting}
+
+The cast introduces an additional runtime verification step. Modern JVM
+implementations can frequently eliminate redundant checks through JIT
+optimization, but unpredictable execution paths may prevent complete removal.
+
+Another consequence of type erasure is the generation of synthetic bridge
+methods. Consider:
+
+\begin{lstlisting}[language=Java]
+interface Box<T> {
+
+    T get();
+
+}
+
+class StringBox implements Box<String> {
+
+    public String get() {
+        return "value";
+    }
+
+}
+\end{lstlisting}
+
+After erasure, the interface method becomes:
+
+\begin{lstlisting}[language=Java]
+Object get();
+\end{lstlisting}
+
+Therefore, the compiler generates an additional bridge method:
+
+\begin{lstlisting}[language=Java]
+public Object get() {
+
+    return get();
+
+}
+\end{lstlisting}
+
+The additional invocation layer can introduce a small runtime overhead.
+However, HotSpot can often remove this cost through method inlining when the
+runtime profile provides sufficient information.
+
+\subsection{Cache Locality and Data Layout}
+
+The memory layout produced by generic structures strongly influences cache
+behavior.
+
+A Java container containing reference types generally follows the layout:
+
+\[
+\text{Container storage}
+\rightarrow
+\text{Reference}
+\rightarrow
+\text{Heap object}
+\rightarrow
+\text{Value}
+\]
+
+Objects may be distributed across different regions of memory, reducing spatial
+locality. During sequential traversal, the processor may need to load multiple
+independent cache lines because consecutive logical elements are not necessarily
+physically adjacent.
+
+This increases cache misses and reduces effective memory bandwidth.
+
+C++ templates allow direct storage of values when instantiated with concrete
+types. A structure such as:
+
+\begin{lstlisting}[language=C++]
+std::vector<double>
+\end{lstlisting}
+
+stores elements sequentially, enabling efficient cache-line utilization and
+hardware prefetching.
+
+Furthermore, because the compiler knows the exact representation and alignment
+of elements, it can apply additional optimizations such as vectorization and
+loop transformations.
+
+\subsection{Instruction Cache Effects and Code Generation Trade-offs}
+
+The two models also produce different effects on instruction cache behavior.
+
+Java type erasure generates a single implementation shared among all generic
+types. This reduces executable size and avoids duplicated machine code.
+However, the generated code cannot always exploit concrete type information.
+
+C++ monomorphization generates separate implementations for each instantiated
+type. This increases executable size and may produce instruction-cache
+pressure, a phenomenon commonly referred to as code bloat.
+
+However, specialized code enables stronger optimization opportunities,
+including:
+
+\begin{itemize}
+
+    \item complete function inlining;
+    \item constant propagation;
+    \item removal of abstraction layers;
+    \item compile-time dispatch resolution;
+    \item architecture-specific optimization.
+
+\end{itemize}
+
+Therefore, C++ trades increased code size for potentially higher execution
+throughput.
+
+\subsection{JVM Just-In-Time Optimization Techniques}
+
+Although Java Generics introduce runtime overheads, modern JVM implementations
+attempt to reduce these costs through adaptive optimization.
+
+The HotSpot JVM performs runtime profiling and dynamically generates optimized
+machine code for frequently executed paths. Relevant techniques include:
+
+\begin{itemize}
+
+    \item \textbf{Devirtualization}: replacing dynamic method resolution with
+    direct calls when the receiver type is predictable.
+
+    \item \textbf{Inline caching}: recording observed runtime types at call
+    sites to optimize repeated method invocations.
+
+    \item \textbf{Escape analysis}: determining whether objects remain local to
+    a method and enabling scalar replacement or elimination of unnecessary
+    allocations.
+
+\end{itemize}
+
+For example, if an object created inside a method never escapes, the JVM may
+replace the object allocation with direct scalar values, reducing memory access
+overhead.
+
+However, these optimizations are speculative and depend on runtime profiling.
+Unlike C++ templates, Java cannot guarantee specialization before execution.
+
+\subsection{Static Optimization versus Dynamic Optimization}
+
+The fundamental difference between the two approaches is the moment at which
+optimization decisions are performed.
+
+C++ performs optimization during ahead-of-time compilation:
+
+\[
+\text{Template instantiation}
+\rightarrow
+\text{Specialized code generation}
+\rightarrow
+\text{Optimized machine code}
+\]
+
+The compiler has complete information about data representation, memory layout,
+and available operations.
+
+Java instead follows a dynamic model:
+
+\[
+\text{Generic bytecode}
+\rightarrow
+\text{Runtime profiling}
+\rightarrow
+\text{JIT optimized machine code}
+\]
+
+The JVM can exploit information collected during execution, but optimization
+depends on runtime behavior.
+
+Consequently, C++ provides predictable specialization, while Java provides
+adaptive optimization capable of exploiting information unavailable during
+static compilation.
+
+\subsection{Comparative Performance Summary}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{4cm}|p{5cm}|p{5cm}|}
+
+\hline
+\textbf{Characteristic} &
+\textbf{Java Generics} &
+\textbf{C++ Templates}
+\\
+\hline
+
+Generic representation &
+Type erasure with shared runtime representation &
+Compile-time monomorphization
+\\
+\hline
+
+Primitive handling &
+Boxing and unboxing required &
+Direct native representation
+\\
+\hline
+
+Memory access &
+Reference indirection and pointer chasing &
+Direct contiguous storage
+\\
+\hline
+
+Dispatch &
+Potential runtime dispatch &
+Static compile-time dispatch
+\\
+\hline
+
+Optimization &
+Adaptive JIT optimization &
+AOT compiler optimization
+\\
+\hline
+
+Cache locality &
+Reduced by object-based layouts &
+Improved through value layouts
+\\
+\hline
+
+\end{tabular}
+
+\caption{Runtime performance comparison between Java Generics and C++ templates.}
+
+\end{table}
 
 % =====================================================================
 % CHAPTER: C# GENERICS
@@ -2547,5 +3208,350 @@ The CLR generic model therefore provides a reflection system in which generic ty
 structure remains part of the runtime type universe, whereas C++ and Java represent
 opposite design points: compile-time expansion without generic runtime metadata in
 C++, and runtime abstraction through type erasure in Java.
+
+\section{Performance}
+
+C\# generics adopt a runtime reification model implemented by the .NET Common
+Language Runtime (CLR). Unlike Java Generics, where generic information is
+removed through type erasure, C\# generic type parameters are preserved inside
+the Common Intermediate Language (CIL) metadata and remain available during
+execution. This allows the runtime environment to
+distinguish different generic instantiations and apply different execution
+strategies depending on the concrete type.
+
+The CLR combines generic reification with Just-In-Time (JIT) compilation.
+Generic classes and methods are initially compiled into a type-independent CIL
+representation. When a concrete instantiation is required, the JIT compiler
+generates native machine code according to the characteristics of the involved
+type. Therefore, C\# generics do not correspond to a purely compile-time
+expansion mechanism as in C++ templates, but they are also not completely
+erased as in Java.
+
+The CLR execution strategy depends mainly on whether the generic parameter is
+a value type or a reference type:
+
+\[
+\text{Generic<T> execution} =
+\begin{cases}
+\text{specialized native code} & \text{if } T \text{ is a value type}\\
+\text{shared native code} & \text{if } T \text{ is a reference type}
+\end{cases}
+\]
+
+For value types such as \texttt{int}, \texttt{float}, or user-defined
+structures, the JIT compiler generates specialized implementations because
+different value types have different sizes, alignment requirements, and calling
+conventions. This allows direct manipulation of the actual data representation
+without additional indirection.
+
+For reference types, instead, the CLR can share the same native implementation
+between different instantiations because object references have a uniform
+runtime representation. The execution engine maintains the required runtime type
+information through internal generic context structures, avoiding the need to
+generate duplicated machine code for every reference type.
+
+This hybrid model provides a compromise between the complete specialization of
+C++ templates and the erased execution model of Java Generics.
+
+\subsection{Value-Type Instantiations: Memory Layout and Cache Efficiency}
+
+The main performance advantage of C\# generics appears when generic data
+structures are instantiated with value types. In this case, the elements are
+stored directly inside the containing structure, avoiding object allocation and
+reference indirection.
+
+Consider the following example:
+
+\begin{lstlisting}[language=CSharp]
+public struct Vector3
+{
+    public float X;
+    public float Y;
+    public float Z;
+}
+
+public class Buffer<T>
+{
+    private T[] data;
+
+    public Buffer(int size)
+    {
+        data = new T[size];
+    }
+
+    public float Compute()
+    {
+        float result = 0;
+
+        for(int i = 0; i < data.Length; i++)
+        {
+            result += data[i].GetHashCode();
+        }
+
+        return result;
+    }
+}
+\end{lstlisting}
+
+When instantiated with a value type:
+
+\begin{lstlisting}[language=CSharp]
+Buffer<Vector3> points =
+    new Buffer<Vector3>(1000000);
+\end{lstlisting}
+
+the array contains the actual structures:
+
+\[
+\begin{array}{|c|c|c|}
+\hline
+(x_0,y_0,z_0)&(x_1,y_1,z_1)&(x_2,y_2,z_2)\\
+\hline
+\end{array}
+\]
+
+The memory representation is contiguous, allowing efficient sequential access.
+Because each element is stored directly inside the array, the processor can
+exploit spatial locality and efficiently use cache lines.
+
+The execution cost is approximately:
+
+\[
+T_{value}=N(C_{load}+C_{operation})
+\]
+
+where the memory access component is minimized by predictable sequential
+loads.
+
+Furthermore, no boxing operation is required. Primitive values and structures
+remain in their native representation, avoiding the additional memory accesses
+required by object wrappers. This makes C\# generic collections of value types
+closer to the execution model of specialized C++ template instantiations.
+
+\subsection{Reference-Type Instantiations: Indirection and Shared Code}
+
+When a generic parameter is a reference type, the CLR uses code sharing. For
+example:
+
+\begin{lstlisting}[language=CSharp]
+Buffer<VectorClass> objects =
+    new Buffer<VectorClass>(1000000);
+\end{lstlisting}
+
+where:
+
+\begin{lstlisting}[language=CSharp]
+public class VectorClass
+{
+    public float X;
+    public float Y;
+    public float Z;
+}
+\end{lstlisting}
+
+the array stores references rather than the objects themselves:
+
+\[
+\begin{array}{|c|c|c|}
+\hline
+ptr_0&ptr_1&ptr_2\\
+\hline
+\end{array}
+\]
+
+The actual objects are located elsewhere in memory. Accessing an element
+requires an additional pointer dereference:
+
+\[
+T_{reference}
+=
+N(C_{load\ reference}
++
+C_{pointer\ chase}
++
+C_{operation})
+\]
+
+The additional memory access can reduce cache efficiency because the referenced
+objects may not be stored contiguously. Consequently, large collections of
+reference types generally exhibit weaker spatial locality compared with
+value-type collections.
+
+However, unlike Java erased generics, this behavior does not require boxing of
+primitive values because C\# maintains explicit runtime support for generic
+types.
+
+\subsection{Comparison with C++ Template Monomorphization}
+
+C++ templates use compile-time monomorphization. For every concrete template
+instantiation, the compiler generates a separate specialized implementation
+before program execution.
+
+Example:
+
+\begin{lstlisting}[language=C++]
+template<typename T>
+class Buffer
+{
+    T* data;
+
+public:
+
+    T sum()
+    {
+        T result = 0;
+
+        for(int i = 0; i < size; i++)
+            result += data[i];
+
+        return result;
+    }
+};
+
+Buffer<float> a;
+Buffer<double> b;
+\end{lstlisting}
+
+The compiler produces two independent versions:
+
+\[
+Buffer<float>\rightarrow Code_{float}
+\]
+
+\[
+Buffer<double>\rightarrow Code_{double}
+\]
+
+This approach provides maximum optimization opportunities because the compiler
+has complete knowledge of the concrete type. The generated code can exploit
+static dispatch, aggressive inlining, and type-specific optimizations.
+
+Compared with C\#, C++ templates have the advantage that specialization happens
+before execution. However, every instantiation generates additional machine
+code, potentially increasing executable size and instruction-cache pressure.
+
+C\# generics avoid this duplication for reference types while still providing
+specialized execution for value types through JIT compilation.
+
+\subsection{Comparison with Java Type-Erased Generics}
+
+Java Generics follow a fundamentally different execution model based on type
+erasure. Generic parameters are removed during compilation and replaced with
+their upper bounds in the generated bytecode.
+A generic class:
+
+\begin{lstlisting}[language=Java]
+class Buffer<T>
+{
+    private T[] data;
+
+    T get(int index)
+    {
+        return data[index];
+    }
+}
+\end{lstlisting}
+
+is represented at runtime without knowledge of the original type parameter.
+
+Because the JVM does not generate specialized versions for primitive types,
+generic collections require wrapper objects:
+
+\[
+int \rightarrow Integer \rightarrow reference
+\]
+
+For example:
+
+\begin{lstlisting}[language=Java]
+ArrayList<Integer> values =
+    new ArrayList<Integer>();
+\end{lstlisting}
+
+stores references to objects rather than compact primitive values. Accessing an
+element requires additional indirection and possible boxing/unboxing
+operations.
+
+The resulting execution model introduces:
+
+\[
+T_{Java}
+=
+T_{operation}
++
+C_{boxing}
++
+C_{indirection}
+\]
+
+which can negatively affect memory locality and cache efficiency.
+
+\subsection{Summary of Runtime Performance Characteristics}
+
+The three approaches provide different trade-offs:
+
+\[
+\begin{array}{c|c|c|c}
+&
+\textbf{C++ Templates}
+&
+\textbf{C\# Generics}
+&
+\textbf{Java Generics}
+\\
+\hline
+Generic representation
+&
+Compile-time specialization
+&
+Runtime reification
+&
+Type erasure
+\\
+
+Value type storage
+&
+Direct
+&
+Direct
+&
+Usually boxed
+\\
+
+Code generation
+&
+AOT monomorphization
+&
+JIT specialization
+&
+Shared erased code
+\\
+
+Cache locality
+&
+Very high
+&
+High for value types
+&
+Lower due to indirection
+\\
+
+Runtime overhead
+&
+Minimal
+&
+Low
+&
+Higher for primitives
+\\
+\end{array}
+\]
+
+C\# generics therefore represent an intermediate solution between C++ and Java.
+They preserve runtime type information and allow efficient specialized execution
+for value types, while avoiding excessive code duplication through reference
+type sharing. In terms of execution performance, C\# approaches the efficiency
+of C++ templates for value-oriented workloads while providing a more flexible
+runtime model than Java erased generics.
 
 \end{document}
