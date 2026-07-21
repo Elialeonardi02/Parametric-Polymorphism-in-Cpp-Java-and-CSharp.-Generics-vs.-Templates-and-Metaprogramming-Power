@@ -920,13 +920,13 @@ Act as a Senior Research Scientist in Programming Language Theory, Compiler Arch
 
 Goal
 
-Generate a rigorous, formal technical-academic report section focusing on the runtime reflection mechanics of C# generics, providing an illustrative code example, and executing a precise comparative analysis of reflection capabilities against C++ templates and Java generics.
+Generate a rigorous, formal technical-academic report section focusing on the runtime reflection mechanics of C\# generics, providing an illustrative code example, and executing a precise comparative analysis of reflection capabilities against C++ templates and Java generics.
 
 Requirements
 
-* **Theoretical Foundation of C# Reflection**: Analyze the structural mechanics of reified generics within the Common Language Runtime (CLR). Explain how type metadata is preserved through compilation into Common Intermediate Language (CIL) and maintained at execution time, allowing full runtime introspection of both open and closed generic types.
+* **Theoretical Foundation of C\# Reflection**: Analyze the structural mechanics of reified generics within the Common Language Runtime (CLR). Explain how type metadata is preserved through compilation into Common Intermediate Language (CIL) and maintained at execution time, allowing full runtime introspection of both open and closed generic types.
 * **Explicative Code Example**: Provide a clear, production-grade programmatic example demonstrating the usage of `System.Reflection` to inspect generic types at runtime. The example must explicitly showcase how to evaluate generic conditions (such as `IsGenericType`) and extract concrete type arguments dynamically using methods like `GetGenericArguments()`.
-* **Targeted Reflection Comparison**: Conduct a rigorous comparative analysis contrasting the reflection capabilities of C# generics against:
+* **Targeted Reflection Comparison**: Conduct a rigorous comparative analysis contrasting the reflection capabilities of C\# generics against:
 1. C++ Templates: Analyze the constraints imposed by compile-time monomorphization and the limitations of standard Runtime Type Information (RTTI) via `typeid` and `std::type_info`.
 2. Java Generics: Analyze the constraints imposed by compile-time type erasure and the nature of residual type metadata, detailing why concrete type parameters cannot be directly introspected at runtime.
 
@@ -1108,16 +1108,16 @@ Act as a Senior Computer Science Researcher and Expert in Programming Language T
 
 Goal
 
-Generate a comprehensive, technically rigorous academic section analyzing the runtime execution performance of C# Generics, providing direct code examples, and explicitly contrasting its performance profile with both C++ templates and Java Generics. This section is intended for inclusion in the academic report "Parametric Polymorphism in C++, Java, and C#: Generics vs. Templates and Metaprogramming Power (C07)".
+Generate a comprehensive, technically rigorous academic section analyzing the runtime execution performance of C\# Generics, providing direct code examples, and explicitly contrasting its performance profile with both C++ templates and Java Generics. This section is intended for inclusion in the academic report "Parametric Polymorphism in C++, Java, and C\#: Generics vs. Templates and Metaprogramming Power (C07)".
 
 Requirements
 
-* Theoretical Foundation: Explain the runtime reification mechanism of C# Generics within the .NET Common Language Runtime (CLR) and the role of Just-In-Time (JIT) specialization.
-* Performance Analysis: Detail the specific runtime performance characteristics of C# Generics, focusing heavily on the distinct handling of value types (structs) versus reference types (classes). Analyze the resulting impacts on memory locality, cache efficiency, and execution speed.
-* Comparative Analysis: Directly contrast C# generic performance with C++ templates (Ahead-Of-Time monomorphization, complete static dispatch, contiguous memory layouts) and Java Generics (type erasure, mandatory boxing/unboxing overhead for primitives, pointer indirection).
-* Concrete Code Examples: Provide precise, comparative code examples demonstrating a generic algorithm or data structure in C# to illustrate the performance divergence between value-type and reference-type instantiations.
+* Theoretical Foundation: Explain the runtime reification mechanism of C\# Generics within the .NET Common Language Runtime (CLR) and the role of Just-In-Time (JIT) specialization.
+* Performance Analysis: Detail the specific runtime performance characteristics of C\# Generics, focusing heavily on the distinct handling of value types (structs) versus reference types (classes). Analyze the resulting impacts on memory locality, cache efficiency, and execution speed.
+* Comparative Analysis: Directly contrast C\# generic performance with C++ templates (Ahead-Of-Time monomorphization, complete static dispatch, contiguous memory layouts) and Java Generics (type erasure, mandatory boxing/unboxing overhead for primitives, pointer indirection).
+* Concrete Code Examples: Provide precise, comparative code examples demonstrating a generic algorithm or data structure in C\# to illustrate the performance divergence between value-type and reference-type instantiations.
 * Strict Scope Control: Confine the analysis entirely to execution performance, runtime throughput, memory layout, and cache behavior. Actively avoid tangential subjects such as language ergonomics, pure compilation times, or garbage collection algorithms, unless they strictly and demonstrably impact the execution throughput of generic structures.
-* References and Citations: Rely on authoritative technical and academic sources, such as the ECMA-335 (Common Language Infrastructure) specification, the C# Language Specification, the ISO C++ Standard, and the Java Language Specification. Include consistent in-text citations and format a final bibliography section.
+* References and Citations: Rely on authoritative technical and academic sources, such as the ECMA-335 (Common Language Infrastructure) specification, the C\# Language Specification, the ISO C++ Standard, and the Java Language Specification. Include consistent in-text citations and format a final bibliography section.
 
 Writing Style Constraint
 
@@ -1164,6 +1164,196 @@ reference indirection, and the absence of primitive specialization
 
 \end{itemize}
 
+\section{Prompt 13: type system in C++ Templates}
+\noindent\textbf{goal:} Generate a detailed academic section of type system analysis of C++ templates,
+with explicit example.
+\noindent\textbf{prompt:}
+\begin{verbatim}
+System Persona
+
+Act as an expert academic researcher and computer scientist specializing in programming language theory, compiler design, and C++ template semantics.
+
+Goal
+
+Generate an exhaustive, academic-grade LaTeX document containing a comprehensive section that analyzes static type safety in C++ templates. This section is being generated specifically for the academic project titled "Parametric Polymorphism in C++, Java, and C\#: Generics vs. Templates and Metaprogramming Power (C07)". The analysis must build upon the theoretical contrast between type erasure and reified generics (monomorphization) and include a clear, explanatory C++ code example.
+
+Requirements
+
+* Integrate the following theoretical premise into the analysis verbatim as the foundation: "Both implementation strategies preserve static type safety, although they achieve this objective differently. In implementations based on type erasure, generic correctness is verified entirely during compilation. Although type parameters disappear from the generated executable, compiler-inserted casts preserve the guarantees established by the static type system. Implementations based on reified generics retain complete type information throughout compilation and generate type-specific implementations directly. Since each specialization corresponds to a concrete type, correctness is preserved without requiring erased representations or implicit runtime casts."
+* Detail how C++ templates utilize reified generics (monomorphization) to retain complete type information and enforce type safety at compile time within the context of parametric polymorphism.
+* Explain how C++ verifies generic correctness without relying on erased representations or implicit runtime casts.
+* Provide a simple, explanatory C++ code example that demonstrates how type safety is preserved during template instantiation.
+* Relate the provided code example directly to the theoretical concepts of reification and concrete type specialization.
+* Rely on authoritative academic or technical sources, such as the official C++ Language Standard (ISO/IEC 14882), peer-reviewed publications, or academic books on programming language theory.
+* Do not include a standard compiled bibliography section inside the LaTeX document text itself.
+* Extract the bibliographic information into a separate code block containing the raw `.bib` entries for all cited sources.
+* Provide a distinct itemized list outside the LaTeX document that explicitly explains what theoretical or technical information was taken from each specific source, referencing their respective citation keys.
+* ENFORCE STRICT SCOPE CONTROL: Confine the generated text strictly to the mechanisms of type safety and the theoretical strategies of template implementation. Actively avoid tangential subjects (such as memory footprint, hardware performance, code bloat resulting from monomorphization, compilation times, garbage collection overhead, or extensive comparisons to Java/C\#) unless explicitly required to explain the core concept of type safety.
+
+Writing Style Constraint
+
+* Produce a complete technical-academic report section rather than a short summary.
+* Maintain a formal, objective, and scientific writing style.
+* Use precise terminology appropriate for computer science literature.
+* Provide a logical progression from theoretical foundations to technical analysis and practical implementation.
+* Distinguish clearly between theoretical concepts (e.g., parametric polymorphism) and implementation mechanisms (e.g., C++ template instantiation).
+* Avoid unsupported claims and clearly identify any theoretical assumptions.
+
+Output Structure
+
+* Provide complete, compilation-ready LaTeX code for the academic section using a standard document class (e.g., `article`).
+* Preserve a professional academic document structure, including the required section and standard LaTeX environments for text formatting and inline citations (`\cite`).
+* Format the C++ code example using the standard `listings` package to ensure readability and professional presentation.
+* After the LaTeX code block, provide a separate code block containing the valid BibTeX (`.bib`) entries for the references.
+* Following the BibTeX block, provide a separate itemized list detailing the specific information extracted and utilized from each cited source.
+\end{verbatim}
+\noindent\textbf{Primary references}
+\begin{itemize}
+    \item 
+    \textbf{Vandevoorde et al. \cite{vandevoorde}}:
+    utilizzato per la descrizione della semantica dei template C++,
+    dell'instanziazione, della sostituzione dei parametri di tipo,
+    della generazione di specializzazioni concrete e del principio
+    secondo cui il controllo di correttezza dei template avviene sulle
+    istanze effettivamente generate.
+
+    \item
+    \textbf{Stroustrup \cite{stroustrup}}:
+    utilizzato per i concetti generali relativi al sistema dei tipi C++,
+    alla verifica statica delle espressioni, al ruolo dei template come
+    meccanismo di programmazione generica e alla garanzia di correttezza
+    dei programmi determinata durante la compilazione.
+\end{itemize}
+
+\section{Prompt 14: Type System in Java Generics}
+\noindent\textbf{goal}: Generate a detailed academic section of type system analysis of Java generics,
+with explicit example and comparison with C++ templates.
+\noindent\textbf{prompt}:
+\begin{verbatim}
+System Persona
+
+Act as an academic expert in programming language theory, compiler design, and software engineering, specializing in rigorous technical writing and LaTeX document typesetting.
+
+Goal
+
+Produce a complete, compilation-ready LaTeX academic section analyzing type safety in Java generics, including a strictly scoped comparison with C++ templates, a detailed breakdown of source information mapping, and a concise bibliography.
+
+Requirements
+
+* Provide an exhaustive academic section analyzing static type safety in Java generics.
+* Explain the Java implementation strategy based on type erasure. Detail how generic correctness is verified entirely during compilation, and how compiler-inserted casts preserve the guarantees established by the static type system, even though type parameters disappear from the generated executable.
+* Compare Java's approach with C++ templates (implementations based on reified generics). Explain how C++ retains complete type information throughout compilation and generates type-specific implementations directly, preserving correctness without requiring erased representations or implicit runtime casts.
+* Restrict the comparison with C++ templates to type safety mechanisms only, introducing it strictly when necessary to contextualize or contrast the Java approach.
+* Include simple, explicative code examples to illustrate type safety concepts in both languages.
+* ENFORCE STRICT SCOPE CONTROL: Confine the generated text strictly to the core topic of type safety, type erasure, and reification. Actively avoid tangential subjects (e.g., memory footprint, hardware performance, code bloat, garbage collection overhead, or broader language comparisons).
+* Reference Constraints: Do not include any inline citations or reference markers within the main academic section text.
+* Create a separate `itemize` section that explicitly explains, for every part/subsection of the report, what specific information was sourced and utilized.
+* Generate a concise list of resources formatted for a `.bib` file. Rely only on a meticulously selected, low number of highly authoritative academic or technical resources (e.g., peer-reviewed publications, academic books, official language specifications).
+* Ensure the LaTeX output is compilation-ready. Preserve a professional academic document structure, including appropriate sections, verbatim/code environments for examples, itemized lists, and bibliography commands.
+
+Writing Style Constraint
+
+* Maintain a formal, objective, and rigorous scientific writing style.
+* Produce a complete technical-academic report section rather than a short summary.
+* Use precise terminology appropriate for computer science and programming language literature.
+* Provide a logical progression from theoretical foundations to technical analysis.
+* Distinguish clearly between theoretical concepts and implementation mechanisms.
+* Avoid unsupported claims and clearly identify assumptions.
+
+Output Structure
+
+* The output must consist entirely of ready-to-compile LaTeX and BibTeX code.
+* Provide the main academic text on type safety in Java generics and C++ templates using standard LaTeX sectioning.
+* Provide the `itemize` environment detailing the source mapping for each section of the report.
+* Provide a separate code block containing the raw BibTeX database (`.bib` format) with the required authoritative resources.
+\end{verbatim}
+\noindent\textbf{Primary references:}
+\begin{itemize}
+
+    \item
+    \textbf{Pierce, ``Types and Programming Languages'' 
+    \cite{pierce2002types}}:
+    provides the theoretical foundations of type systems, including the
+    concepts of type safety, type soundness, preservation, progress, and
+    the role of static typing in guaranteeing the correctness of
+    programs using parametric polymorphism.
+
+    \item
+    \textbf{Gosling et al., ``The Java Language Specification''
+    \cite{gosling2014java}}:
+    provides the formal definition of Java generic types, generic type
+    checking rules, bounded type parameters, type erasure semantics, and
+    the compile-time verification rules used by the Java type system.
+
+    \item
+    \textbf{Stroustrup, ``The C++ Programming Language''
+    \cite{stroustrup2013cpp}}:
+    provides the description of C++ templates, template instantiation,
+    compile-time type checking of template arguments, and the
+    reification-based model used by C++ generic programming.
+
+\end{itemize}
+\section{Prompt 16: C\# Generics type Safety}
+\noindent\textbf{goal}: Generate a detailed academic section of type system analysis of C\# generics,
+with explicit example and comparison with C++ templates and Java generics.
+\noindent\textbf{prompt:}
+\begin{verbatim}
+    System Persona
+
+Act as an expert academic writer and researcher specializing in computer science, programming language theory, compiler design, and software engineering. You have profound expertise in parametric polymorphism across C++, Java, and C\#.
+
+Goal
+
+Generate an exhaustive, compilation-ready academic LaTeX section analyzing type safety in C\# generics, featuring simple explicative code examples and targeted comparisons with C++ templates and Java generics. Additionally, provide a methodological breakdown of the information sources used and a concise bibliography suitable for a .bib file.
+
+Requirements
+
+* Integrate the provided theoretical premise: Both type erasure and reified generics preserve static type safety differently. Explain how Java's type erasure verifies generic correctness entirely during compilation, using compiler-inserted casts to preserve static type guarantees despite type parameters disappearing from the executable. Contrast this with C\# reified generics, which retain complete type information throughout compilation and generate type-specific implementations corresponding to concrete types, preserving correctness without requiring erased representations or implicit runtime casts.
+* Compare C\# type safety mechanisms with Java's generics and C++ templates, introducing these comparisons only when strictly necessary to highlight the specific approach and advantages of C\#.
+* Include simple, explicative code examples using the LaTeX listings package to illustrate type safety concepts in C\#, and where necessary, in Java or C++ for direct contrast.
+* ENFORCE STRICT SCOPE CONTROL: Confine the generated text strictly to parametric polymorphism and type safety. Actively avoid tangential subjects (e.g., memory footprint, hardware performance, code bloat, garbage collection overhead, or broader language comparisons) unless directly relevant to type safety mechanisms.
+* Do not cite any references inline within the main text of the generated section.
+* Create a separate LaTeX itemize environment detailing exactly what information was extracted from external literature to compose the report section.
+* Provide a short, curated list of authoritative academic or technical resources (e.g., peer-reviewed publications, official language specifications) formatted as BibTeX entries to be added to a .bib file. Limit this to a low number of highly relevant resources.
+
+Writing Style Constraint
+
+* Maintain a formal, objective, and scientific writing style using precise terminology appropriate for computer science literature.
+* Produce complete, compilation-ready LaTeX code for the section, ensuring compatibility with standard LaTeX compilation workflows.
+* Provide a logical progression from theoretical foundations to technical analysis, distinguishing clearly between theoretical concepts and implementation mechanisms.
+* Avoid unsupported claims and clearly identify assumptions.
+* Do not use first-person forms ("I", "we").
+* Do not include explanations, comments, editorial notes, placeholders, or meta-commentary addressed to the user.
+* Output only the requested content structure.
+
+Output Structure
+
+* The exhaustive LaTeX section on C\# type safety (without inline citations).
+* A LaTeX itemize environment explaining the mapping of sourced information to the generated text.
+* A code block containing the raw BibTeX (.bib) entries for the selected resources.
+\end{verbatim}
+\noindent\textbf{Primary Resources}
+\begin{itemize}
+
+    \item
+    \cite{pierce2002types}
+    provides the theoretical foundations of type safety used in this section,
+    including the concepts of type soundness, progress, preservation,
+    typing environments, and parametric polymorphism.
+
+    \item
+    \cite{csharp_language_specification}
+    provides the formal rules of the C\# type system related to generic type
+    parameters, generic constraints, covariance, contravariance, variance,
+    and compile-time verification of generic type correctness.
+
+    \item
+    \cite{ecma335}
+    provides the description of the Common Language Infrastructure type system
+    and supports the discussion of reified generics, where generic type
+    information remains associated with constructed generic types.
+
+\end{itemize}
 % =====================================================================
 % BIBLIOGRAPHY
 % =====================================================================

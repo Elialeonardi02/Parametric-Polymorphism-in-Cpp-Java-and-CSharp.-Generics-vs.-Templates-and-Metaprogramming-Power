@@ -285,11 +285,9 @@ monomorphization.
 % =====================================================================
 % CHAPTER: C++ TEMPLATES
 % =====================================================================
-
 \chapter{C++ Templates}
 
 \section{Instantiation Time}
-
 
 C++ implements parametric polymorphism through the \emph{template} mechanism,
 which adopts a purely compile-time instantiation model.
@@ -309,7 +307,6 @@ Consequently, all template instantiations are resolved entirely during static
 compilation, and no template instantiation mechanism exists during program
 execution.
 
-
 The complete instantiation process can be understood by following the template
 through the compilation pipeline.
 
@@ -322,7 +319,6 @@ ordinary front-end compilation stages, including lexical analysis, parsing,
 and semantic analysis that can be performed without knowledge of future
 template arguments.
 
-
 For example:
 
 \begin{lstlisting}
@@ -332,7 +328,6 @@ T get_max(T a, T b)
     return (a > b) ? a : b;
 }
 \end{lstlisting}
-
 
 The compiler parses the template syntax, builds the corresponding Abstract
 Syntax Tree (AST), checks syntactic correctness, and stores an internal
@@ -367,12 +362,10 @@ int i = get_max(3, 7);
 double d = get_max<double>(2.5, 4.8);
 \end{lstlisting}
 
-
-The first invocation relies on template argument deduction: 
+The first invocation relies on template argument deduction:
 \[
 T = int
 \]
-
 
 whereas the second invocation explicitly specifies the template argument:
 
@@ -380,14 +373,13 @@ whereas the second invocation explicitly specifies the template argument:
 T = double
 \]
 
-
 Therefore, the compiler generates two different template instantiations:
 \texttt{get\_max<int>} and \texttt{get\_max<double>}
 
 \end{examplebox}
+
 Each unique set of template arguments constitutes a distinct template
-instantiation.
-Instantiation may occur through:
+instantiation. Instantiation may occur through:
 
 \begin{itemize}
     \item \texttt{implicit instantiation}, automatically performed whenever a
@@ -407,10 +399,8 @@ only after the complete set of template arguments is known.
 
 \subsection{Template Argument Substitution}
 
-
 Once instantiation has been triggered, the compiler performs template argument
 substitution.
-
 
 During this phase, every formal template parameter is replaced by its
 corresponding concrete argument.
@@ -422,7 +412,6 @@ corresponding concrete argument.
 T \rightarrow int
 \]
 
-
 produces the specialization:
 
 \begin{lstlisting}
@@ -432,13 +421,11 @@ int get_max(int a, int b)
 }
 \end{lstlisting}
 
-
 whereas:
 
 \[
 T \rightarrow double
 \]
-
 
 produces:
 
@@ -465,12 +452,14 @@ Instantiation does not immediately produce executable code.
 Instead, each generated specialization undergoes the normal semantic analysis
 performed for ordinary C++ program entities.
 
-Depending on the specialization, the compiler performs activities such as: type checking, overload resolution, name lookup, constraint verification for constrained templates,
-constant expression evaluation, instantiation of nested templates and verification of language rules required by the selected template arguments.
+Depending on the specialization, the compiler performs activities such as:
+type checking, overload resolution, name lookup, constraint verification for
+constrained templates, constant expression evaluation, instantiation of
+nested templates and verification of language rules required by the selected
+template arguments.
 
 This step is fundamental because many semantic properties cannot be verified
 before template parameters have been substituted.
-
 
 Consequently, a template definition that is syntactically correct may still
 produce compilation errors if one of its concrete instantiations violates the
@@ -487,8 +476,9 @@ The compiler generates an Intermediate Representation (IR) specifically for the
 instantiated specialization.
 
 Subsequently, the specialization undergoes the standard optimization pipeline,
-which may include: constant propagation, dead-code elimination, function inlining, loop optimizations, register allocation,
-instruction selection and target-specific optimizations.
+which may include: constant propagation, dead-code elimination, function
+inlining, loop optimizations, register allocation, instruction selection and
+target-specific optimizations.
 
 Finally, the compiler emits native machine code corresponding exclusively to
 that specialization.
@@ -497,7 +487,7 @@ Importantly, this process is repeated independently for every distinct template
 instantiation.
 
 Consequently, each specialization owns an independent executable
-implementation. Infact, the compiler does not produce a single shared executable representation capable
+implementation. In fact, the compiler does not produce a single shared executable representation capable
 of serving multiple template arguments.
 
 % ---------------------------------------------------------------------
@@ -517,22 +507,14 @@ template can be summarized as follows:
 
 \begin{enumerate}
     \item The compiler parses the template definition.
-    
     \item The template is stored as a parameterized internal representation.
-
     \item A concrete template use triggers instantiation.
-
     \item Template parameters are substituted with concrete arguments.
-
     \item The generated specialization undergoes complete semantic analysis.
-
     \item The compiler produces a specialization-specific intermediate
           representation.
-
     \item Optimization passes are applied.
-
     \item Native machine code is emitted.
-
     \item The specialization is included in the final executable before program
           execution begins.
 \end{enumerate}
@@ -545,6 +527,7 @@ When execution begins, no template instantiation mechanism remains active.
 The runtime simply executes machine code that has already been generated for
 every required specialization during compilation.
 
+% =====================================================================
 
 \section{Runtime Representation}
 \label{sec:cpp_template_runtime}
@@ -579,7 +562,6 @@ For example:
 \[
 T<int> \rightarrow P_{int}
 \]
-
 \[
 T<double> \rightarrow P_{double}
 \]
@@ -665,13 +647,13 @@ Vector<double>
 
 Each specialization exists as a normal C++ type produced before execution.
 
-\subsection{Monomorphization and Native Code Artifacts}
+\subsection{Monomorphization}
 \label{sec:monomorphization}
 
 C++ uses heterogeneous translation, commonly described as
-monomorphization, to implement templates. This mechanism transforms generic
-template definitions into concrete specialized entities for each set of
-template arguments used by the program.
+\emph{monomorphization}, to implement templates. This mechanism transforms
+generic template definitions into concrete specialized entities for each set
+of template arguments used by the program.
 
 The essential property of monomorphization is that every specialization
 receives its own native representation. The compiler substitutes the template
@@ -712,53 +694,35 @@ Container<T>
 
 because the generic abstraction has already been resolved during translation.
 
-\subsection{Native Machine Code Generation}
-
 For function templates, each specialization produces a distinct machine-code
-artifact.
-
-Conceptually:
+artifact:
 
 \[
-Compiler(T<int>) =
-MachineCode_{int}
+Compiler(T<int>) = MachineCode_{int}
 \]
-
 \[
-Compiler(T<double>) =
-MachineCode_{double}
+Compiler(T<double>) = MachineCode_{double}
 \]
 
 These generated artifacts behave exactly like functions written explicitly
-for those types.
+for those types. After compilation, functions such as \texttt{sort<int>()}
+and \texttt{sort<double>()} are ordinary executable functions with
+independent entry points, invoked through normal machine-level control-flow
+instructions.
 
-For example, after compilation, the following two functions:
+\subsection{Name Mangling}
 
-\[
-sort<int>()
-\]
+Compilers encode template arguments into symbol names through
+\emph{name mangling}. This allows different specializations to coexist in
+object files and allows the linker to distinguish between entities such as
+\texttt{function<int>()} and \texttt{function<double>()}.
 
-and:
-
-\[
-sort<double>()
-\]
-
-are ordinary executable functions. They have independent entry points and can
-be invoked through normal machine-level control-flow instructions.
-
-The binary format does not preserve the template abstraction. The executable
-contains:
-
-\begin{itemize}
-    \item machine instructions for instantiated functions;
-    \item symbols identifying generated entities;
-    \item relocation information required during linking;
-    \item optional runtime metadata produced by other C++ mechanisms.
-\end{itemize}
-
-These artifacts are not different from those produced by non-template C++
-code.
+Name mangling is a compiler and linker mechanism used during binary
+generation; it is not runtime metadata. Once linking is completed, the CPU
+does not interpret mangled names or template information. The executable
+address associated with a symbol identifies machine code, and the processor
+executes this code without understanding the source-level template
+relationship.
 
 \subsection{Final Executable Representation}
 
@@ -775,20 +739,29 @@ Code(P_n)
 \}
 \]
 
-where each $P_i$ corresponds to a particular template specialization.
+where each $P_i$ corresponds to a particular template specialization. The
+executable contains:
+
+\begin{itemize}
+    \item machine instructions for instantiated functions;
+    \item symbols identifying generated entities;
+    \item relocation information required during linking;
+    \item optional runtime metadata produced by other C++ mechanisms (see
+          Section~\ref{sec:cpp_reflection}).
+\end{itemize}
+
+These artifacts are not different from those produced by non-template C++
+code.
 
 During execution, the processor does not interpret template parameters.
 A machine instruction such as a function call transfers execution to a
 specific address. The target address corresponds to a compiled function, not
-to a generic template definition.
+to a generic template definition. The relationship between a generated
+function and its original template source exists only within
+compiler-generated information such as debugging information or symbol
+naming conventions; it is not part of the runtime execution model.
 
-The relationship between a generated function and its original template
-source exists only within compiler-generated information such as debugging
-information or symbol naming conventions. It is not part of the runtime
-execution model.
-
-\subsection{Absence of Generic Metadata and the Role of RTTI}
-\label{sec:rtti}
+\subsection{Absence of Generic Metadata}
 
 A defining characteristic of the C++ template implementation model is the
 absence of runtime generic metadata. After template instantiation has
@@ -804,17 +777,7 @@ void process(T value);
 \end{lstlisting}
 
 Instead, it only observes a concrete function generated from a specific
-instantiation:
-
-\[
-process<int>()
-\]
-
-or:
-
-\[
-process<double>()
-\]
+instantiation, such as \texttt{process<int>()} or \texttt{process<double>()}.
 
 The following concepts do not exist as runtime entities:
 
@@ -826,181 +789,19 @@ The following concepts do not exist as runtime entities:
 \end{itemize}
 
 The execution environment only manipulates the final native representation.
+The limited runtime type identification that C++ does provide is discussed in
+Section~\ref{sec:cpp_reflection}.
 
-\subsection{Name Mangling}
+% =====================================================================
 
-Compilers often encode template arguments into symbol names through name
-mangling. This allows different specializations to coexist in object files
-and allows the linker to distinguish between entities such as:
-
-\[
-function<int>()
-\]
-
-and:
-
-\[
-function<double>()
-\]
-
-However, name mangling is not runtime metadata. It is a compiler and linker
-mechanism used during binary generation. Once linking is completed, the CPU
-does not interpret mangled names or template information.
-
-The executable address associated with a symbol identifies machine code.
-The processor executes this code without understanding the source-level
-template relationship.
-
-\subsection{Run-Time Type Information}
-
-C++ provides optional Run-Time Type Information (RTTI), mainly through
-features such as:
-
-\begin{lstlisting}[language=C++]
-typeid
-\end{lstlisting}
-
-and:
-
-\begin{lstlisting}[language=C++]
-dynamic_cast
-\end{lstlisting}
-
-RTTI allows certain concrete C++ types to be identified during execution.
-However, RTTI does not represent templates themselves.
-
-For example:
-
-\begin{lstlisting}[language=C++]
-template<typename T>
-class Base
-{
-public:
-    virtual ~Base(){}
-};
-
-Base<int> object;
-\end{lstlisting}
-
-may generate runtime type information describing:
-
-\[
-Base<int>
-\]
-
-but it does not generate a runtime descriptor describing:
-
-\[
-Base<T>
-\]
-
-because the generic template abstraction has no runtime existence.
-
-RTTI therefore represents concrete runtime types produced by the language
-implementation, not generic template definitions.
-
-The C++ runtime model is consequently based on fully instantiated entities.
-Templates influence the generation of executable artifacts, but after
-translation and loading, execution operates exclusively on concrete native
-code and concrete data representations.
-\section{Reflection and Runtime Type Information}
-
-The availability of generic type information at runtime depends directly on the representation strategy adopted by the programming language implementation. In systems based on type erasure, generic parameters are removed or abstracted during compilation, preventing direct access to the original concrete type arguments during execution. Consequently, runtime inspection mechanisms can only operate on the residual type information preserved after erasure. Reflection facilities applied to erased generic structures therefore provide limited information about the original instantiations, since the relationship between the generic abstraction and its concrete type parameters is no longer explicitly represented.
-
-Conversely, implementations based on reified generics preserve concrete type information throughout compilation and execution. In such systems, runtime reflection or runtime type identification mechanisms can access metadata associated with the actual instantiated generic types, enabling operations such as generic type inspection, runtime metadata analysis, and specialized processing based on concrete type information.
-
-C++ templates follow a different model from type-erased generic systems because template instantiation is performed through compile-time specialization. Template parameters are not represented as a single runtime generic entity; instead, the compiler generates concrete versions of templates for each required set of template arguments. This process, commonly referred to as \emph{template instantiation} or \emph{monomorphization}, preserves the identity of the concrete types used during compilation. Therefore, C++ templates are based on compile-time type preservation rather than runtime reification.
-
-\subsection{Template Instantiation and Compile-Time Type Information}
-
-A C++ template represents a parameterized definition from which the compiler can generate concrete entities after template arguments become known. For example, a class template such as:
-
-\begin{verbatim}
-	template <typename T>
-	class Container {
-		public:
-		T value;
-	};
-\end{verbatim}
-
-does not directly correspond to a single runtime type representing all possible values of \texttt{T}. Instead, when the template is instantiated with a specific type, the compiler produces a distinct specialization:
-
-\begin{verbatim}
-	Container<int>
-	Container<double>
-\end{verbatim}
-
-Each specialization has an independent compile-time type identity. The compiler therefore retains complete knowledge of the substituted template arguments during parsing, semantic analysis, overload resolution, and template metaprogramming operations.
-
-This compile-time availability of type information is fundamental to several C++ mechanisms, including template specialization, type traits, and compile-time conditional logic. Facilities such as \texttt{std::is\_same}, \texttt{std::is\_class}, and \texttt{std::enable\_if} operate entirely during compilation and exploit the fact that template arguments are explicitly represented in the instantiated type system.
-
-However, compile-time preservation should not be confused with runtime reflection. After compilation, the C++ execution environment does not generally provide a universal mechanism capable of enumerating arbitrary template parameters, inspecting source-level declarations, or dynamically querying all properties of instantiated template entities. The concrete type information preserved by templates is primarily used by the compiler during code generation.
-
-\subsection{Runtime Type Identification for Template Instantiations}
-
-Although C++ does not provide a complete general-purpose reflection system for templates, the language includes Runtime Type Information (RTTI) mechanisms that allow limited runtime identification of polymorphic objects and concrete types. The primary standard facilities are provided by the operators \texttt{typeid} and \texttt{dynamic\_cast}, together with the \texttt{std::type\_info} class.
-
-The \texttt{typeid} operator obtains runtime type information associated with an expression or a type. When applied to an instantiated template class, it can identify the concrete specialization generated by the compiler. For example:
-
-\begin{verbatim}
-	template <typename T>
-	class Wrapper {
-	};
-	
-	Wrapper<int> a;
-	Wrapper<double> b;
-	
-	std::cout << typeid(a).name();
-	std::cout << typeid(b).name();
-\end{verbatim}
-
-The two objects correspond to different C++ types, namely \texttt{Wrapper<int>} and \texttt{Wrapper<double>}. Consequently, the RTTI system treats them as distinct runtime types whenever RTTI metadata is generated for these entities. The resulting \texttt{std::type\_info} objects represent the runtime identity of the instantiated classes.
-
-The information exposed by \texttt{std::type\_info} is intentionally limited. It allows comparison of runtime type identities through operations such as equality comparison and provides an implementation-defined textual representation through \texttt{name()}. It does not provide access to template arguments, class members, inheritance hierarchies, or source-level metadata in the manner of a full reflection system.
-
-\subsection{RTTI and Polymorphic Template Classes}
-
-The \texttt{dynamic\_cast} operator provides another RTTI mechanism for performing safe runtime conversions within polymorphic class hierarchies. A class must contain at least one virtual function for RTTI-based dynamic identification to be available.
-
-Template classes can participate in such hierarchies like ordinary C++ classes. For example:
-
-\begin{verbatim}
-	class Base {
-		public:
-		virtual ~Base() = default;
-	};
-	
-	template <typename T>
-	class Derived : public Base {
-	};
-	
-	Base* ptr = new Derived<int>();
-	
-	Derived<int>* result = dynamic_cast<Derived<int>*>(ptr);
-\end{verbatim}
-
-During execution, \texttt{dynamic\_cast} uses runtime type information associated with the object to verify whether the actual object type corresponds to the requested target type. In this example, the cast succeeds because the dynamically stored object is an instance of the concrete template specialization \texttt{Derived<int>}.
-
-The same operation would fail for an object instantiated with a different template argument, such as \texttt{Derived<double>}, because each template specialization represents a distinct C++ type. Therefore, RTTI preserves the identity of instantiated template classes when those classes are part of a polymorphic hierarchy.
-
-\subsection{Relationship Between Template Reification and RTTI}
-
-C++ templates demonstrate a hybrid relationship between type preservation and runtime identification. The template mechanism preserves concrete type information during compilation through specialization generation, but this information is not automatically exposed through a general runtime reflection interface.
-
-The compiler knows the complete instantiated type during template compilation. It can therefore perform static analysis, select specialized implementations, and generate code based on the concrete template arguments. This information belongs to the compile-time type system and is consumed before program execution.
-
-RTTI, in contrast, represents a restricted runtime mechanism. It operates only on the subset of type information explicitly retained by the C++ object model, primarily for polymorphic objects and explicit type identification through \texttt{typeid}. Consequently, RTTI can distinguish between instantiated template types when the compiler emits the corresponding runtime metadata, but it cannot reconstruct the complete template definition or inspect arbitrary template parameters dynamically.
-
-Therefore, C++ templates preserve generic type information through compile-time monomorphization rather than through runtime reification. Standard RTTI mechanisms provide runtime access to the identity of concrete instantiated types, but they do not constitute a complete reflection system capable of exposing the full structure of template-generated types.
-
-\section{Performance Characteristics of C++ Templates}
+\section{Performance Characteristics}
 
 The preservation of complete type information through template instantiation
-has direct consequences for execution performance.
-Although \emph{reification} describes the conceptual property of retaining
-type information throughout compilation, the performance characteristics of
-C++ templates derive from the concrete implementation mechanism of
-\emph{template monomorphization}.
+has direct consequences for execution performance. Although
+\emph{reification} describes the conceptual property of retaining type
+information throughout compilation, the performance characteristics of C++
+templates derive from the concrete implementation mechanism of template
+monomorphization described in Section~\ref{sec:monomorphization}.
 
 During compilation, every template instantiation is transformed into an
 independent specialization operating on a specific concrete type.
@@ -1019,7 +820,7 @@ T max(T a, T b) {
 }
 \end{lstlisting}
 
-when instantiated with different types, can generate specialized functions
+when instantiated with different types, generates specialized functions
 equivalent to:
 
 \begin{lstlisting}[language=C++]
@@ -1039,12 +840,11 @@ generic type parameter.
 \subsection{Static Dispatch and Elimination of Runtime Overhead}
 
 One of the main performance advantages introduced by template
-monomorphization is static dispatch.
-Since the concrete type of every template parameter is known during
-compilation, function calls can be resolved before execution.
-This eliminates the runtime indirections required by dynamic dispatch
-mechanisms and allows the compiler to directly generate the target
-function call.
+monomorphization is static dispatch. Since the concrete type of every
+template parameter is known during compilation, function calls can be
+resolved before execution. This eliminates the runtime indirections required
+by dynamic dispatch mechanisms and allows the compiler to directly generate
+the target function call.
 
 For example:
 
@@ -1063,15 +863,13 @@ process(m);
 \end{lstlisting}
 
 allows the compiler to resolve the call directly to
-\texttt{Matrix::compute()}.
-The absence of runtime dispatch reduces execution overhead and exposes
-additional opportunities for optimization.
+\texttt{Matrix::compute()}. The absence of runtime dispatch reduces execution
+overhead and exposes additional opportunities for optimization.
 
 Another direct consequence of template specialization is the elimination of
-boxing and unboxing operations.
-Template-generated code operates directly on the native representation of
-objects and primitive values, avoiding additional conversions or wrapper
-objects.
+boxing and unboxing operations. Template-generated code operates directly on
+the native representation of objects and primitive values, avoiding
+additional conversions or wrapper objects.
 
 For example:
 
@@ -1080,23 +878,22 @@ std::vector<int> values;
 values.push_back(10);
 \end{lstlisting}
 
-stores integer values using their native representation.
-The generated implementation does not require conversion of the integer into
-a generic object representation before storage or computation.
+stores integer values using their native representation. The generated
+implementation does not require conversion of the integer into a generic
+object representation before storage or computation.
 
 \subsection{Compiler Optimization Opportunities}
 
 Because every template specialization is fully typed, optimizing compilers
 can apply the same optimization techniques used for manually written
-specialized code.
-The availability of concrete types, sizes, and operations enables more
-aggressive analysis and transformation of the generated machine code.
+specialized code. The availability of concrete types, sizes, and operations
+enables more aggressive analysis and transformation of the generated machine
+code.
 
 A fundamental optimization enabled by template specialization is function
-inlining.
-Since both the function implementation and the argument types are known at
-compile time, the compiler can replace a function call with the corresponding
-function body.
+inlining. Since both the function implementation and the argument types are
+known at compile time, the compiler can replace a function call with the
+corresponding function body.
 
 For example:
 
@@ -1115,10 +912,8 @@ can be transformed into code equivalent to:
 int result = 5 * 5;
 \end{lstlisting}
 
-removing the function call overhead and enabling further optimizations.
-
-Inlining enlarges the optimization scope available to the compiler,
-allowing additional transformations such as:
+removing the function call overhead and enabling further optimizations, such
+as:
 
 \begin{itemize}
     \item constant propagation;
@@ -1128,9 +923,9 @@ allowing additional transformations such as:
     \item strength reduction.
 \end{itemize}
 
-Template parameters can also represent compile-time constants.
-When values such as array sizes or loop bounds are known during compilation,
-the compiler can simplify control flow and remove unnecessary runtime
+Template parameters can also represent compile-time constants. When values
+such as array sizes or loop bounds are known during compilation, the
+compiler can simplify control flow and remove unnecessary runtime
 operations.
 
 For example:
@@ -1147,9 +942,9 @@ int sum(const int* data) {
 }
 \end{lstlisting}
 
-allows the compiler to know the exact iteration count.
-Consequently, loop unrolling can be applied, replacing repeated loop
-iterations with explicit instructions and reducing loop-control overhead.
+allows the compiler to know the exact iteration count. Consequently, loop
+unrolling can be applied, replacing repeated loop iterations with explicit
+instructions and reducing loop-control overhead.
 
 Similarly, compile-time specialization facilitates branch elimination through
 features such as \texttt{if constexpr}:
@@ -1169,9 +964,9 @@ Only the branch corresponding to the selected type is generated in the final
 code, eliminating unnecessary runtime condition checks.
 
 The availability of concrete types and memory layouts also improves the
-ability of compilers to perform automatic vectorization.
-For numerical templates, the compiler can recognize regular memory access
-patterns and generate SIMD instructions when applicable.
+ability of compilers to perform automatic vectorization. For numerical
+templates, the compiler can recognize regular memory access patterns and
+generate SIMD instructions when applicable.
 
 \begin{lstlisting}[language=C++]
 template<typename T>
@@ -1189,33 +984,315 @@ When instantiated with numerical types, the generated code can be optimized
 using vector instructions, allowing multiple operations to be executed
 simultaneously.
 
-\subsection{Zero-Overhead Abstraction and Performance Trade-offs}
+\subsection{Zero-Overhead Abstraction and Trade-offs}
 
 The combination of static dispatch, direct data representation, and compiler
 optimization enables C++ templates to follow the
-\emph{zero-overhead abstraction} principle.
-According to this principle, abstractions introduced at the source level
-should not impose additional runtime costs compared with an equivalent
-manually specialized implementation.
-
-Template-based abstractions can therefore provide generic programming
-capabilities while maintaining execution efficiency comparable to explicitly
-written type-specific code.
+\emph{zero-overhead abstraction} principle. According to this principle,
+abstractions introduced at the source level should not impose additional
+runtime costs compared with an equivalent manually specialized
+implementation. Template-based abstractions can therefore provide generic
+programming capabilities while maintaining execution efficiency comparable to
+explicitly written type-specific code.
 
 The main performance limitation associated with template monomorphization is
-related to the expansion of generated code.
-Since every specialization produces an independent implementation,
-extensive template usage may increase executable size.
-A larger instruction footprint can negatively affect instruction cache
-locality, increasing instruction cache misses in performance-critical
-applications.
+related to the expansion of generated code. Since every specialization
+produces an independent implementation, extensive template usage may increase
+executable size. A larger instruction footprint can negatively affect
+instruction cache locality, increasing instruction cache misses in
+performance-critical applications.
 
 This effect does not originate from additional runtime computation introduced
 by templates, but from the interaction between generated specialized code and
-the processor memory hierarchy.
-Therefore, template performance is generally dominated by the benefits of
-compile-time specialization, while instruction cache behavior represents the
-main architectural factor capable of reducing these advantages.
+the processor memory hierarchy. Therefore, template performance is generally
+dominated by the benefits of compile-time specialization, while instruction
+cache behavior represents the main architectural factor capable of reducing
+these advantages.
+
+% =====================================================================
+
+\section{Type Safety}
+
+Static type safety represents one of the fundamental objectives of
+parametric polymorphism. Its purpose is to guarantee that every operation
+performed on a value is compatible with its statically known type before
+program execution. In this way, incorrect type interactions are detected
+during compilation rather than being deferred to runtime.
+
+Different implementations of parametric polymorphism achieve static type
+safety through different mechanisms. Some approaches eliminate generic type
+information after compilation through type erasure, while others preserve
+type information and generate concrete implementations for each instantiated
+type. C++ templates belong to the second category and adopt a reified
+implementation strategy based on the template instantiation and
+monomorphization process described in Section~\ref{sec:monomorphization}.
+
+Both implementation strategies preserve static type safety, although they
+achieve this objective differently. In implementations based on type
+erasure, generic correctness is verified entirely during compilation.
+Although type parameters disappear from the generated executable,
+compiler-inserted casts preserve the guarantees established by the static
+type system. Implementations based on reified generics retain complete type
+information throughout compilation and generate type-specific
+implementations directly. Since each specialization corresponds to a
+concrete type, correctness is preserved without requiring erased
+representations or implicit runtime casts.
+
+From a type system perspective, reification allows the compiler to retain
+complete information about the actual types involved in every specialization.
+Unlike erased representations, where the original type parameter is no
+longer available during execution, C++ templates preserve the relationship
+between the generic definition and the concrete types used to instantiate it.
+Consequently, all type-dependent operations are checked directly against the
+substituted types.
+
+\subsection{Verification of Template Correctness}
+
+The verification of template correctness occurs through the ordinary C++
+static type system. After template argument substitution, the compiler
+performs semantic analysis on the generated specialization, checking that
+all expressions, operators, conversions, and function calls are valid for
+the concrete type. If a required operation is not supported by the
+instantiated type, the specialization is considered ill-formed and the
+program is rejected during compilation.
+
+This mechanism differs fundamentally from implementations based on type
+erasure because C++ templates never require the compiler to recover
+discarded type information. Since each specialization is generated from a
+known concrete type, operations are resolved statically according to the
+rules of the language type system. Therefore, no implicit runtime casts are
+required to restore the original generic type information.
+
+\subsection{Example: Type Checking Across Specializations}
+
+The following example illustrates how C++ templates preserve static type
+safety through concrete specialization.
+
+\begin{lstlisting}
+#include <string>
+
+template <typename T>
+T maximum(const T& a, const T& b)
+{
+    return (a < b) ? b : a;
+}
+
+int main()
+{
+    int x = maximum(3, 7);
+
+    double y = maximum(3.5, 8.1);
+
+    // Compilation error:
+    // no valid specialization exists because
+    // the arguments do not have the same type.
+
+    // auto z = maximum(3, std::string("hello"));
+}
+\end{lstlisting}
+
+The function template \texttt{maximum} describes a generic operation that
+can be applied to any type satisfying the required semantic constraints.
+When the compiler encounters the expression \texttt{maximum(3, 7)}, template
+argument deduction determines that the parameter \texttt{T} corresponds to
+the type \texttt{int}. The compiler then creates a specialization equivalent
+to:
+
+\begin{lstlisting}
+int maximum(const int& a, const int& b);
+\end{lstlisting}
+
+Similarly, the invocation \texttt{maximum(3.5, 8.1)} produces a
+specialization where \texttt{T = double}, and the generated function
+operates exclusively on values of type \texttt{double}.
+
+Each specialization is independently checked by the compiler. The comparison
+operator \texttt{<} must exist for the instantiated type, the return
+expression must be compatible with the declared return type, and all
+parameter bindings must satisfy the requirements imposed by the C++ type
+system.
+
+The invalid invocation \texttt{maximum(3, std::string("hello"))} cannot
+produce a valid specialization because template argument deduction cannot
+identify a single type for \texttt{T}. The compiler therefore rejects the
+program before executable code is generated. No runtime type inspection,
+dynamic cast, or conversion mechanism is involved, because the type
+inconsistency is detected entirely during static analysis.
+
+\subsection{Type Safety Across Instantiations}
+
+A further consequence of template reification is that type checking is
+performed with respect to each concrete template instantiation. A template
+definition represents a family of possible programs, while every generated
+specialization represents a fully specified program whose types are known.
+Therefore, correctness is established separately for every instantiated
+version rather than through a single erased generic representation.
+
+This property means that template abstraction does not weaken the C++ static
+type system. Instead, templates delay the determination of concrete types
+until instantiation, after which normal compile-time type checking is
+applied to the resulting program. Every successfully generated specialization
+is consequently an ordinary statically typed C++ entity, whose correctness
+has been verified before execution.
+
+From a type-theoretic perspective, C++ templates achieve static type safety
+through reification: generic definitions preserve type information, template
+arguments are substituted with concrete types, and the resulting
+specializations are validated according to the complete rules of the language
+type system. This approach guarantees generic correctness without requiring
+erased representations or compiler-generated runtime casts.
+
+% =====================================================================
+
+\section{Reflection and Runtime Type Information}
+\label{sec:cpp_reflection}
+
+The availability of generic type information at runtime depends directly on
+the representation strategy adopted by the programming language
+implementation. In systems based on type erasure, generic parameters are
+removed or abstracted during compilation, preventing direct access to the
+original concrete type arguments during execution. Consequently, runtime
+inspection mechanisms can only operate on the residual type information
+preserved after erasure. Reflection facilities applied to erased generic
+structures therefore provide limited information about the original
+instantiations, since the relationship between the generic abstraction and
+its concrete type parameters is no longer explicitly represented.
+
+Conversely, implementations based on reified generics preserve concrete type
+information throughout compilation and execution. In such systems, runtime
+reflection or runtime type identification mechanisms can access metadata
+associated with the actual instantiated generic types, enabling operations
+such as generic type inspection, runtime metadata analysis, and specialized
+processing based on concrete type information.
+
+C++ templates follow the reified model described in
+Section~\ref{sec:cpp_template_runtime}: template parameters are not
+represented as a single runtime generic entity, and monomorphization
+preserves the identity of the concrete types used during compilation.
+However, compile-time type preservation should not be confused with runtime
+reflection. After compilation, the C++ execution environment does not
+generally provide a universal mechanism capable of enumerating arbitrary
+template parameters, inspecting source-level declarations, or dynamically
+querying all properties of instantiated template entities. What C++ does
+provide is a restricted mechanism, Run-Time Type Information (RTTI), which
+allows limited runtime identification of concrete types.
+
+\subsection{The \texttt{typeid} Operator and \texttt{std::type\_info}}
+
+The primary standard facilities for RTTI are the operators \texttt{typeid}
+and \texttt{dynamic\_cast}, together with the \texttt{std::type\_info} class.
+
+The \texttt{typeid} operator obtains runtime type information associated
+with an expression or a type. When applied to an instantiated template
+class, it can identify the concrete specialization generated by the
+compiler. For example:
+
+\begin{verbatim}
+template <typename T>
+class Wrapper {
+};
+
+Wrapper<int> a;
+Wrapper<double> b;
+
+std::cout << typeid(a).name();
+std::cout << typeid(b).name();
+\end{verbatim}
+
+The two objects correspond to different C++ types, namely \texttt{Wrapper<int>}
+and \texttt{Wrapper<double>}. Consequently, the RTTI system treats them as
+distinct runtime types whenever RTTI metadata is generated for these
+entities. The resulting \texttt{std::type\_info} objects represent the
+runtime identity of the instantiated classes.
+
+The information exposed by \texttt{std::type\_info} is intentionally limited.
+It allows comparison of runtime type identities through operations such as
+equality comparison and provides an implementation-defined textual
+representation through \texttt{name()}. It does not provide access to
+template arguments, class members, inheritance hierarchies, or source-level
+metadata in the manner of a full reflection system.
+
+\subsection{\texttt{dynamic\_cast} and Polymorphic Template Classes}
+
+The \texttt{dynamic\_cast} operator provides another RTTI mechanism for
+performing safe runtime conversions within polymorphic class hierarchies. A
+class must contain at least one virtual function for RTTI-based dynamic
+identification to be available.
+
+Template classes can participate in such hierarchies like ordinary C++
+classes. For example:
+
+\begin{verbatim}
+class Base {
+    public:
+    virtual ~Base() = default;
+};
+
+template <typename T>
+class Derived : public Base {
+};
+
+Base* ptr = new Derived<int>();
+
+Derived<int>* result = dynamic_cast<Derived<int>*>(ptr);
+\end{verbatim}
+
+During execution, \texttt{dynamic\_cast} uses runtime type information
+associated with the object to verify whether the actual object type
+corresponds to the requested target type. In this example, the cast succeeds
+because the dynamically stored object is an instance of the concrete
+template specialization \texttt{Derived<int>}.
+
+The same operation would fail for an object instantiated with a different
+template argument, such as \texttt{Derived<double>}, because each template
+specialization represents a distinct C++ type. Therefore, RTTI preserves the
+identity of instantiated template classes when those classes are part of a
+polymorphic hierarchy.
+
+\subsection{Limits of RTTI as a Reflection Mechanism}
+
+C++ templates demonstrate a hybrid relationship between type preservation
+and runtime identification. The template mechanism preserves concrete type
+information during compilation through specialization generation, but this
+information is not automatically exposed through a general runtime
+reflection interface.
+
+The compiler knows the complete instantiated type during template
+compilation. It can therefore perform static analysis, select specialized
+implementations, and generate code based on the concrete template arguments.
+This information belongs to the compile-time type system and is consumed
+before program execution.
+
+RTTI, in contrast, represents a restricted runtime mechanism. It operates
+only on the subset of type information explicitly retained by the C++ object
+model, primarily for polymorphic objects and explicit type identification
+through \texttt{typeid}. For example, a template class such as:
+
+\begin{verbatim}
+template<typename T>
+class Base
+{
+public:
+    virtual ~Base(){}
+};
+
+Base<int> object;
+\end{verbatim}
+
+may generate runtime type information describing \texttt{Base<int>}, but it
+does not generate a runtime descriptor describing the generic definition
+\texttt{Base<T>}, because the generic template abstraction has no runtime
+existence (Section~\ref{sec:cpp_template_runtime}).
+
+Consequently, RTTI can distinguish between instantiated template types when
+the compiler emits the corresponding runtime metadata, but it cannot
+reconstruct the complete template definition or inspect arbitrary template
+parameters dynamically. C++ templates therefore preserve generic type
+information through compile-time monomorphization rather than through
+runtime reification, and standard RTTI mechanisms provide runtime access to
+the identity of concrete instantiated types without constituting a complete
+reflection system.
+
 
 % =====================================================================
 % CHAPTER: JAVA GENERICS
@@ -2386,6 +2463,309 @@ Improved through value layouts
 \caption{Runtime performance comparison between Java Generics and C++ templates.}
 
 \end{table}
+\section{Type Safety}
+
+Type safety is a fundamental property of statically typed programming
+languages and defines the ability of a type system to prevent invalid
+operations on values before program execution. In the context of
+parametric polymorphism, type safety requires that abstract type
+parameters can be substituted with concrete types without introducing
+operations that violate the constraints established by the program.
+
+A sound type system guarantees that every expression accepted by the
+compiler respects the typing rules of the language. This property is
+traditionally described through two fundamental principles:
+
+\begin{itemize}
+
+    \item
+    \textit{Progress}: a well-typed program cannot reach a state where an
+    undefined operation caused by a type mismatch must be performed;
+
+    \item
+    \textit{Preservation}: the evaluation of a well-typed expression
+    preserves its type correctness.
+
+\end{itemize}
+
+Parametric polymorphism extends these guarantees by allowing the
+definition of algorithms and data structures independently from specific
+types. However, the implementation strategy adopted by a language
+determines how type information is preserved during compilation and how
+the type system guarantees correctness.
+
+Java Generics and C++ Templates represent two different approaches.
+Java uses a type-erasure strategy, where generic correctness is verified
+statically and type parameters are removed after compilation. C++ uses a
+reification-based strategy, where templates are instantiated with
+concrete types and type information remains available during compilation.
+
+The difference between the two approaches concerns the mechanism used to
+preserve type safety rather than the presence or absence of static type
+checking.
+
+\subsection{Static Type Checking in Java Generics}
+
+Java Generics extend the Java type system by introducing parameterized
+types. A generic declaration defines a family of related types whose
+correctness depends on the constraints imposed on their type parameters.
+
+Consider the following generic class:
+
+\begin{verbatim}
+class Box<T> {
+
+    private T value;
+
+    public void set(T value) {
+        this.value = value;
+    }
+
+    public T get() {
+        return value;
+    }
+}
+\end{verbatim}
+
+The type parameter \texttt{T} represents an abstract type that is
+determined when the generic class is instantiated.
+
+For example:
+
+\begin{verbatim}
+Box<String> textBox = new Box<>();
+
+textBox.set("Java");
+
+String value = textBox.get();
+\end{verbatim}
+
+The compiler interprets \texttt{Box<String>} as a type where every use
+of \texttt{T} must be compatible with \texttt{String}. Therefore, the
+following operation is rejected:
+
+\begin{verbatim}
+textBox.set(10);
+\end{verbatim}
+
+because the argument type \texttt{Integer} does not satisfy the type
+constraint established by the parameterization.
+
+The type system therefore prevents the creation of inconsistent states:
+after the declaration of \texttt{Box<String>}, every value inserted into
+the container must conform to the declared type argument.
+
+The same principle applies to method invocations. If a generic method
+requires a specific type relationship, the compiler verifies that all
+actual arguments satisfy the required constraints before accepting the
+program.
+
+For example:
+
+\begin{verbatim}
+static <T> T identity(T value) {
+
+    return value;
+}
+
+
+String result = identity("example");
+\end{verbatim}
+
+The compiler infers the type argument and ensures that the inferred
+substitution preserves the validity of the expression.
+
+\subsection{Bounded Type Parameters and Generic Constraints}
+
+Java generics also support bounded type parameters, allowing the type
+system to restrict the set of admissible substitutions.
+
+For example:
+
+\begin{verbatim}
+class Maximum<T extends Comparable<T>> {
+
+    T max(T a, T b) {
+
+        return a.compareTo(b) > 0 ? a : b;
+    }
+}
+\end{verbatim}
+
+The declaration:
+
+\begin{verbatim}
+<T extends Comparable<T>>
+\end{verbatim}
+
+introduces a constraint stating that every valid type argument must
+provide a comparison operation compatible with the generic algorithm.
+
+The compiler verifies this constraint when the generic type is
+instantiated. A type that does not satisfy the required relationship is
+rejected statically.
+
+Therefore, Java generic constraints express properties that must hold
+for every valid substitution of the type parameter, allowing the type
+system to reason about generic programs independently from concrete
+types.
+
+\subsection{Type Erasure and Preservation of Static Type Safety}
+
+Java implements generics through type erasure. From the perspective of
+the type system, this means that generic parameters are used during
+static analysis but are not represented as independent types after the
+compilation process.
+
+The important property is that erasure does not remove the guarantees
+provided by the type system. Generic correctness is established before
+the erasure transformation occurs.
+
+For example:
+
+\begin{verbatim}
+List<String> names = new ArrayList<>();
+
+names.add("Alice");
+
+String name = names.get(0);
+\end{verbatim}
+
+The compiler verifies that:
+
+\begin{itemize}
+
+    \item
+    only values compatible with \texttt{String} can be inserted into the
+    list;
+
+    \item
+    every retrieval operation is interpreted as producing a value of type
+    \texttt{String}.
+
+\end{itemize}
+
+After the generic verification phase, the implementation no longer
+depends on the explicit parameter \texttt{String}. However, the
+soundness argument of the type system is based on the fact that all
+possible uses of the generic abstraction have already been checked.
+
+Consequently, Java separates the concepts of:
+
+\begin{itemize}
+
+    \item
+    \textit{static type correctness}, which is guaranteed by generic
+    type checking;
+
+    \item
+    \textit{type representation}, which is determined after the generic
+    analysis phase.
+
+\end{itemize}
+
+The type-erasure strategy therefore preserves type safety by shifting the
+responsibility for correctness entirely to compile-time verification.
+
+\subsection{Reification-Based Type Safety in C++ Templates}
+
+C++ templates adopt a different approach based on type reification.
+Instead of removing type parameters after checking, the compiler
+instantiates templates using concrete type arguments.
+
+Consider:
+
+\begin{verbatim}
+template <typename T>
+class Box {
+
+private:
+
+    T value;
+
+public:
+
+    void set(T value) {
+        this->value = value;
+    }
+
+    T get() {
+        return value;
+    }
+};
+\end{verbatim}
+
+A concrete use:
+
+\begin{verbatim}
+Box<int> integerBox;
+
+integerBox.set(10);
+
+int value = integerBox.get();
+\end{verbatim}
+
+causes the compiler to analyse the template using the concrete type
+\texttt{int}. Every operation involving \texttt{T} is therefore checked
+against the actual instantiated type.
+
+If an invalid operation is attempted:
+
+\begin{verbatim}
+Box<int> box;
+
+box.set("text");
+\end{verbatim}
+
+the compiler rejects the program because the instantiated type
+\texttt{int} does not accept a string value.
+
+From the perspective of type safety, C++ templates preserve the complete
+type information during template instantiation. The compiler verifies
+the correctness of each concrete specialization directly rather than
+checking an abstract erased representation.
+
+\subsection{Comparison of Java Generics and C++ Templates}
+
+Java Generics and C++ Templates both provide compile-time guarantees
+through parametric polymorphism, but they preserve type information in
+different ways.
+
+Java follows the model:
+
+\begin{verbatim}
+Generic abstraction
+        |
+        v
+Static type checking
+        |
+        v
+Type erasure
+\end{verbatim}
+
+The type system verifies every substitution before removing the generic
+parameter from the resulting representation.
+
+C++ follows the model:
+
+\begin{verbatim}
+Template abstraction
+        |
+        v
+Instantiation with concrete type
+        |
+        v
+Static type checking of specialization
+\end{verbatim}
+
+The compiler retains the concrete type throughout template processing
+and verifies operations directly on the instantiated form.
+
+Therefore, the fundamental distinction is not whether type safety is
+provided, but how the type system associates abstract parameters with
+concrete types. Java achieves safety through static verification before
+erasure, whereas C++ achieves safety through compile-time reification of
+concrete types.
 
 % =====================================================================
 % CHAPTER: C# GENERICS
@@ -3553,5 +3933,299 @@ for value types, while avoiding excessive code duplication through reference
 type sharing. In terms of execution performance, C\# approaches the efficiency
 of C++ templates for value-oriented workloads while providing a more flexible
 runtime model than Java erased generics.
+
+\section{Type Safety}
+
+Type safety represents one of the fundamental properties of a sound type system.
+A type-safe language guarantees that well-typed programs cannot perform operations
+that violate the rules defined by the language type model. In the context of
+parametric polymorphism, type safety requires that generic abstractions preserve
+the relationships between type parameters and concrete types throughout the
+program.
+
+From a theoretical perspective, a sound type system is generally described through
+the properties of \emph{progress} and \emph{preservation}. The preservation property
+states that the evaluation of a well-typed expression cannot invalidate its typing
+judgment:
+
+\[
+\Gamma \vdash e : T \land e \rightarrow e'
+\implies
+\Gamma \vdash e' : T
+\]
+
+where $\Gamma$ represents the typing environment, $e$ is an expression, and $T$
+is the type assigned by the type system.
+
+The progress property states that a well-typed expression is either already a
+value or can perform a valid computation step:
+
+\[
+\Gamma \vdash e : T
+\implies
+e \text{ is a value or } e \rightarrow e'
+\]
+
+For generic programming, these principles imply that a generic abstraction must
+remain type-correct for every valid substitution of its type parameters. A generic
+definition cannot assume properties that are not guaranteed by the type system,
+and every operation performed on a type parameter must be justified by the
+available typing information.
+
+C\# generics implement parametric polymorphism while preserving these properties
+through static verification of generic type usage. The compiler verifies that all
+instantiations of a generic abstraction respect the constraints imposed by the
+generic declaration, preventing invalid substitutions from being accepted.
+
+\subsection{Static Type Checking of Generic Parameters}
+
+A generic type introduces a type variable whose concrete type is unknown during
+the declaration of the abstraction. However, this unknown type is not arbitrary:
+the type system reasons about it symbolically and ensures that every operation
+performed on the parameter is valid for all permitted substitutions.
+
+Consider the following generic container:
+
+\begin{lstlisting}[language=CSharp]
+public class Box<T>
+{
+    private T value;
+
+    public void Set(T value)
+    {
+        this.value = value;
+    }
+
+    public T Get()
+    {
+        return value;
+    }
+}
+\end{lstlisting}
+
+The type parameter $T$ represents an abstract type that will be replaced by a
+concrete type during generic instantiation. The type system guarantees that all
+values stored inside the container are compatible with the chosen instantiation.
+
+For example:
+
+\begin{lstlisting}[language=CSharp]
+Box<int> numbers = new Box<int>();
+
+numbers.Set(10);
+
+int value = numbers.Get();
+\end{lstlisting}
+
+The compiler verifies that the argument passed to \texttt{Set} is compatible with
+the type parameter substitution:
+
+\begin{lstlisting}[language=CSharp]
+Box<int> numbers = new Box<int>();
+
+numbers.Set("text");   // Type error
+\end{lstlisting}
+
+The assignment is rejected because the generic instance
+\texttt{Box<int>} defines a type invariant requiring every stored value to be an
+integer. The generic mechanism therefore does not weaken static typing but extends
+it by allowing reusable abstractions while preserving exact type relationships.
+
+\subsection{Generic Constraints as Type System Rules}
+
+In a generic declaration, a type parameter does not automatically provide access
+to arbitrary operations. The type system only permits operations that are valid
+for every possible type satisfying the current assumptions about the parameter.
+
+For example, the following generic method cannot assume that $T$ provides a
+specific member:
+
+\begin{lstlisting}[language=CSharp]
+public class Processor<T>
+{
+    public void Process(T value)
+    {
+        value.SpecialOperation();
+    }
+}
+\end{lstlisting}
+
+The compiler rejects this definition because the generic parameter does not
+guarantee the existence of \texttt{SpecialOperation}. The operation would violate
+type safety for substitutions where such a member does not exist.
+
+Generic constraints extend the typing environment by introducing additional
+assumptions about the parameter:
+
+\begin{lstlisting}[language=CSharp]
+public class Processor<T>
+    where T : IDisposable
+{
+    public void Process(T value)
+    {
+        value.Dispose();
+    }
+}
+\end{lstlisting}
+
+The constraint establishes that every valid substitution of $T$ must implement
+\texttt{IDisposable}. Therefore, the invocation of \texttt{Dispose()} is statically
+verified as safe.
+
+Constraints can be interpreted as additional typing rules restricting the set of
+types that can instantiate a generic abstraction. They do not represent runtime
+checks added after compilation, but rather static guarantees used by the type
+checker to prove correctness.
+
+\subsection{Variance and Type-Safe Generic Subtyping}
+
+Generic type safety also depends on the interaction between generics and
+subtyping. A naive interpretation of subtyping could incorrectly allow unsafe
+substitutions between parameterized types.
+
+For example, although \texttt{string} is a subtype of \texttt{object}, a mutable
+generic container containing strings cannot generally be considered a container
+of objects:
+
+\begin{lstlisting}[language=CSharp]
+List<string> strings = new List<string>();
+
+List<object> objects = strings;   // Invalid
+\end{lstlisting}
+
+Allowing this assignment would violate type safety because an object of another
+type could be inserted into the list through the \texttt{List<object>} reference.
+The generic type system therefore treats mutable generic classes as invariant.
+
+C\# explicitly supports variance annotations for generic interfaces and delegates
+when the substitution is type-safe. For example:
+
+\begin{lstlisting}[language=CSharp]
+IEnumerable<string> strings =
+    new List<string>();
+
+IEnumerable<object> objects = strings;
+\end{lstlisting}
+
+This assignment is valid because \texttt{IEnumerable<T>} only provides read-only
+access to elements. Since values are produced but never consumed through the
+generic interface, replacing a more specific type with a more general one cannot
+introduce an invalid operation.
+
+Covariance and contravariance therefore represent controlled extensions of the
+subtyping relation, where the type system permits only substitutions that preserve
+soundness.
+
+\subsection{Reified Generics and Preservation of Type Information}
+
+C\# generics are based on a reified model in which generic type parameters remain
+associated with the generic abstraction. From the perspective of type safety, this
+means that the relationship between a generic definition and its concrete type
+arguments is preserved.
+
+A generic type declaration:
+
+\begin{lstlisting}[language=CSharp]
+Box<T>
+\end{lstlisting}
+
+can be instantiated with different type arguments:
+
+\begin{lstlisting}[language=CSharp]
+Box<int>
+Box<string>
+\end{lstlisting}
+
+These represent different constructed types derived from the same generic
+definition. The type system maintains the distinction between these
+parameterizations, ensuring that operations performed through one constructed type
+cannot violate the invariants of another.
+
+This approach differs from type-erasure systems, where generic parameters are
+removed after compilation. In Java, for example, generic correctness is verified
+statically before erasure. The compiler guarantees that all uses of a generic
+abstraction are valid and may introduce implicit casts where necessary to preserve
+the source-level typing semantics.
+
+Conceptually:
+
+\begin{lstlisting}[language=Java]
+List<String> values = new ArrayList<>();
+
+String element = values.get(0);
+\end{lstlisting}
+
+is checked using the generic type information available during compilation, even
+though the executable representation does not preserve the original parameterized
+type.
+
+C\# follows a different type-system model: the association between the generic
+abstraction and its type parameter remains part of the program representation.
+Consequently, the generic type relationship is preserved rather than reconstructed
+after type erasure.
+
+\subsection{Comparison with C++ Templates from a Type System Perspective}
+
+C++ templates and C\# generics both support parametric programming, but they
+represent different approaches to expressing type relationships.
+
+In C++:
+
+\begin{lstlisting}[language=C++]
+template<typename T>
+class Box
+{
+    T value;
+};
+\end{lstlisting}
+
+the compiler verifies whether a concrete substitution satisfies the requirements
+of the template when the template is instantiated. The resulting type correctness
+depends on the validity of the substituted operations.
+
+C\# generics instead define a parameterized type inside the language type system.
+The generic abstraction itself has a type-level meaning, and constraints explicitly
+describe the requirements that valid substitutions must satisfy.
+
+Therefore, both mechanisms prevent invalid type usage, but they express generic
+correctness through different models:
+
+\begin{itemize}
+    \item C++ templates rely on compile-time template substitution and validation
+    of generated concrete types.
+    \item C\# generics represent parameterized types directly in the language type
+    system and preserve the relationship between generic definitions and type
+    arguments.
+\end{itemize}
+
+\subsection{Type Safety Guarantees of the C\# Generic Type System}
+
+The C\# generic system preserves type safety through a combination of static
+checking rules and a precise representation of parameterized types. The main
+guarantees provided by the type system are:
+
+\begin{itemize}
+    \item Every generic instantiation must satisfy the declared constraints of its
+    type parameters.
+
+    \item Operations performed on generic parameters are accepted only when they
+    are valid for every permitted substitution.
+
+    \item Generic subtyping relationships are restricted through variance rules
+    to prevent unsafe substitutions.
+
+    \item Generic abstractions preserve the association between type parameters and
+    concrete types, maintaining the consistency of typing relationships.
+
+    \item Invalid conversions between incompatible parameterized types are rejected
+    statically.
+\end{itemize}
+
+Consequently, C\# generics provide parametric polymorphism without sacrificing the
+guarantees of a statically typed language. The generic mechanism extends the
+expressiveness of the type system while preserving the fundamental property that
+well-typed programs cannot perform operations outside the set allowed by their
+declared types.
+
 
 \end{document}
