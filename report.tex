@@ -1,4 +1,4 @@
-\documentclass[12pt]{report}
+\documentclass[11pt]{report}
 
 % =====================================================================
 % PREAMBLE
@@ -22,11 +22,25 @@
 % Page geometry
 \geometry{
     a4paper,
-    top=3cm,
-    bottom=3cm,
-    left=3cm,
-    right=3cm
+    top=2.2cm,
+    bottom=2.2cm,
+    left=2.4cm,
+    right=2.4cm
 }
+
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{parskip}
+
+\titlespacing*{\chapter}{0pt}{-20pt}{10pt}
+\titlespacing*{\section}{0pt}{10pt}{4pt}
+\titlespacing*{\subsection}{0pt}{8pt}{3pt}
+\titlespacing*{\subsubsection}{0pt}{6pt}{2pt}
+
+\setlist{itemsep=1pt, topsep=2pt, parsep=0pt}
+
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
 
 
 % =====================================================================
@@ -38,18 +52,20 @@
 \lstdefinestyle{cppstyle}{
     language=C++,
     backgroundcolor=\color{codebackground},
-    basicstyle=\ttfamily\small,
+    basicstyle=\ttfamily\footnotesize,
     keywordstyle=\bfseries,
     commentstyle=\itshape,
     numbers=left,
     numberstyle=\tiny,
-    numbersep=10pt,
+    numbersep=8pt,
     frame=single,
-    framesep=6pt,
+    framesep=4pt,
     breaklines=true,
     tabsize=4,
     showstringspaces=false,
-    columns=fullflexible
+    columns=fullflexible,
+    aboveskip=4pt,
+    belowskip=4pt
 }
 
 \lstset{style=cppstyle}
@@ -61,14 +77,16 @@
 
 % Esempio di stile pulito e accademico per tutti i blocchi di codice
 \lstset{
-    basicstyle=\ttfamily\small,
+    basicstyle=\ttfamily\footnotesize,
     keywordstyle=\bfseries\color{blue!70!black},
     commentstyle=\itshape\color{green!50!black},
     stringstyle=\color{red!60!black},
     showstringspaces=false,
     numbers=none, % metti 'left' se vuoi i numeri di riga
     frame=single, % riquadro attorno al codice
-    breaklines=true
+    breaklines=true,
+    aboveskip=4pt,
+    belowskip=4pt
 }
 
 % =====================================================================
@@ -289,37 +307,19 @@ monomorphization.
 
 \section{Instantiation Time}
 
-C++ implements parametric polymorphism through the \emph{template} mechanism,
-which adopts a purely compile-time instantiation model.
-
-Unlike languages that compile a generic definition only once, a C++ template is
-not itself an executable entity. Instead, it represents a parameterized program definition that serves as a
-blueprint from which the compiler generates independent concrete
-implementations.
-
-% ---------------------------------------------------------------------
-
-From the perspective of instantiation time, the defining characteristic of C++
-is that executable code is generated only after the compiler knows the complete
-set of template arguments.
-
-Consequently, all template instantiations are resolved entirely during static
-compilation, and no template instantiation mechanism exists during program
-execution.
-
-The complete instantiation process can be understood by following the template
-through the compilation pipeline.
-
-% ---------------------------------------------------------------------
+C++ implements parametric polymorphism through the \emph{template} mechanism, which
+adopts a purely compile-time instantiation model. A template is not itself an
+executable entity but a parameterized blueprint from which the compiler generates
+independent concrete implementations. Executable code is generated only after the
+complete set of template arguments is known, so all instantiation is resolved during
+static compilation and no instantiation mechanism exists at runtime.
 
 \subsection{Template Definition}
 
-When the compiler encounters a template definition, it first performs the
-ordinary front-end compilation stages, including lexical analysis, parsing,
-and semantic analysis that can be performed without knowledge of future
-template arguments.
-
-For example:
+When the compiler encounters a template definition, it performs the front-end
+stages (lexical analysis, parsing, and the semantic checks possible without
+knowledge of future arguments) and stores a parameterized internal representation,
+without generating executable code:
 
 \begin{lstlisting}
 template<typename T>
@@ -329,252 +329,121 @@ T get_max(T a, T b)
 }
 \end{lstlisting}
 
-The compiler parses the template syntax, builds the corresponding Abstract
-Syntax Tree (AST), checks syntactic correctness, and stores an internal
-parameterized representation.
-
-At this stage, the compiler does not generate executable machine code.
-
-The reason is straightforward: the compiler still ignores the concrete meaning
-of the template parameter \texttt{T}, and therefore cannot determine the exact
-operations, object layout, calling convention, or generated instructions
-required by the final implementation.
-
-Consequently, the template definition remains a generic blueprint waiting for
-future instantiation.
+Since the compiler still ignores the concrete meaning of \texttt{T}, it cannot yet
+determine the operations, layout, or instructions required by the final
+implementation; the definition remains a blueprint awaiting instantiation.
 
 % ---------------------------------------------------------------------
 
 \subsection{Instantiation Trigger}
 
-The instantiation process begins only when the compiler encounters a concrete
-use of the template, either through an explicit specification of the template
-argument or through implicit type deduction.
+Instantiation begins when the compiler encounters a concrete use of the template,
+either via explicit argument specification or implicit type deduction:
 
 \begin{examplebox}
-
 \textbf{Example.}
-
-Consider the following template invocations:
 
 \begin{lstlisting}
 int i = get_max(3, 7);
 double d = get_max<double>(2.5, 4.8);
 \end{lstlisting}
 
-The first invocation relies on template argument deduction:
-\[
-T = int
-\]
-
-whereas the second invocation explicitly specifies the template argument:
-
-\[
-T = double
-\]
-
-Therefore, the compiler generates two different template instantiations:
-\texttt{get\_max<int>} and \texttt{get\_max<double>}
-
+The first invocation relies on deduction ($T = int$); the second specifies the
+argument explicitly ($T = double$). The compiler generates two distinct
+instantiations: \texttt{get\_max<int>} and \texttt{get\_max<double>}.
 \end{examplebox}
 
-Each unique set of template arguments constitutes a distinct template
-instantiation. Instantiation may occur through:
-
-\begin{itemize}
-    \item \texttt{implicit instantiation}, automatically performed whenever a
-          specialization is required by the program;
-
-    \item \texttt{explicit instantiation}, requested directly by the programmer through
-          an explicit instantiation declaration or definition;
-
-    \item \texttt{explicit specialization}, where an entirely different implementation
-          is provided for a specific combination of template arguments.
-\end{itemize}
-
-Regardless of how instantiation is initiated, executable code generation begins
-only after the complete set of template arguments is known.
+Each unique set of arguments constitutes a distinct instantiation, triggered through
+\emph{implicit instantiation} (performed automatically when required),
+\emph{explicit instantiation} (requested directly by the programmer), or
+\emph{explicit specialization} (a wholly different implementation provided for a
+specific argument combination). In every case, code generation begins only once
+the complete set of arguments is known.
 
 % ---------------------------------------------------------------------
 
 \subsection{Template Argument Substitution}
 
-Once instantiation has been triggered, the compiler performs template argument
-substitution.
-
-During this phase, every formal template parameter is replaced by its
-corresponding concrete argument.
+Once triggered, the compiler substitutes every formal parameter with its concrete
+argument:
 
 \begin{examplebox}
-\textbf{From previous example.}
-
-\[
-T \rightarrow int
-\]
-
-produces the specialization:
-
+\textbf{From previous example.} $T \rightarrow int$ produces:
 \begin{lstlisting}
 int get_max(int a, int b)
 {
     return (a > b) ? a : b;
 }
 \end{lstlisting}
-
-whereas:
-
-\[
-T \rightarrow double
-\]
-
-produces:
-
-\begin{lstlisting}
-double get_max<double>(double a, double b)
-{
-    return (a > b) ? a : b;
-}
-\end{lstlisting}
+while $T \rightarrow double$ produces the analogous specialization for
+\texttt{double}.
 \end{examplebox}
 
-Conceptually, the compiler now treats each specialization as if it had been
-written explicitly by the programmer.
-
-From this point onward, the specialization behaves as an ordinary non-template
-function.
+From this point, the compiler treats each specialization as if it had been written
+explicitly, behaving as an ordinary non-template function.
 
 % ---------------------------------------------------------------------
 
 \subsection{Semantic Analysis of the Specialization}
 
-Instantiation does not immediately produce executable code.
-
-Instead, each generated specialization undergoes the normal semantic analysis
-performed for ordinary C++ program entities.
-
-Depending on the specialization, the compiler performs activities such as:
-type checking, overload resolution, name lookup, constraint verification for
-constrained templates, constant expression evaluation, instantiation of
-nested templates and verification of language rules required by the selected
-template arguments.
-
-This step is fundamental because many semantic properties cannot be verified
-before template parameters have been substituted.
-
-Consequently, a template definition that is syntactically correct may still
-produce compilation errors if one of its concrete instantiations violates the
+Instantiation does not immediately produce executable code: each generated
+specialization first undergoes the normal semantic analysis applied to ordinary
+C++ entities, including type checking, overload resolution, name lookup,
+constraint verification, constant expression evaluation, and instantiation of
+nested templates. This step is essential because many semantic properties cannot
+be verified before substitution occurs; consequently, a syntactically correct
+template may still fail to compile if a specific instantiation violates the
 requirements imposed by the template body.
 
 % ---------------------------------------------------------------------
 
 \subsection{Intermediate Representation and Code Generation}
 
-Once semantic analysis has successfully completed, the specialization enters
-the compiler back-end.
-
-The compiler generates an Intermediate Representation (IR) specifically for the
-instantiated specialization.
-
-Subsequently, the specialization undergoes the standard optimization pipeline,
-which may include: constant propagation, dead-code elimination, function
-inlining, loop optimizations, register allocation, instruction selection and
-target-specific optimizations.
-
-Finally, the compiler emits native machine code corresponding exclusively to
-that specialization.
-
-Importantly, this process is repeated independently for every distinct template
-instantiation.
-
-Consequently, each specialization owns an independent executable
-implementation. In fact, the compiler does not produce a single shared executable representation capable
-of serving multiple template arguments.
-
-% ---------------------------------------------------------------------
+Once semantic analysis succeeds, the specialization enters the compiler back-end,
+which generates an Intermediate Representation, applies the standard optimization
+pipeline (constant propagation, dead-code elimination, inlining, loop
+optimizations, register allocation, instruction selection), and emits native
+machine code exclusively for that specialization. This process repeats
+independently for every distinct instantiation, so each specialization owns an
+independent executable implementation; no shared representation is produced that
+could serve multiple template arguments.
 
 \subsection{Completion of the Instantiation Process}
 
-The instantiation process terminates entirely before linking.
-
-By the time object files are generated, every template specialization required
-by the translation unit already exists as ordinary compiled code.
-
-After linking, the final executable therefore contains every specialization
-required by the program.
-
-From the perspective of executable code generation, the lifecycle of a C++
-template can be summarized as follows:
-
-\begin{enumerate}
-    \item The compiler parses the template definition.
-    \item The template is stored as a parameterized internal representation.
-    \item A concrete template use triggers instantiation.
-    \item Template parameters are substituted with concrete arguments.
-    \item The generated specialization undergoes complete semantic analysis.
-    \item The compiler produces a specialization-specific intermediate
-          representation.
-    \item Optimization passes are applied.
-    \item Native machine code is emitted.
-    \item The specialization is included in the final executable before program
-          execution begins.
-\end{enumerate}
-
-Therefore, the defining characteristic of C++ parametric polymorphism is that
-the entire instantiation process is completed during static compilation.
-
-When execution begins, no template instantiation mechanism remains active.
-
-The runtime simply executes machine code that has already been generated for
-every required specialization during compilation.
+Instantiation terminates entirely before linking: by the time object files are
+generated, every specialization required by the translation unit already exists
+as compiled code, and the final linked executable contains all of them. The
+lifecycle can be summarized as: parsing the definition, storing it as a
+parameterized representation, triggering instantiation on concrete use,
+substituting arguments, performing semantic analysis, generating IR, optimizing,
+and emitting native code included in the executable before execution begins.
+The defining characteristic of C++ parametric polymorphism is therefore that
+the entire process completes during static compilation; when execution begins, no
+instantiation mechanism remains active, and the runtime simply executes machine
+code already generated for every required specialization.
 
 % =====================================================================
 
 \section{Runtime Representation}
 \label{sec:cpp_template_runtime}
 
-C++ templates are implemented according to a translation model in which
-generic source-level abstractions are transformed into concrete program
-entities before execution. A template declaration itself does not correspond
-to a runtime object, runtime function, or executable structure. Instead, it
-defines a family of possible entities that are materialized only when the
-compiler generates a specific specialization.
-
-The runtime representation of a C++ template specialization is therefore
-equivalent to the representation of an ordinary C++ function, class, or
-object. After compilation and linking, the executable contains native machine
-instructions and data structures associated with each instantiated
-specialization. The execution environment, including the operating system
-loader and the processor, has no knowledge of the original template
-declaration, template parameters, or instantiation process. It only observes
-ordinary executable artifacts such as functions, symbols, and memory objects.
-
-A template can be conceptually modeled as a compile-time transformation:
-
-\[
-T : (A_1, A_2, ..., A_n) \rightarrow P
-\]
-
-where $T$ represents a template definition, $(A_1,A_2,...,A_n)$ are template
-arguments, and $P$ is a concrete program entity generated from the template.
-
-For example:
-
-\[
-T<int> \rightarrow P_{int}
-\]
-\[
-T<double> \rightarrow P_{double}
-\]
-
-The generated entities are independent concrete implementations. During
-execution, the program does not invoke a generic representation of $T$;
-instead, it executes the machine code generated for each concrete
-specialization.
+C++ templates transform generic source-level abstractions into concrete program
+entities before execution. A template declaration does not itself correspond to a
+runtime object; it defines a family of possible entities materialized only when
+the compiler generates a specific specialization. The runtime representation of a
+specialization is therefore identical to that of an ordinary function, class, or
+object: after linking, the executable contains native instructions and data
+associated with each instantiated specialization, and the loader and processor
+have no knowledge of the original template or its parameters. Conceptually, a
+template is a compile-time transformation
+$T : (A_1, ..., A_n) \rightarrow P$, so that $T{<}int{>} \rightarrow P_{int}$ and
+$T{<}double{>} \rightarrow P_{double}$ are independent implementations; at runtime
+the program never invokes a generic representation of $T$, only the machine code
+generated for each concrete specialization.
 
 \subsection{Runtime Form of Template Specializations}
 
-The C++ compilation model transforms template specializations into ordinary
-binary-level entities. Consider the following function template:
+Consider the following function template:
 
 \begin{lstlisting}[language=C++]
 template <typename T>
@@ -584,83 +453,25 @@ T add(T a, T b)
 }
 \end{lstlisting}
 
-When the program requires multiple specializations:
-
-\begin{lstlisting}[language=C++]
-add<int>(1,2);
-add<double>(1.0,2.0);
-\end{lstlisting}
-
-the compiler produces separate functions:
-
-\[
-add<int>(int,int)
-\]
-
-and
-
-\[
-add<double>(double,double)
-\]
-
-At the binary level, these functions are represented as independent machine
-code regions. Each specialization has its own instructions, symbol identity,
-and executable address. The runtime system does not contain a generic
-function body with a runtime type parameter. Instead, it contains the
-concrete implementations produced during translation.
-
-Once the executable is loaded into memory, the operating system maps the
-binary sections containing executable instructions and data. Control flow
-transfers directly to the generated machine-code addresses. The processor
-executes instructions without any awareness that those instructions were
-originally produced from a template definition.
-
-Therefore, the runtime representation of:
-
-\[
-Vector<int>
-\]
-
-and:
-
-\[
-Vector<double>
-\]
-
-is not a single generic runtime object:
-
-\[
-Vector<T>
-\]
-
-but two independent concrete program entities:
-
-\[
-Vector<int>
-\]
-
-and:
-
-\[
-Vector<double>
-\]
-
-Each specialization exists as a normal C++ type produced before execution.
+When the program requires \texttt{add<int>(1,2)} and \texttt{add<double>(1.0,2.0)},
+the compiler produces two separate functions, \texttt{add<int>(int,int)} and
+\texttt{add<double>(double,double)}, represented at the binary level as independent
+machine-code regions with their own instructions, symbol identity, and entry
+address. The runtime system contains no generic function body carrying a runtime
+type parameter, only the concrete implementations produced during translation;
+control flow transfers directly to the generated addresses, and the processor
+executes without any awareness that the code originated from a template. Hence the
+runtime representation of \texttt{Vector<int>} and \texttt{Vector<double>} is not a
+single generic object \texttt{Vector<T>}, but two independent concrete types
+produced before execution.
 
 \subsection{Monomorphization}
 \label{sec:monomorphization}
 
-C++ uses heterogeneous translation, commonly described as
-\emph{monomorphization}, to implement templates. This mechanism transforms
-generic template definitions into concrete specialized entities for each set
-of template arguments used by the program.
-
-The essential property of monomorphization is that every specialization
-receives its own native representation. The compiler substitutes the template
-arguments into the template definition and generates a concrete function or
-class implementation.
-
-For example:
+C++ uses heterogeneous translation, commonly called \emph{monomorphization}: the
+compiler substitutes template arguments into the definition and generates a
+concrete function or class implementation for each argument set used by the
+program. For example:
 
 \begin{lstlisting}[language=C++]
 template <typename T>
@@ -673,145 +484,60 @@ Container<int> a;
 Container<float> b;
 \end{lstlisting}
 
-creates two independent specializations:
-
-\[
-Container<int>
-\]
-
-and
-
-\[
-Container<float>
-\]
-
-The executable contains the concrete representations of these entities.
-There is no runtime object representing:
-
-\[
-Container<T>
-\]
-
-because the generic abstraction has already been resolved during translation.
-
-For function templates, each specialization produces a distinct machine-code
-artifact:
-
-\[
-Compiler(T<int>) = MachineCode_{int}
-\]
-\[
-Compiler(T<double>) = MachineCode_{double}
-\]
-
-These generated artifacts behave exactly like functions written explicitly
-for those types. After compilation, functions such as \texttt{sort<int>()}
-and \texttt{sort<double>()} are ordinary executable functions with
-independent entry points, invoked through normal machine-level control-flow
-instructions.
+creates two independent specializations, \texttt{Container<int>} and
+\texttt{Container<float>}; the executable contains their concrete
+representations, with no runtime object representing \texttt{Container<T>} since
+the generic abstraction was already resolved during translation. For function
+templates, each specialization produces a distinct machine-code artifact behaving
+exactly like a function written explicitly for that type, with its own entry
+point invoked through normal control-flow instructions.
 
 \subsection{Name Mangling}
 
-Compilers encode template arguments into symbol names through
-\emph{name mangling}. This allows different specializations to coexist in
-object files and allows the linker to distinguish between entities such as
-\texttt{function<int>()} and \texttt{function<double>()}.
-
-Name mangling is a compiler and linker mechanism used during binary
-generation; it is not runtime metadata. Once linking is completed, the CPU
-does not interpret mangled names or template information. The executable
-address associated with a symbol identifies machine code, and the processor
-executes this code without understanding the source-level template
-relationship.
+Compilers encode template arguments into symbol names through \emph{name
+mangling}, allowing different specializations to coexist in object files and
+letting the linker distinguish entities such as \texttt{function<int>()} and
+\texttt{function<double>()}. This is purely a compiler/linker mechanism, not
+runtime metadata: once linking completes, the CPU does not interpret mangled
+names, and an executable address identifies machine code without any awareness
+of the source-level template relationship.
 
 \subsection{Final Executable Representation}
 
-After linking, the final executable represents a collection of concrete
-compiled entities:
-
-\[
-Executable =
-\{
-Code(P_1),
-Code(P_2),
-...,
-Code(P_n)
-\}
-\]
-
-where each $P_i$ corresponds to a particular template specialization. The
-executable contains:
-
-\begin{itemize}
-    \item machine instructions for instantiated functions;
-    \item symbols identifying generated entities;
-    \item relocation information required during linking;
-    \item optional runtime metadata produced by other C++ mechanisms (see
-          Section~\ref{sec:cpp_reflection}).
-\end{itemize}
-
-These artifacts are not different from those produced by non-template C++
-code.
-
-During execution, the processor does not interpret template parameters.
-A machine instruction such as a function call transfers execution to a
-specific address. The target address corresponds to a compiled function, not
-to a generic template definition. The relationship between a generated
-function and its original template source exists only within
-compiler-generated information such as debugging information or symbol
-naming conventions; it is not part of the runtime execution model.
+After linking, the executable is a collection of concrete compiled entities,
+$Executable = \{Code(P_1), ..., Code(P_n)\}$, where each $P_i$ corresponds to a
+template specialization. It contains machine instructions for instantiated
+functions, symbols identifying them, relocation information, and optionally
+runtime metadata produced by other C++ mechanisms (Section~\ref{sec:cpp_reflection}) --
+artifacts no different from those produced by non-template code. During
+execution the processor never interprets template parameters: a call instruction
+transfers control to a compiled function's address, and the link back to the
+original template source survives only in debugging information or symbol
+naming conventions, not in the runtime execution model.
 
 \subsection{Absence of Generic Metadata}
 
-A defining characteristic of the C++ template implementation model is the
-absence of runtime generic metadata. After template instantiation has
-occurred, the executable does not contain information describing the original
-template declaration or the possible template arguments.
-
-The runtime environment does not know that a particular function originated
-from:
-
-\begin{lstlisting}[language=C++]
-template<typename T>
-void process(T value);
-\end{lstlisting}
-
-Instead, it only observes a concrete function generated from a specific
-instantiation, such as \texttt{process<int>()} or \texttt{process<double>()}.
-
-The following concepts do not exist as runtime entities:
-
-\begin{itemize}
-    \item template declarations;
-    \item template parameter lists;
-    \item generic type variables;
-    \item mechanisms for creating new template specializations dynamically.
-\end{itemize}
-
-The execution environment only manipulates the final native representation.
-The limited runtime type identification that C++ does provide is discussed in
-Section~\ref{sec:cpp_reflection}.
+A defining characteristic of the C++ model is the absence of runtime generic
+metadata: after instantiation, the executable retains no information describing
+the original template declaration or its possible arguments. Given
+\texttt{template<typename T> void process(T value);}, the runtime environment
+only observes concrete functions such as \texttt{process<int>()} or
+\texttt{process<double>()} -- template declarations, parameter lists, generic
+type variables, and mechanisms for creating new specializations dynamically
+simply do not exist as runtime entities; the execution environment manipulates
+only the final native representation. The limited runtime type identification
+C++ does provide is discussed in Section~\ref{sec:cpp_reflection}.
 
 % =====================================================================
 
 \section{Performance Characteristics}
 
-The preservation of complete type information through template instantiation
-has direct consequences for execution performance. Although
-\emph{reification} describes the conceptual property of retaining type
-information throughout compilation, the performance characteristics of C++
-templates derive from the concrete implementation mechanism of template
-monomorphization described in Section~\ref{sec:monomorphization}.
-
-During compilation, every template instantiation is transformed into an
-independent specialization operating on a specific concrete type.
-Therefore, the generated executable contains ordinary statically typed
-functions and classes rather than a generic runtime representation.
-The compiler does not generate a universal implementation capable of
-handling arbitrary types; instead, it produces optimized versions tailored
-to each instantiated type.
-
-For example, the following template function:
+The performance characteristics of C++ templates derive directly from
+monomorphization (Section~\ref{sec:monomorphization}): every instantiation is
+transformed into an independent specialization operating on a concrete type, so
+the executable contains ordinary statically typed functions and classes tailored
+to each instantiated type rather than a universal generic implementation. For
+example:
 
 \begin{lstlisting}[language=C++]
 template<typename T>
@@ -820,169 +546,41 @@ T max(T a, T b) {
 }
 \end{lstlisting}
 
-when instantiated with different types, generates specialized functions
-equivalent to:
-
-\begin{lstlisting}[language=C++]
-int max(int a, int b) {
-    return (a > b) ? a : b;
-}
-
-double max(double a, double b) {
-    return (a > b) ? a : b;
-}
-\end{lstlisting}
-
-The resulting machine code operates directly on concrete data types,
-without requiring runtime mechanisms for interpreting or resolving the
-generic type parameter.
+instantiated with different types generates specialized functions equivalent to
+handwritten \texttt{int max(int,int)} and \texttt{double max(double,double)}
+versions, whose machine code operates directly on concrete data types without
+runtime mechanisms for resolving the generic parameter.
 
 \subsection{Static Dispatch and Elimination of Runtime Overhead}
 
-One of the main performance advantages introduced by template
-monomorphization is static dispatch. Since the concrete type of every
-template parameter is known during compilation, function calls can be
-resolved before execution. This eliminates the runtime indirections required
-by dynamic dispatch mechanisms and allows the compiler to directly generate
-the target function call.
-
-For example:
-
-\begin{lstlisting}[language=C++]
-template<typename T>
-void process(T& object) {
-    object.compute();
-}
-\end{lstlisting}
-
-with a concrete type:
-
-\begin{lstlisting}[language=C++]
-Matrix m;
-process(m);
-\end{lstlisting}
-
-allows the compiler to resolve the call directly to
-\texttt{Matrix::compute()}. The absence of runtime dispatch reduces execution
-overhead and exposes additional opportunities for optimization.
-
-Another direct consequence of template specialization is the elimination of
-boxing and unboxing operations. Template-generated code operates directly on
-the native representation of objects and primitive values, avoiding
-additional conversions or wrapper objects.
-
-For example:
-
-\begin{lstlisting}[language=C++]
-std::vector<int> values;
-values.push_back(10);
-\end{lstlisting}
-
-stores integer values using their native representation. The generated
-implementation does not require conversion of the integer into a generic
-object representation before storage or computation.
+One of the main performance advantages of monomorphization is static dispatch:
+since the concrete type of every parameter is known at compile time, function
+calls are resolved before execution, eliminating the indirections required by
+dynamic dispatch. Given \texttt{template<typename T> void process(T\& object) \{
+object.compute(); \}} called with a \texttt{Matrix}, the compiler resolves the
+call directly to \texttt{Matrix::compute()}, reducing overhead and exposing
+further optimization opportunities. A related consequence is the elimination of
+boxing and unboxing: template-generated code operates directly on the native
+representation of values, so \texttt{std::vector<int>} stores integers in their
+native form without conversion into a generic object wrapper.
 
 \subsection{Compiler Optimization Opportunities}
 
-Because every template specialization is fully typed, optimizing compilers
-can apply the same optimization techniques used for manually written
-specialized code. The availability of concrete types, sizes, and operations
-enables more aggressive analysis and transformation of the generated machine
-code.
-
-A fundamental optimization enabled by template specialization is function
-inlining. Since both the function implementation and the argument types are
-known at compile time, the compiler can replace a function call with the
-corresponding function body.
-
-For example:
-
-\begin{lstlisting}[language=C++]
-template<typename T>
-inline T square(T x) {
-    return x * x;
-}
-
-int result = square(5);
-\end{lstlisting}
-
-can be transformed into code equivalent to:
-
-\begin{lstlisting}[language=C++]
-int result = 5 * 5;
-\end{lstlisting}
-
-removing the function call overhead and enabling further optimizations, such
-as:
-
-\begin{itemize}
-    \item constant propagation;
-    \item constant folding;
-    \item dead-code elimination;
-    \item loop optimization;
-    \item strength reduction.
-\end{itemize}
-
-Template parameters can also represent compile-time constants. When values
-such as array sizes or loop bounds are known during compilation, the
-compiler can simplify control flow and remove unnecessary runtime
-operations.
-
-For example:
-
-\begin{lstlisting}[language=C++]
-template<int N>
-int sum(const int* data) {
-    int result = 0;
-
-    for(int i = 0; i < N; i++)
-        result += data[i];
-
-    return result;
-}
-\end{lstlisting}
-
-allows the compiler to know the exact iteration count. Consequently, loop
-unrolling can be applied, replacing repeated loop iterations with explicit
-instructions and reducing loop-control overhead.
-
-Similarly, compile-time specialization facilitates branch elimination through
-features such as \texttt{if constexpr}:
-
-\begin{lstlisting}[language=C++]
-template<typename T>
-void process(T value) {
-
-    if constexpr(std::is_integral_v<T>)
-        integer_algorithm(value);
-    else
-        generic_algorithm(value);
-}
-\end{lstlisting}
-
-Only the branch corresponding to the selected type is generated in the final
-code, eliminating unnecessary runtime condition checks.
-
-The availability of concrete types and memory layouts also improves the
-ability of compilers to perform automatic vectorization. For numerical
-templates, the compiler can recognize regular memory access patterns and
-generate SIMD instructions when applicable.
-
-\begin{lstlisting}[language=C++]
-template<typename T>
-void add(const T* a,
-         const T* b,
-         T* result,
-         int n)
-{
-    for(int i = 0; i < n; i++)
-        result[i] = a[i] + b[i];
-}
-\end{lstlisting}
-
-When instantiated with numerical types, the generated code can be optimized
-using vector instructions, allowing multiple operations to be executed
-simultaneously.
+Because every specialization is fully typed, optimizing compilers apply the same
+techniques used for manually written specialized code. A fundamental example is
+function inlining: since both implementation and argument types are known at
+compile time, \texttt{template<typename T> inline T square(T x) \{ return x*x;
+\}} called as \texttt{square(5)} can be replaced directly by \texttt{5*5},
+removing call overhead and enabling further constant propagation, constant
+folding, dead-code elimination, loop optimization, and strength reduction.
+Template parameters can also encode compile-time constants -- e.g.\ a
+\texttt{template<int N>} array bound lets the compiler know the exact iteration
+count of a loop and apply loop unrolling. Compile-time specialization also
+enables branch elimination via \texttt{if constexpr}, where only the branch
+matching the selected type is emitted, and improves automatic vectorization:
+because concrete types and memory layouts are known, numerical templates such as
+an element-wise array \texttt{add} can be compiled directly into SIMD
+instructions.
 
 \subsection{Zero-Overhead Abstraction and Trade-offs}
 
@@ -4043,6 +3641,5 @@ the three approaches can be summarized as follows:
 The CLR generic model therefore provides a reflection system in which generic type
 structure remains part of the runtime type universe, whereas C++ and Java represent
 opposite design points: compile-time expansion without generic runtime metadata in
-C++, and runtime abstraction through type erasure in Java.
-
+C++, and runtime abstraction through type erasure in Java. 
 \end{document}

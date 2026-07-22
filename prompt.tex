@@ -20,6 +20,11 @@
     citecolor=black,
 }
 
+% Miglioramenti di impaginazione e verbatim con rottura delle righe
+\usepackage{microtype}
+\usepackage{fancyvrb}
+\usepackage{fvextra}
+
 % =====================================================================
 % TITLE PAGE INFORMATION
 % =====================================================================
@@ -42,23 +47,42 @@
 
 % 3. Corpo del documento
 \chapter{AI Prompt Engineering}
-For the technical accuracy of the output, following the guidelines of the project,
-the report is generated using a \textbf{Two-phase prompt strategy}: prompt improvement and prompt execution.
+
+To ensure the technical accuracy of the generated content and strictly adhere 
+to the project guidelines, this report was developed using a \textbf{two-phase 
+prompting strategy}: prompt improvement and prompt execution. A fundamental 
+principle of this methodology is strict context isolation: both the refinement 
+of the prompts and the generation of the final outputs are treated as completely 
+independent operations.
 
 \section{Architect Chat}
-This chat is used to plan the sequence of prompt based on the project requirment. 
 
+An initial ``Architect Chat'' was utilized to plan and outline the optimal 
+sequence of prompts, ensuring that all project requirements were systematically 
+addressed before any content generation began.
 
 \section{Prompt Engineering Phases}
 
-\subsection[short]{Prompt Improvement}
-The first phase is prompt improvement, where the initial prompt is redefined and improved
-following the project guidelines and a rigorous academic approach. Every prompt improvement is independent
-from the previous prompt
+\subsection{Prompt Improvement}
+
+The first phase focuses on prompt refinement. During this stage, the initial 
+prompts are iteratively improved to align with the project guidelines and 
+maintain a rigorous academic standard. Crucially, the generation of each 
+improved prompt is an independent operation. The AI is tasked solely with 
+rewriting and optimizing the prompt's structure, without executing it or 
+carrying over context from unrelated topics.
 
 \subsection{Prompt Execution}
-The second phase the execution of the improved prompt to generate the final output.
-In this phase, the system is invited to also give the source references used to generate the output.
+
+The second phase involves the execution of the refined prompts to generate the 
+final output. To ensure the integrity of the results, each execution is treated 
+as a strictly independent operation, performed in an isolated context (e.g., a 
+completely new session). This strict separation guarantees that the generated 
+content relies exclusively on the explicit instructions provided in the finalized 
+prompt, preventing any bias or ``context leakage'' from the improvement phase. 
+Furthermore, during this execution phase, the AI model is explicitly instructed 
+to provide the source references and documentation used to formulate its 
+responses, ensuring traceability and reliability.
 
 \chapter{Prompts}
 
@@ -66,66 +90,195 @@ In this phase, the system is invited to also give the source references used to 
 \section{Prompt 0: Configure Prompt Engineering}
 % =====================================================================
 
-\noindent\textbf{Model:} Gemini 3.1 Pro extended reasoning
+To ensure the generation of rigorous academic sections, this methodology
+treats prompt generation and the final report generation as strictly independent
+operations. The process does not rely on manual, ad-hoc prompts for each
+language. Instead, it employs a \textit{meta-prompting} approach. A
+\textbf{Master Prompt} was designed whose sole purpose is to act as a
+"Senior Prompt Engineer" in an isolated session. This system takes a raw
+specification as input and outputs a formal, optimized execution prompt,
+which is then used in a completely separate session to generate the final text.
 
-\vspace{0.5em}
-\noindent\textbf{Prompt:}
+The Master Prompt was engineered using a sequential task architecture
+to impose strict constraints on the language model:
 
-\vspace{0.5em}
-\noindent\textbf{System Persona} \\
-Act as a world-class computer scientist and principal compiler engineer specializing in Programming Language Theory (PLT), virtual machine architectures (such as the .NET CLR and JVM), and type systems.
-
-\vspace{0.5em}
-\noindent\textbf{Goal} \\
-Generate an exhaustive, publication-grade academic report section in LaTeX titled "Instantiation Time in C\#". The text must analyze the instantiation mechanics and timeline of C\# generics during runtime execution and rigorously contrast this specific temporal approach with the compile-time instantiation model of C++ templates and the type erasure model of Java generics.
-
-\vspace{0.5em}
-\noindent\textbf{Requirements}
 \begin{itemize}
-    \item Focus explicitly on the instantiation timeline and execution model of C\# generics, detailing when the Common Language Runtime (CLR) and the Just-In-Time (JIT) compiler process generic types.
-    \item Explain the concept of reified generics in C\# strictly in terms of how type information is preserved for the runtime instantiation phase.
-    \item Detail the dual-phase implementation mechanisms used by C\# (compile-time CIL generation vs. runtime JIT native code generation), including reference-type sharing and value-type specialization, strictly from an instantiation perspective.
-    \item Provide a rigorous technical comparison of the timeline between C\# (JIT-time specialization) and C++ (ahead-of-time compile-time monomorphization).
-    \item Provide a rigorous technical comparison of the timeline between C\# (runtime instantiation) and Java (compile-time type erasure with no runtime instantiation).
-    \item STRICT SCOPE CONTROL: You must confine the generated text strictly to the instantiation timeline, mechanisms, and architectural flow. You must actively avoid tangential subjects. DO NOT discuss executable size, code bloat, memory footprint, garbage collection overhead, runtime performance speed, or dynamic dispatch overhead.
-    \item Base every technical statement on authoritative references (e.g., C\# Language Specification, ECMA-335, JVM Specification).
-    \item Require consistent citation formatting and a final bibliography section.
-    \item Output complete, compilation-ready LaTeX code.
+    \item \textbf{Task 1, Extraction and Preservation:} The model analyzes
+    the input specification to identify the objective, the required role, and
+    the technical constraints. This ensures the original intent is preserved
+    without unauthorized simplifications or additions.
+
+    \item \textbf{Task 2, Correction and Structuring:} The extracted
+    information is sanitized of ambiguities and organized into a fixed,
+    predictable structure (\textit{System Persona, Goal, Requirements,
+    Writing Style Constraint, Output Structure}).
+
+    \item \textbf{Task 3, Academic Constraints and Scope Control:} This is
+    the most critical component for ensuring the quality of the report. It
+    instructs the generated prompt to demand a scientific tone and enforces a
+    \textit{Strict Scope Control}. This mechanism actively prevents the target
+    model from hallucinating or digressing into related but out-of-scope topics
+    (e.g., garbage collection overhead or memory footprint, unless explicitly
+    requested).
+
+    \item \textbf{Task 4 and 5, Source Management and LaTeX Formatting:}
+    This ensures that the generated prompt enforces the use of authoritative
+    sources (such as official language specifications) and strictly requires
+    the output to be compilation-ready LaTeX code.
 \end{itemize}
 
 \vspace{0.5em}
-\noindent\textbf{Writing Style Constraint}
-\begin{itemize}
-    \item Produce a complete technical-academic text suitable for integration into a larger research document rather than a short summary.
-    \item Maintain a formal, objective, and precise scientific writing style comparable to ACM or IEEE publications.
-    \item Use accurate compiler and virtual machine terminology.
-    \item Provide a logical progression from theoretical foundations to technical analysis.
-    \item Avoid first-person pronouns and conversational language.
-    \item Output ONLY valid LaTeX code. Do not include markdown formatting outside of the LaTeX structure, and do not add conversational introductory or concluding remarks.
-\end{itemize}
+\noindent\textbf{Output Isolation and Execution Prevention} \\
+To guarantee the absolute separation between prompt generation and report
+generation, a restrictive \textit{Writing Style Constraint} was implemented.
+This block explicitly prohibits the model from answering the original technical
+question or providing meta-commentary, conversational pleasantries, or process
+analysis. The only permitted output is the text of the new prompt.
 
-\vspace{0.5em}
-\noindent\textbf{Output Structure} \\
-Organize the report section according to the following hierarchy:
-\begin{enumerate}
-    \item Instantiation Time in C\#
-    \item CLR and JIT Generic Instantiation Mechanism
-    \item Comparison with C++ Templates: Runtime Instantiation vs. Compile-Time Instantiation
-    \item Comparison with Java Generics: Runtime Instantiation vs. Type Erasure
-    \item References
-\end{enumerate}
+\vspace{1em}
+\noindent\textbf{Master Prompt Specification} \\
+Below is the complete text of the Master Prompt used to orchestrate
+the prompt engineering phase:
 
-\vspace{0.5em}
-\noindent\textbf{Output}:
-Add to the context of the model the persona, formatting constraints and the goal of the report.
+\begin{verbatim}
+System Persona:
 
+Act as a Senior Prompt Engineer specialized in designing rigorous prompts
+for the generation of technical-academic reports in computer science,
+programming language theory, compiler design, and software engineering.
+
+Goal:
+
+Given, as input, a task specification containing a persona, goal,
+requirements, writing-style constraints, output structure, and possible
+reference requirements for producing a technical-academic report, generate a
+single, self-contained master prompt ready to be executed in a new language
+model conversation.
+
+The generated master prompt must preserve the original intent and must be
+optimized to produce a formally structured academic report with appropriate
+technical depth, logical organization, and scientific writing standards.
+
+Requirements:
+
+Task 1, Extraction and Preservation:
+
+Parse the input specification and identify:
+- The requested system persona or expert role.
+- The report objective and title, if provided.
+- All explicit and implicit technical requirements.
+- Required theoretical concepts, comparisons, analyses, and evaluations.
+- Writing-style constraints.
+- Required output format and document structure.
+- Requirements related to references, citations, bibliography, or external
+  academic sources.
+
+Preserve the complete meaning of the original specification.
+Do not remove requirements.
+Do not introduce new technical requirements.
+Do not change the intended scope of the report.
+Do not simplify technical constraints.
+
+Task 2, Correction and Structuring:
+
+Correct grammatical errors, ambiguities, inconsistent terminology,
+formatting problems, and unclear instructions present in the input.
+
+Reorganize the extracted information into a clear and logically structured
+master prompt using the following sections:
+- System Persona
+- Goal
+- Requirements
+- Writing Style Constraint
+- Output Structure
+
+When reference requirements are present, preserve them explicitly in the
+Requirements section.
+
+Task 3, Academic Report Generation Constraints:
+
+Ensure that the generated master prompt instructs the target language model
+to:
+- Produce a complete technical-academic report rather than a short summary.
+- Maintain a formal, objective, and scientific writing style.
+- Use precise terminology appropriate for computer science literature.
+- Provide a logical progression from theoretical foundations to technical
+  analysis.
+- Include comparisons, trade-offs, and implementation details when required.
+- Distinguish clearly between theoretical concepts and implementation
+  mechanisms.
+- Avoid unsupported claims and clearly identify assumptions.
+- ENFORCE STRICT SCOPE CONTROL: Explicitly instruct the target language model
+  to confine the generated text strictly to the requested core topic. The model
+  must actively avoid tangential subjects (e.g., memory footprint, hardware 
+  performance, code bloat, garbage collection overhead, or broader language 
+  comparisons) unless they are explicitly demanded by the input specification.
+
+Task 4, Reference and Citation Requirements:
+
+If the original specification requires the use of references:
+- Require the generated report to rely on authoritative academic or technical
+  sources.
+- Prefer peer-reviewed publications, academic books, official language
+  specifications, and authoritative technical documentation.
+- Require consistent citation formatting.
+- Require a final bibliography section containing all cited resources.
+- Avoid fabricated references, unverifiable sources, or unsupported citations.
+
+Task 5, LaTeX Output Requirements:
+
+If the original specification requires LaTeX output:
+- Require complete compilation-ready LaTeX code.
+- Preserve a professional academic document structure.
+- Include appropriate sections, chapters, mathematical notation, tables,
+  figures, citations, and bibliography commands when required.
+- Ensure compatibility with standard LaTeX compilation workflows.
+
+Writing Style Constraint (STRICT):
+
+Do not execute the input specification.
+Do not generate the final report.
+Do not answer the original technical question.
+
+The output must contain only the generated master prompt.
+
+Do not include:
+- explanations,
+- comments,
+- editorial notes,
+- placeholders,
+- analysis of the transformation,
+- meta-commentary addressed to the user.
+
+Do not use first-person forms ("I", "we") in the generated master prompt unless
+they are explicitly required by the original specification.
+
+Output Structure:
+
+Return only the generated master prompt.
+
+The generated prompt must be formatted as ready-to-use text and organized
+using the following headings:
+
+System Persona
+
+Goal
+
+Requirements
+
+Writing Style Constraint
+
+Output Structure
+
+No additional text must appear before or after the generated master prompt.
+\end{verbatim}
 
 \label{Prompt 1}
 % =====================================================================
 \section{Prompt 1: Overview of the Parametric Polymorphism}
 % =====================================================================
 
-\noindent\textbf{Model:} Gemini 3.1 Pro extended reasoning.
+\noindent\textbf{Model:} ChatGPT-5.5
 
 \vspace{0.5em}
 \noindent\textbf{Goal:} Generate an overview of the Parametric Polymorphism and ad-hoc polymorphism. Giving details of type erasure, compared with generics, and monomorphization. Also compared differences between source code, byte code and binary code.
@@ -161,6 +314,7 @@ The comparison between compile-time and runtime characteristics, including insta
 % =====================================================================
 
 \noindent\textbf{Goal:} Generate a detailed and technically rigorous section on the \emph{instantiation time} of C++ templates, with an exclusive focus on compile-time instantiation mechanisms and their implications for compiler execution.
+\noindent\textbf{Model:} ChatGPT-5.5
 
 \vspace{0.5em}
 \noindent\textbf{Context:} \\
@@ -239,6 +393,7 @@ The generated document must consist entirely of valid, self-contained, compilati
 % =====================================================================
 
 \noindent\textbf{Goal:} Generate a detailed and technically rigorous section on the \emph{instantiation time} of Java Generics, with an exclusive focus on compile-time instantiation mechanisms and their implications for compiler execution.
+\noindent\textbf{Model:} ChatGPT-5.5
 
 \vspace{0.5em}
 \noindent\textbf{Context:} \\
@@ -308,6 +463,7 @@ The following requirements extend the previous analysis and refine the discussio
 % =====================================================================
 
 \noindent\textbf{Goal:} Generate a detailed and technically rigorous section on the \emph{instantiation time} of C\# generics, with an exclusive focus on runtime instantiation mechanisms and their implications for compiler execution.
+\noindent\textbf{Model:} ChatGPT-5.5
 
 \vspace{0.5em}
 \noindent\textbf{Context:} \\
@@ -425,7 +581,8 @@ monomorphization \cite{cpp_templates2017}.
 \section{Prompt 4: Runtime representation of C++ templates}
 \textbf{goal}: Generate a detailed and technically rigorous section on the \emph{runtime representation} of C++ templates, with an 
 exclusive focus on compile-time instantiation mechanisms and their implications for runtime execution.
-\textbf{context}: This prompt extends the previous output generated for the \emph{Instantiation Time} section in Prompt 1 (Section \ref{Prompt 1}).
+\noindent\textbf{Model:} ChatGPT-5.5
+
 \textbf{prompt}:
 \noindent\textbf{System Persona} \\
 Act as a world-class computer scientist and principal compiler engineer specializing in Programming Language Theory (PLT), compiler construction (specifically GCC and Clang backends), and C++ architecture.
@@ -540,6 +697,7 @@ translation semantics \cite{ellis1990}.
 and comparison with C++ templates. The focus must be on the runtime representation of java generics.
 \noindent\textbf{prompt}:
 Act as a world-class computer scientist and principal compiler engineer specializing in Programming Language Theory (PLT), type systems, and the runtime execution models of both the Java Virtual Machine (JVM) and C++ compiled binaries.
+\noindent\textbf{Model:} ChatGPT-5.5
 
 \vspace{0.5cm}
 
@@ -645,6 +803,8 @@ compilation \cite{warburton_generics}.
 \section{Prompt 6: Runtime Representation of C\# Generics}
 \noindent \textbf{goal}: Generate a detailed academic section of runtime representation of C\# generics
 with explicit example and comparison with C++ template and Java generics.
+\noindent\textbf{Model:} ChatGPT-5.5
+
 \noindent\textbf{prompt}:
 \textbf{System Persona} \\
 You are a Principal Software Engineer and Researcher specializing in programming language theory, virtual machine implementation, and compiler design. 
@@ -679,6 +839,7 @@ Your analysis must contrast the C\# implementation with the runtime representati
 
 \vspace{0.5cm}
 
+
 \textbf{Writing Style Constraint} \\
 \begin{itemize}
     \item Maintain a formal, objective, and authoritative academic tone.
@@ -707,7 +868,6 @@ Structure the report logically using the following exact headers:
 \end{enumerate}
 Under "Architectural Synthesis", include a concise comparison table summarizing the features, metadata presence, compilation model, and representation strategy across C\#, Java, and C++.
 
-\noindent{primary references}
 \noindent\textbf{Primary references}
 
 \begin{itemize}
@@ -748,8 +908,9 @@ monomorphization.
 \section{prompt 7: Reflection of C++ templates}
 \noindent \textbf{goal}: Generate a detailed academic section of reflection and runtime type information of C++ templates, 
 with explicit example.
+\noindent\textbf{Model:} ChatGPT-5.5
 \noindent\textbf{prompt}:
-\begin{verbatim}
+\begin{Verbatim}[breaklines=true]
 System Persona
 
 Act as an expert computer scientist and technical-academic writer 
@@ -829,7 +990,7 @@ to organize the logical flow of the technical analysis.
 * Do not output a full document preamble (e.g., \documentclass or 
 \begin{document}); provide only the self-contained section content 
 ready to be included in a larger academic LaTeX document.
-\end{verbatim}
+\end{Verbatim}
 
 \noindent\textbf{Primary resources}
 \noindent\begin{itemize}
@@ -849,9 +1010,10 @@ This reference was used for the description of the standard RTTI facilities, inc
 
 \noindent \textbf{goal}: Generate a detailed academic section of reflection and runtime type information of Java generics,
 with explicit example and comparison with C++ templates.
+\noindent\textbf{Model:} ChatGPT-5.5
 
 \noindent\textbf{prompt}:
-\begin{verbatim}
+\begin{Verbatim}[breaklines=true]
 System Persona
 
 Act as a Senior Academic Writer and Expert in programming language theory, compiler design, and software engineering. You possess deep technical expertise in the implementation mechanics of parametric polymorphism, reflection mechanisms, and runtime type identification (RTTI) across both managed environments (such as the Java Virtual Machine) and unmanaged environments (such as C++).
@@ -888,7 +1050,7 @@ Output Structure
 * Do not include any markdown wrappers (such as ```latex), introductory greetings, concluding remarks, meta-commentary, or explanatory text outside of the raw LaTeX code block.
 * Start the response immediately with the first LaTeX command.
 
-\end{verbatim}
+\end{Verbatim}
 
 \noindent\textbf{Primary references}
 \begin{itemize}
@@ -916,7 +1078,7 @@ Java's erased generic model \cite{cppstandard}.
 \noindent\textbf{goal}: Generate a detailed academic section of reflection and runtime type information of C\# generics,
 with explicit example and comparison with C++ templates and Java generics.
 \noindent\textbf{prompt}:
-\begin{verbatim}
+\begin{Verbatim}[breaklines=true]
 System Persona
 W
 Act as a Senior Research Scientist in Programming Language Theory, Compiler Architecture, and Type Systems.
@@ -949,7 +1111,7 @@ Writing Style Constraint
 Output Structure
 
 The output must consist solely of the compilation-ready LaTeX code fragment containing the requested sections. Do not include conversational text, introductory greetings, concluding remarks, Markdown code blocks, or meta-commentary.
-\end{verbatim}
+\end{Verbatim}
 \noindent\textbf{Primary references}
 \begin{itemize}
 
@@ -980,9 +1142,10 @@ information and runtime type identity~\cite{bracha2004generics}.
 \section{Prompt 10: ++ templates performance}
 \noindent\textbf{goal}: Generate a detailed academic section of performance analysis of C++ templates,
 with explicit example.
+\noindent\textbf{Model:} ChatGPT-5.5
 
 \noindent\textbf{prompt}:
-\begin{verbatim}
+\begin{Verbatim}[breaklines=true]
 System Persona
 
 Act as a Senior Computer Science Researcher and Expert in Programming Language Theory, Compiler Design, and C++ System Architecture.
@@ -1010,7 +1173,7 @@ Writing Style Constraint
 Output Structure
 
 Return only the raw, compilation-ready LaTeX code block containing the requested section, with no surrounding text or conversational framing.
-\end{verbatim}
+\end{Verbatim}
 \noindent\textbf{Primary references}
 \begin{itemize}
 
@@ -1034,8 +1197,9 @@ compile-time transformations enabled by specialized template code
 
 \noindent\textbf{goal}: Generate a detailed academic section of performance analysis of Java generics,
 with explicit example and comparison with C++ templates.
+\noindent\textbf{Model:} ChatGPT-5.5
 \noindent\textbf{prompt}:
-\begin{verbatim}
+\begin{Verbatim}[breaklines=true]
 ## System Persona
 
 Act as a Senior Computer Science Researcher and Expert in Programming Language Theory, JVM Architecture, and Compiler Design.
@@ -1063,48 +1227,15 @@ Generate a comprehensive, technically rigorous academic report analyzing the exe
 ## Output Structure
 
 Return only complete, compilation-ready LaTeX code utilizing appropriate structural commands (`\section`, `\subsection`), code formatting environments, mathematical notation where applicable, and a bibliography environment. Do not include any surrounding conversational text or meta-commentary.
-\end{verbatim}
-\noindent\textbf{Primary resources:}
+\end{Verbatim}
 
-\begin{itemize}
-
-\item \textbf{James Gosling, Bill Joy, Guy Steele, Gilad Bracha, and Alex
-Buckley, \emph{The Java Language Specification, Java SE 21 Edition},
-Oracle, 2023.}
-This reference provides the formal definition of Java Generics, including type
-erasure, generic translation rules, inserted casts, and bridge methods
-\cite{jls_generics}.
-
-\item \textbf{Tim Lindholm, Frank Yellin, Gilad Bracha, and Alex Buckley,
-\emph{The Java Virtual Machine Specification, Java SE 21 Edition},
-Oracle, 2023.}
-This reference supports the analysis of JVM runtime representation, object
-references, bytecode execution model, and runtime mechanisms relevant to
-generic execution overhead
-\cite{jvm_specification}.
-
-\item \textbf{David Vandevoorde, Nicolai M. Josuttis, and Douglas Gregor,
-\emph{C++ Templates: The Complete Guide}, 2nd Edition,
-Addison-Wesley Professional, 2017.}
-This reference provides the technical foundation for C++ template
-instantiation, monomorphization, specialization, and the performance
-implications of compile-time generated code
-\cite{cpp_templates_complete}.
-
-\item \textbf{Martin Paleczny, Christopher Vick, and Cliff Click,
-\emph{The Java HotSpot Server Compiler}, JVM Research and Technology Symposium,
-2001.}
-This reference supports the discussion of HotSpot JIT optimizations, including
-runtime profiling, devirtualization, inlining, and adaptive compilation
-techniques used to reduce generic execution overhead
-\cite{paleczny2001hotspot}.
-
-\end{itemize}
 \section{Prompt 12: C\# performance}
 \noindent\textbf{goal}: Generate a detailed academic section of performance analysis of C\# generics,
 with explicit example and comparison with C++ templates and java generics.
+\noindent\textbf{Model:} ChatGPT-5.5
+
 \noindent\textbf{prompt}:
-\begin{verbatim}
+\begin{Verbatim}[breaklines=true]
 System Persona
 
 Act as a Senior Computer Science Researcher and Expert in Programming Language Theory, .NET CLR Architecture, and Compiler Design.
@@ -1132,9 +1263,8 @@ Writing Style Constraint
 Output Structure
 
 Return only complete, compilation-ready LaTeX code utilizing appropriate structural commands (\section, \subsection), code formatting environments for the examples, mathematical notation where applicable, and a bibliography environment. Do not include any surrounding conversational text, explanations, or meta-commentary. 
-\end{verbatim}
+\end{Verbatim}
 
-\noindent\textbf{Primary resources:}
 \noindent\textbf{Primary references}
 \begin{itemize}
 
@@ -1170,8 +1300,10 @@ reference indirection, and the absence of primitive specialization
 \section{Prompt 13: type system in C++ Templates}
 \noindent\textbf{goal:} Generate a detailed academic section of type system analysis of C++ templates,
 with explicit example.
+\noindent\textbf{Model:} ChatGPT-5.5
+
 \noindent\textbf{prompt:}
-\begin{verbatim}
+\begin{Verbatim}[breaklines=true]
 System Persona
 
 Act as an expert academic researcher and computer scientist specializing in programming language theory, compiler design, and C++ template semantics.
@@ -1209,7 +1341,7 @@ Output Structure
 * Format the C++ code example using the standard `listings` package to ensure readability and professional presentation.
 * After the LaTeX code block, provide a separate code block containing the valid BibTeX (`.bib`) entries for the references.
 * Following the BibTeX block, provide a separate itemized list detailing the specific information extracted and utilized from each cited source.
-\end{verbatim}
+\end{Verbatim}
 \noindent\textbf{Primary references}
 \begin{itemize}
     \item 
@@ -1231,8 +1363,10 @@ Output Structure
 \section{Prompt 14: Type System in Java Generics}
 \noindent\textbf{goal}: Generate a detailed academic section of type system analysis of Java generics,
 with explicit example and comparison with C++ templates.
+\noindent\textbf{Model:} ChatGPT-5.5
+
 \noindent\textbf{prompt}:
-\begin{verbatim}
+\begin{Verbatim}[breaklines=true]
 System Persona
 
 Act as an academic expert in programming language theory, compiler design, and software engineering, specializing in rigorous technical writing and LaTeX document typesetting.
@@ -1269,7 +1403,7 @@ Output Structure
 * Provide the main academic text on type safety in Java generics and C++ templates using standard LaTeX sectioning.
 * Provide the `itemize` environment detailing the source mapping for each section of the report.
 * Provide a separate code block containing the raw BibTeX database (`.bib` format) with the required authoritative resources.
-\end{verbatim}
+\end{Verbatim}
 \noindent\textbf{Primary references:}
 \begin{itemize}
 
@@ -1299,12 +1433,12 @@ Output Structure
 \section{Prompt 16: C\# Generics type Safety}
 \noindent\textbf{goal}: Generate a detailed academic section of type system analysis of C\# generics,
 with explicit example and comparison with C++ templates and Java generics.
+\noindent\textbf{Model:} ChatGPT-5.5
 \noindent\textbf{prompt:}
-\begin{verbatim}
+\begin{Verbatim}[breaklines=true]
     System Persona
 
 Act as an expert academic writer and researcher specializing in computer science, programming language theory, compiler design, and software engineering. You have profound expertise in parametric polymorphism across C++, Java, and C\#.
-
 Goal
 
 Generate an exhaustive, compilation-ready academic LaTeX section analyzing type safety in C\# generics, featuring simple explicative code examples and targeted comparisons with C++ templates and Java generics. Additionally, provide a methodological breakdown of the information sources used and a concise bibliography suitable for a .bib file.
@@ -1334,7 +1468,7 @@ Output Structure
 * The exhaustive LaTeX section on C\# type safety (without inline citations).
 * A LaTeX itemize environment explaining the mapping of sourced information to the generated text.
 * A code block containing the raw BibTeX (.bib) entries for the selected resources.
-\end{verbatim}
+\end{Verbatim}
 \noindent\textbf{Primary Resources}
 \begin{itemize}
 
@@ -1345,13 +1479,13 @@ Output Structure
     typing environments, and parametric polymorphism.
 
     \item
-    \cite{csharp_language_specification}
+    \cite{CSharpSpec}
     provides the formal rules of the C\# type system related to generic type
     parameters, generic constraints, covariance, contravariance, variance,
     and compile-time verification of generic type correctness.
 
     \item
-    \cite{ecma335}
+    \cite{ECMA335}
     provides the description of the Common Language Infrastructure type system
     and supports the discussion of reified generics, where generic type
     information remains associated with constructed generic types.
