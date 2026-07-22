@@ -294,16 +294,20 @@ orthogonal dimensions:
 These dimensions form the basis for comparing homogeneous implementations based
 on type erasure with heterogeneous implementations based on reification or
 monomorphization.
-
-
-
-
-
-
 % =====================================================================
 % CHAPTER: C++ TEMPLATES
 % =====================================================================
 \chapter{C++ Templates}
+C++ implements parametric polymorphism through the \emph{template}
+mechanism, a compile-time construct that allows the definition of generic
+classes and functions parameterized over one or more types. Rather than
+producing a single generic runtime entity, the compiler generates an
+independent specialized implementation for each concrete type argument
+used by the program, a process known as monomorphization. This chapter
+examines when this instantiation occurs, how it shapes the runtime
+representation of specialized code, and the consequences this reified
+model has for performance, static type safety, and the limited runtime
+type information exposed through RTTI.
 
 \section{Instantiation Time}
 
@@ -868,1385 +872,353 @@ reflection system.
 % =====================================================================
 % CHAPTER: JAVA GENERICS
 % =====================================================================
-
 \chapter{Java Generics}
-
+Java implements parametric polymorphism through \emph{generics}, a
+compile-time mechanism that allows classes and methods to be parameterized
+over types while relying on \emph{type erasure} rather than
+specialization: generic type arguments are verified statically and then
+removed from the compiled representation, so that all parameterizations of
+a generic declaration share a single runtime implementation. This chapter
+discusses when this instantiation and erasure take place, what runtime
+representation results from it, and how this erased model affects
+execution performance, the preservation of static type safety, and the
+limits it imposes on runtime reflection.
 \section{Instantiation Time}
 
-Java Generics adopt a compilation strategy based on compile-time instantiation
-followed by type erasure. During compilation, the Java compiler associates
-concrete type arguments with generic declarations in order to perform static
-type checking. However, this association does not lead to the generation of a
-new specialized class representation.
+Java implements parametric polymorphism through a compile-time instantiation
+model based on \emph{type erasure}. During compilation, the compiler
+associates concrete type arguments with generic declarations for the sole
+purpose of static type checking; this association does not, however, produce
+a specialized runtime class. This contrasts directly with C++, where
+template instantiation triggers monomorphization and generates an
+independent specialization for every concrete type argument.
 
-This design differs fundamentally from the approach adopted by C++ templates.
-While Java uses instantiation only as a compile-time type verification
-mechanism, C++ performs template instantiation through monomorphization,
-generating a separate specialization for every concrete type argument.
+\subsection{Generic Declaration}
 
-\subsection{The Java Generic Instantiation Model}
-
-Consider the following generic declaration:
+Consider the following generic class:
 
 \begin{lstlisting}[language=Java]
 class Box<T> {
     private T value;
-
-    public T get() {
-        return value;
-    }
+    public T get() { return value; }
 }
 \end{lstlisting}
 
-When the compiler encounters:
+The compiler stores a single parameterized representation; unlike C++
+templates, no family of specializations will later be generated from it.
 
+% ---------------------------------------------------------------------
+
+\subsection{Instantiation Trigger}
+
+Instantiation occurs when the compiler encounters a concrete parameterized
+use:
+
+\begin{examplebox}
+\textbf{Example.}
 \begin{lstlisting}[language=Java]
-Box<String> box = new Box<String>();
+Box<String> box = new Box<>();
+Box<Integer> numbers = new Box<>();
 \end{lstlisting}
+The compiler associates $T = String$ and $T = Integer$ respectively for
+type-checking purposes. Unlike the C++ case, no distinct classes
+\texttt{Box<String>} or \texttt{Box<Integer>} exist afterward; both
+instantiations resolve to the same erased implementation.
+\end{examplebox}
 
-the type parameter $T$ is instantiated with the argument \texttt{String} for
-the purpose of compile-time verification. The compiler therefore checks that
-every operation involving \texttt{box} respects the constraint:
-
-\[
-T = String
-\]
-
-However, this instantiation does not generate a new runtime class:
-
-\[
-Box<String>
-\]
-
-Instead, Java produces a single generic class representation that is shared by
-all possible instantiations.
+% ---------------------------------------------------------------------
 
 \subsection{Type Erasure Pipeline}
 
-After generic type checking, the Java compiler applies type erasure. The type
-parameter is removed and replaced by its erasure according to the rules
-defined by the Java Language Specification.
+After compile-time verification, the compiler applies type erasure: an
+unbounded parameter \texttt{<T>} is replaced by \texttt{Object}, while a
+bounded parameter \texttt{<T extends Number>} is replaced by the erasure of
+its leftmost bound:
 
-For an unbounded parameter:
-
-\[
-<T>
-\]
-
-the erased type becomes:
-
-\[
-Object
-\]
-
-Therefore:
-
-\begin{lstlisting}[language=Java]
-class Box<T>
-\end{lstlisting}
-
-is transformed into a representation equivalent to:
-
+\begin{examplebox}
+\textbf{From previous example.}
 \begin{lstlisting}[language=Java]
 class Box {
-    Object value;
-
-    Object get()
+    private Object value;
+    public Object get() { return value; }
 }
 \end{lstlisting}
+\end{examplebox}
 
-At this point, Java has completed the generic instantiation process. No
-additional class corresponding to:
+At this point, no additional class corresponding to \texttt{Box<String>}
+exists; the generic parameter has been discarded from the representation.
 
-\[
-Box<String>
-\]
+% ---------------------------------------------------------------------
 
-exists in the JVM.
+\subsection{Compiler-Inserted Casts}
 
-\subsection{Instantiation with Type Bounds}
+Because generic parameters are removed before execution, the compiler
+inserts casts to preserve the semantics established during instantiation.
+The expression \texttt{String s = box.get();} compiles to a call returning
+\texttt{Object}, followed by an inserted \texttt{checkcast} instruction.
 
-When a Java generic parameter has a bound:
+% ---------------------------------------------------------------------
 
-\begin{lstlisting}[language=Java]
-class NumericBox<T extends Number>
-\end{lstlisting}
+\subsection{Completion of the Instantiation Process}
 
-the compiler verifies that every instantiation satisfies:
-
-\[
-T <: Number
-\]
-
-The bound also determines the erasure type. According to the Java Language
-Specification, the erasure of a type variable corresponds to the erasure of
-its leftmost bound.
-
-Therefore:
-
-\begin{lstlisting}[language=Java]
-NumericBox<Integer>
-NumericBox<Double>
-\end{lstlisting}
-
-are both translated into a representation equivalent to:
-
-\begin{lstlisting}[language=Java]
-NumericBox
-\end{lstlisting}
-
-with:
-
-\begin{lstlisting}[language=Java]
-Number value;
-\end{lstlisting}
-
-\subsection{Compiler Adaptation After Erasure}
-
-Because Java removes generic parameters before execution, the compiler must
-insert additional bytecode instructions to preserve the semantics established
-during compile-time instantiation.
-
-For example:
-
-\begin{lstlisting}[language=Java]
-String s = box.get();
-\end{lstlisting}
-
-is compiled into a call returning:
-
-\begin{lstlisting}[language=Java]
-Object get()
-\end{lstlisting}
-
-followed by an inserted cast:
-
-\begin{lstlisting}
-checkcast java/lang/String
-\end{lstlisting}
-
-Across all these mechanisms, the Java instantiation model consistently
-contrasts with C++ template compilation: whereas C++ monomorphization
-generates a distinct specialization for every concrete type argument, with
-type information encoded directly into each generated implementation, Java
-instantiation is entirely a compile-time verification step that resolves to
-a single shared runtime representation, requiring the compiler to insert
-casts and rely on erasure rules precisely because no specialized,
-type-specific code is produced.
+Instantiation terminates entirely during compilation: type parameters are
+verified statically, then erased before bytecode generation. The defining
+characteristic of Java parametric polymorphism is therefore that
+instantiation is exclusively a compile-time verification step resolving to
+a single shared runtime representation, in direct contrast to the
+per-argument specialization performed by C++ monomorphization.
 
 % =====================================================================
 
 \section{Runtime Representation}
 
-Java Generics are implemented through a \emph{type erasure} model, in which
-generic type parameters are removed from the executable representation before
-runtime. The generic abstraction exists only during compilation, where the
-compiler performs static type checking, verifies type constraints, and
-generates bytecode compatible with the non-generic JVM execution model.
+Java generics are implemented through type erasure: generic type parameters
+are removed from the executable representation before runtime, and
+different parameterizations of the same generic class share a single
+runtime implementation. Source-level types \texttt{List<String>} and
+\texttt{List<Integer>} therefore correspond to the same JVM runtime class,
+\texttt{List}, with no separate metadata, layout, or method implementation
+maintained per argument.
 
-The fundamental design principle of Java Generics is that different
-parameterizations of the same generic class share a single runtime
-representation. For example, the source-level types
+\subsection{Erasure of Generic Parameters}
 
-\[
-List<String> \quad \text{and} \quad List<Integer>
-\]
+Given \texttt{class Box<T> \{ T value; T get(); \}}, erasure produces
+\texttt{class Box \{ Object value; Object get(); \}}. Formally,
+$Box{<}T{>} \rightarrow Box{<}Object{>}$ for an unbounded variable, so
+$RuntimeType(Box{<}String{>}) = RuntimeType(Box{<}Integer{>}) = Box$: the
+generic parameter plays no role in runtime type identity.
 
-do not correspond to two different classes inside the JVM. Instead, both are
-represented by the same runtime class:
+\subsection{Object Layout and Storage}
 
-\[
-List
-\]
-
-The JVM runtime does not maintain separate metadata, object layouts, or method
-implementations for different generic arguments.
-
-\subsection{Erasure of Generic Type Parameters}
-
-The Java compiler transforms parameterized types by replacing type variables
-with their erasures. According to the Java Language Specification, the
-erasure of an unbounded type variable is \texttt{Object}, while a bounded type
-variable is replaced by the erasure of its first bound.
-
-Consider the generic declaration:
-
-\begin{lstlisting}[language=Java]
-class Box<T> {
-    private T value;
-
-    T get() {
-        return value;
-    }
-}
-\end{lstlisting}
-
-After erasure, the runtime representation is equivalent to:
-
-\begin{lstlisting}[language=Java]
-class Box {
-    private Object value;
-
-    Object get() {
-        return value;
-    }
-}
-\end{lstlisting}
-
-The JVM therefore executes a representation where the type variable $T$ has
-been replaced by its erased type. The runtime system has no knowledge that the
-original source-level declaration used a generic parameter.
-
-Formally, the transformation can be expressed as:
-
-\[
-Box<T> \rightarrow Box<Object>
-\]
-
-for an unbounded type variable.
-
-Consequently, the runtime identity of an object is determined only by the
-erased class:
-
-\[
-RuntimeType(Box<String>) =
-RuntimeType(Box<Integer>) =
-Box
-\]
-
-The generic parameter is not part of the runtime type identity.
-
-\subsection{Object Layout and Storage Representation}
-
-Because Java Generics do not create specialized runtime classes, generic
-objects use the same memory representation as ordinary JVM objects.
-
-A generic reference field:
-
-\[
-T\ value
-\]
-
-is represented after erasure as:
-
-\[
-Object\ value
-\]
-
-The JVM stores a reference to an object rather than a value specialized for
-the concrete generic type.
-
-For example, an instance of:
-
-\[
-ArrayList<String>
-\]
-
-and an instance of:
-
-\[
-ArrayList<Integer>
-\]
-
-have identical internal structural representations. The JVM does not allocate
-a specialized array of strings or integers for these collections. The generic
-container stores references using the standard JVM reference representation.
-
-This differs from a reified implementation, such as C++ template
-monomorphization, where each concrete instantiation may generate a distinct
-object layout and specialized machine code. In Java, the same erased
-representation is reused for all parameterizations.
+Since no specialized classes are generated, a generic field \texttt{T value}
+is represented after erasure as \texttt{Object value}, storing a reference
+rather than a value specialized for the concrete argument.
+\texttt{ArrayList<String>} and \texttt{ArrayList<Integer>} therefore share
+an identical internal structure, unlike C++ monomorphization, where each
+instantiation may produce a distinct object layout.
 
 \subsection{Inserted Runtime Casts}
 
-Since generic parameters are removed before execution, the compiler inserts
-runtime casts whenever a value retrieved from a generic structure must be
-treated as a more specific type.
-
-Example:
-
-\begin{lstlisting}[language=Java]
-String s = list.get(0);
-\end{lstlisting}
-
-The erased execution model becomes equivalent to:
-
-\begin{lstlisting}[language=Java]
-Object tmp = list.get(0);
-String s = (String) tmp;
-\end{lstlisting}
-
-At the bytecode level, the JVM executes a \texttt{checkcast} instruction.
-
-The runtime sequence is therefore:
-
-\[
-\text{retrieve erased reference}
-\rightarrow
-\text{check actual object type}
-\rightarrow
-\text{use typed reference}
-\]
-
-The runtime verification concerns the concrete class of the object, not the
-generic argument. The JVM checks whether the object is a \texttt{String}, but
-it does not verify the existence of an original \texttt{List<String>}
-instantiation.
+Retrieval from a generic structure requires an inserted cast:
+\texttt{String s = list.get(0);} becomes \texttt{Object tmp = list.get(0);
+String s = (String) tmp;}, executed via the \texttt{checkcast} bytecode
+instruction. The JVM verifies the concrete class of the retrieved object,
+not the existence of the original parameterized type.
 
 \subsection{Bridge Methods}
 
-Type erasure can modify method signatures and break overriding relationships
-at the JVM level. To preserve polymorphism, the Java compiler generates
-synthetic \emph{bridge methods}.
+Erasure can break overriding relationships at the JVM level. Given
+\texttt{Node<T>.get():T} overridden by \texttt{StringNode.get():String},
+erasure reduces the parent signature to \texttt{get():Object}; the compiler
+therefore generates a synthetic bridge method \texttt{Object get() \{ return
+get(); \}} to preserve polymorphic dispatch.
 
-Example:
+\subsection{Primitive Types}
 
-\begin{lstlisting}[language=Java]
-class Node<T> {
-    T get();
-}
-
-class StringNode extends Node<String> {
-    String get();
-}
-\end{lstlisting}
-
-Before erasure, the overriding relationship is:
-
-\[
-Node<T>.get():T
-\]
-
-overridden by:
-
-\[
-StringNode.get():String
-\]
-
-After erasure, the parent method becomes:
-
-\[
-get():Object
-\]
-
-while the child method remains:
-
-\[
-get():String
-\]
-
-Since the JVM method descriptors differ, the compiler generates a bridge:
-
-\begin{lstlisting}[language=Java]
-Object get() {
-    return get();
-}
-\end{lstlisting}
-
-The bridge method adapts the specialized method to the erased representation,
-allowing normal JVM method dispatch to operate correctly.
-
-Bridge methods are therefore a direct runtime consequence of the decision to
-implement generics through erasure rather than through specialized generated
-types.
-
-\subsection{Primitive Types and Generic Representation}
-
-Java Generics are restricted to reference types because erased generic
-parameters are represented using reference-compatible types.
-
-A primitive instantiation:
-
-\[
-List<int>
-\]
-
-is not permitted.
-
-Instead, the corresponding wrapper type must be used:
-
-\[
-List<Integer>
-\]
-
-The runtime representation therefore becomes:
-
-\[
-int
-\rightarrow
-Integer
-\rightarrow
-Object
-\]
-
-The primitive value is converted into an object representation through
-boxing, and retrieved values require unboxing.
-
-This behavior follows directly from the erased representation: since every
-generic parameter is mapped to a reference type, the JVM cannot create a
-specialized generic representation containing primitive values.
+Because erased parameters are represented as reference types, primitive
+instantiation (\texttt{List<int>}) is disallowed; wrapper types
+(\texttt{List<Integer>}) are required instead, so that
+$int \rightarrow Integer \rightarrow Object$, with boxing and unboxing
+performed on insertion and retrieval.
 
 \subsection{Comparison with C++ Templates}
 
-C++ Templates are based on a different runtime representation strategy:
-\emph{monomorphization}. Unlike Java Generics, C++ compilers generate a
-separate representation for each concrete template instantiation.
-
-This difference explains why Java uses one erased runtime representation:
-
-\[
-List<T> \rightarrow List<Object>
-\]
-
-while C++ can generate independent specialized representations:
-
-\[
-Vector<int>,\ Vector<double>,\ldots
-\]
-
-The Java approach avoids multiple generated implementations but sacrifices
-runtime visibility of generic parameters and requires mechanisms such as
-casts, boxing, and bridge methods. C++ preserves concrete type information in
-the generated executable by creating specialized versions, but this may
-increase generated code size.
-
-The central distinction is therefore:
-
-\[
-\boxed{
-\text{Java Generics preserve abstraction through erasure}
-}
-\]
-
-whereas:
-
-\[
-\boxed{
-\text{C++ Templates preserve abstraction through specialization}
-}
-\]
-
-For Java, the generic type parameter is a compile-time concept. For C++,
-template instantiation becomes part of the generated runtime representation.
+Java preserves abstraction through erasure, sharing one runtime
+representation ($List{<}T{>} \rightarrow List{<}Object{>}$) across all
+instantiations; C++ preserves abstraction through specialization, generating
+independent representations ($Vector{<}int{>}$, $Vector{<}double{>}$, \dots)
+for each argument. Java avoids multiple generated implementations at the
+cost of runtime visibility of generic parameters, requiring casts, boxing,
+and bridge methods; C++ retains concrete type information at the cost of
+increased code size.
 
 % =====================================================================
 
 \section{Performance Characteristics}
 
-The execution performance of generic programming is strongly determined by
-the translation strategy adopted by the language implementation. Java
-Generics and C++ templates represent two fundamentally different approaches:
-Java employs a \emph{type erasure} model, whereas C++ relies on compile-time
-instantiation and \emph{monomorphization}. These strategies produce different
-runtime representations and consequently different execution
-characteristics.
-
-Java Generics are implemented through type erasure, as specified by the Java
-Language Specification. During compilation, generic type parameters are
-removed from the generated bytecode and replaced by their upper bounds,
-typically \texttt{Object}. Generic information is preserved only in metadata
-attributes used by the compiler and runtime tools, but it does not determine
-the actual machine representation of executed objects.
-
-For example, the generic class:
-
-\begin{lstlisting}[language=Java]
-class Container<T> {
-
-    T value;
-
-    T get() {
-        return value;
-    }
-}
-\end{lstlisting}
-
-is translated approximately into:
-
-\begin{lstlisting}[language=Java]
-class Container {
-
-    Object value;
-
-    Object get() {
-        return value;
-    }
-}
-\end{lstlisting}
-
-Consequently, the JVM executes a single implementation shared by all generic
-instantiations. A \texttt{Container<String>} and a \texttt{Container<Integer>}
-therefore use the same erased runtime representation.
-
-C++ templates follow a different execution model. Template instantiation
-occurs during compilation, and the compiler generates a specialized version
-of the code for every concrete type used by the program. For example:
-
-\begin{lstlisting}[language=C++]
-template <typename T>
-class Container {
-
-    T value;
-
-public:
-
-    T get() {
-        return value;
-    }
-};
-\end{lstlisting}
-
-instantiated as:
-
-\begin{lstlisting}[language=C++]
-Container<int> a;
-Container<double> b;
-\end{lstlisting}
-
-produces two independent implementations specialized for \texttt{int} and
-\texttt{double}. This process, known as monomorphization, allows the compiler
-to exploit complete type information during optimization.
-
-Therefore, Java preserves a uniform runtime representation by removing
-generic type information, while C++ exchanges additional generated code for
-type-specific machine implementations.
+The performance profile of Java generics follows directly from type
+erasure: a single shared implementation executes for all parameterizations,
+so the JVM operates on \texttt{Object} references rather than
+specialized, type-tailored code.
 
 \subsection{Memory Representation and Pointer Indirection}
 
-The main performance consequence of Java type erasure is that generic
-structures operate primarily on object references rather than direct values.
-In the JVM object model, reference variables contain pointers to heap
-objects, requiring additional memory accesses compared with direct value
-storage.
-
-For example:
-
-\begin{lstlisting}[language=Java]
-ArrayList<Integer> values = new ArrayList<>();
-
-values.add(10);
-
-int x = values.get(0);
-\end{lstlisting}
-
-does not store the integer value directly inside the container. Instead, the
-runtime representation consists of a reference to an \texttt{Integer} object:
-
-\[
-\text{Array reference}
-\rightarrow
-\text{Object reference}
-\rightarrow
-\text{Heap object containing value}
-\]
-
-Accessing an element therefore requires additional pointer dereferencing and
-memory accesses.
-
-In contrast, C++ templates combined with value semantics allow direct storage
-of objects inside contiguous memory regions. For example:
-
-\begin{lstlisting}[language=C++]
-std::vector<int> values;
-\end{lstlisting}
-
-stores integer values directly:
-
-\[
-\text{int}
-\rightarrow
-\text{int}
-\rightarrow
-\text{int}
-\rightarrow
-\text{int}
-\]
-
-The absence of intermediate references reduces memory latency and improves
-the ability of the processor to exploit cache locality (a systematic
-comparison with C++ is given in
-Section~\ref{sec:java_cpp_perf_comparison}).
+Generic structures operate primarily on references rather than direct
+values. \texttt{ArrayList<Integer>.get(0)} does not store the integer
+directly; it dereferences an \texttt{Integer} object on the heap. C++
+templates, by contrast, allow direct contiguous storage
+(\texttt{std::vector<int>}), avoiding this indirection and improving cache
+locality.
 
 \subsection{Boxing and Unboxing Overhead}
 
-A significant limitation of Java Generics is the inability to directly
-instantiate generic types with primitive values. Generic parameters must
-always refer to object types; therefore primitive values require wrapper
-objects.
+Since generic parameters must be reference types, primitive values require
+wrapper objects: \texttt{values.add(5)} requires boxing
+($int \rightarrow Integer$), and retrieval requires unboxing. This
+introduces allocation, additional memory accesses, and conversion costs
+absent from C++, which manipulates primitives natively within
+instantiations.
 
-For example:
+\subsection{Casts and Bridge Methods at Runtime}
 
-\begin{lstlisting}[language=Java]
-ArrayList<Integer> values = new ArrayList<>();
+Type erasure requires inserted \texttt{checkcast} verification on
+retrieval, and synthetic bridge methods to preserve overriding under
+erasure; both introduce a small runtime cost, though modern JIT compilers
+frequently eliminate redundant checks and inline bridge calls.
 
-values.add(5);
-\end{lstlisting}
+\subsection{Cache Locality}
 
-requires automatic boxing:
+Reference-based storage scatters logical elements across the heap,
+increasing cache misses during traversal relative to the contiguous value
+layout achievable through C++ template instantiation.
 
-\[
-int \rightarrow Integer
-\]
+\subsection{Adaptive JIT Optimization}
 
-while retrieving the value requires unboxing:
+The HotSpot JVM mitigates these costs through runtime profiling:
+devirtualization, inline caching, and escape analysis (enabling scalar
+replacement of non-escaping allocations) recover some of the performance
+lost to erasure. These optimizations remain speculative and
+profile-dependent, unlike the ahead-of-time specialization guaranteed by
+C++ monomorphization.
 
-\[
-Integer \rightarrow int
-\]
-
-The boxing process introduces additional execution costs:
-
-\begin{itemize}
-
-    \item creation of wrapper objects when values are not reused;
-    \item additional memory accesses caused by object references;
-    \item increased memory footprint due to object metadata;
-    \item conversion operations during boxing and unboxing.
-
-\end{itemize}
-
-These overheads are particularly relevant for numerical workloads, where
-large collections of primitive values are processed repeatedly (C++
-templates avoid this limitation entirely, as discussed in
-Section~\ref{sec:java_cpp_perf_comparison}).
-
-\subsection{Runtime Effects of Type Erasure: Casts and Bridge Methods}
-
-Type erasure also requires Java to preserve type safety through inserted
-casts. Since the JVM executes erased bytecode, the compiler introduces
-runtime checks when retrieving values from generic structures.
-
-For example:
-
-\begin{lstlisting}[language=Java]
-String value = list.get(0);
-\end{lstlisting}
-
-is internally equivalent to:
-
-\begin{lstlisting}[language=Java]
-String value = (String) list.get(0);
-\end{lstlisting}
-
-The cast introduces an additional runtime verification step. Modern JVM
-implementations can frequently eliminate redundant checks through JIT
-optimization, but unpredictable execution paths may prevent complete
-removal.
-
-Another consequence of type erasure is the generation of synthetic bridge
-methods. Consider:
-
-\begin{lstlisting}[language=Java]
-interface Box<T> {
-
-    T get();
-
-}
-
-class StringBox implements Box<String> {
-
-    public String get() {
-        return "value";
-    }
-
-}
-\end{lstlisting}
-
-After erasure, the interface method becomes:
-
-\begin{lstlisting}[language=Java]
-Object get();
-\end{lstlisting}
-
-Therefore, the compiler generates an additional bridge method:
-
-\begin{lstlisting}[language=Java]
-public Object get() {
-
-    return get();
-
-}
-\end{lstlisting}
-
-The additional invocation layer can introduce a small runtime overhead.
-However, HotSpot can often remove this cost through method inlining when the
-runtime profile provides sufficient information.
-
-\subsection{Cache Locality and Data Layout}
-
-The memory layout produced by generic structures strongly influences cache
-behavior.
-
-A Java container containing reference types generally follows the layout:
-
-\[
-\text{Container storage}
-\rightarrow
-\text{Reference}
-\rightarrow
-\text{Heap object}
-\rightarrow
-\text{Value}
-\]
-
-Objects may be distributed across different regions of memory, reducing
-spatial locality. During sequential traversal, the processor may need to load
-multiple independent cache lines because consecutive logical elements are not
-necessarily physically adjacent.
-
-This increases cache misses and reduces effective memory bandwidth, in
-contrast with the contiguous value storage achievable through C++ templates
-(Section~\ref{sec:java_cpp_perf_comparison}).
-
-\subsection{JVM Just-In-Time Optimization Techniques}
-
-Although Java Generics introduce runtime overheads, modern JVM
-implementations attempt to reduce these costs through adaptive
-optimization.
-
-The HotSpot JVM performs runtime profiling and dynamically generates
-optimized machine code for frequently executed paths. Relevant techniques
-include:
-
-\begin{itemize}
-
-    \item \textbf{Devirtualization}: replacing dynamic method resolution
-    with direct calls when the receiver type is predictable.
-
-    \item \textbf{Inline caching}: recording observed runtime types at call
-    sites to optimize repeated method invocations.
-
-    \item \textbf{Escape analysis}: determining whether objects remain local
-    to a method and enabling scalar replacement or elimination of
-    unnecessary allocations.
-
-\end{itemize}
-
-For example, if an object created inside a method never escapes, the JVM may
-replace the object allocation with direct scalar values, reducing memory
-access overhead. However, these optimizations remain speculative and depend
-on runtime profiling, unlike the ahead-of-time specialization guaranteed by
-C++ templates.
-
-\subsection{Comparison with C++ Templates}
-\label{sec:java_cpp_perf_comparison}
-
-The preceding subsections isolate individual runtime costs introduced by
-Java's type-erasure model; this section consolidates them into a single
-systematic comparison with C++ templates.
-
-At the representation level, Java containers store object references,
-introducing pointer indirection and additional memory accesses, whereas C++
-templates instantiated with concrete types allow direct, contiguous value
-storage. This layout difference directly affects cache behavior: Java's
-reference-based objects can be scattered across the heap, increasing cache
-misses during traversal, while C++ value layouts enable efficient cache-line
-utilization, hardware prefetching, and vectorization.
-
-At the level of primitive handling, Java's inability to instantiate generics
-with primitive types forces boxing and unboxing whenever numeric values are
-stored in generic structures, adding allocation and conversion costs absent
-from C++, where a template instantiated with a primitive type manipulates
-its native representation directly.
-
-At the level of code generation, the two models also diverge on instruction
-cache behavior. Java type erasure generates a single implementation shared
-among all generic instantiations, keeping executable size small but
-preventing the generated code from exploiting concrete type information. C++
-monomorphization instead generates a separate implementation per
-instantiated type: this increases executable size and can introduce
-instruction-cache pressure (``code bloat''), but enables stronger
-optimizations such as complete function inlining, constant propagation, and
-architecture-specific code generation.
-
-Finally, the two models differ in \emph{when} optimization decisions are
-made. C++ performs optimization during ahead-of-time compilation, with the
-compiler having complete information about data representation, memory
-layout, and available operations before the program ever runs. Java follows
-a dynamic model instead, in which the JVM profiles the running program and
-generates JIT-optimized machine code based on observed behavior.
-Consequently, C++ provides predictable, guaranteed specialization, while Java
-provides adaptive optimization capable of exploiting information that is
-only available at runtime.
-
-\subsection{Comparative Performance Summary}
+\subsection{Comparative Summary}
 
 \begin{table}[h]
 \centering
 \begin{tabular}{|p{4cm}|p{5cm}|p{5cm}|}
-
 \hline
-\textbf{Characteristic} &
-\textbf{Java Generics} &
-\textbf{C++ Templates}
-\\
+\textbf{Characteristic} & \textbf{Java Generics} & \textbf{C++ Templates} \\
 \hline
-
-Generic representation &
-Type erasure with shared runtime representation &
-Compile-time monomorphization
-\\
+Representation & Type erasure, shared runtime class & Compile-time monomorphization \\
 \hline
-
-Primitive handling &
-Boxing and unboxing required &
-Direct native representation
-\\
+Primitives & Boxing/unboxing required & Direct native representation \\
 \hline
-
-Memory access &
-Reference indirection and pointer chasing &
-Direct contiguous storage
-\\
+Memory access & Reference indirection & Direct contiguous storage \\
 \hline
-
-Dispatch &
-Potential runtime dispatch &
-Static compile-time dispatch
-\\
+Optimization & Adaptive JIT & Ahead-of-time compiler \\
 \hline
-
-Optimization &
-Adaptive JIT optimization &
-AOT compiler optimization
-\\
+Cache locality & Reduced by object layout & Improved via value layout \\
 \hline
-
-Cache locality &
-Reduced by object-based layouts &
-Improved through value layouts
-\\
-\hline
-
 \end{tabular}
-
 \caption{Runtime performance comparison between Java Generics and C++ templates.}
-
 \end{table}
 
 % =====================================================================
 
 \section{Type Safety}
 
-Type safety is a fundamental property of statically typed programming
-languages and defines the ability of a type system to prevent invalid
-operations on values before program execution. In the context of parametric
-polymorphism, type safety requires that abstract type parameters can be
-substituted with concrete types without introducing operations that violate
-the constraints established by the program.
-
-A sound type system guarantees that every expression accepted by the
-compiler respects the typing rules of the language. This property is
-traditionally described through two fundamental principles:
-
-\begin{itemize}
-
-    \item
-    \textit{Progress}: a well-typed program cannot reach a state where an
-    undefined operation caused by a type mismatch must be performed;
-
-    \item
-    \textit{Preservation}: the evaluation of a well-typed expression
-    preserves its type correctness.
-
-\end{itemize}
-
-Parametric polymorphism extends these guarantees by allowing the definition
-of algorithms and data structures independently from specific types.
-However, the implementation strategy adopted by a language determines how
-type information is preserved during compilation and how the type system
-guarantees correctness.
-
-The implementation strategy adopted by Java and C++ differs in how type
-information is preserved after compilation; this distinction is examined in
-detail in Section~\ref{sec:java_cpp_type_safety_comparison}, once the
-static type checking rules of Java Generics have been introduced.
-
-\subsection{Static Type Checking in Java Generics}
-
-Java Generics extend the Java type system by introducing parameterized
-types. A generic declaration defines a family of related types whose
-correctness depends on the constraints imposed on their type parameters.
-
-Consider the following generic class:
-
-\begin{lstlisting}[language=Java]
-class Box<T> {
-
-    private T value;
-
-    public void set(T value) {
-        this.value = value;
-    }
-
-    public T get() {
-        return value;
-    }
-}
-\end{lstlisting}
-
-The type parameter \texttt{T} represents an abstract type that is determined
-when the generic class is instantiated.
-
-For example:
-
-\begin{lstlisting}[language=Java]
-Box<String> textBox = new Box<>();
-
-textBox.set("Java");
-
-String value = textBox.get();
-\end{lstlisting}
-
-The compiler interprets \texttt{Box<String>} as a type where every use of
-\texttt{T} must be compatible with \texttt{String}. Therefore, the following
-operation is rejected:
-
-\begin{lstlisting}[language=Java]
-textBox.set(10);
-\end{lstlisting}
-
-because the argument type \texttt{Integer} does not satisfy the type
-constraint established by the parameterization.
-
-The type system therefore prevents the creation of inconsistent states:
-after the declaration of \texttt{Box<String>}, every value inserted into the
-container must conform to the declared type argument.
-
-The same principle applies to method invocations. If a generic method
-requires a specific type relationship, the compiler verifies that all
-actual arguments satisfy the required constraints before accepting the
-program.
-
-For example:
-
-\begin{lstlisting}[language=Java]
-static <T> T identity(T value) {
-
-    return value;
-}
-
-
-String result = identity("example");
-\end{lstlisting}
-
-The compiler infers the type argument and ensures that the inferred
-substitution preserves the validity of the expression.
-
-\subsection{Bounded Type Parameters and Generic Constraints}
-
-Java generics also support bounded type parameters, allowing the type
-system to restrict the set of admissible substitutions.
-
-For example:
-
-\begin{lstlisting}[language=Java]
-class Maximum<T extends Comparable<T>> {
-
-    T max(T a, T b) {
-
-        return a.compareTo(b) > 0 ? a : b;
-    }
-}
-\end{lstlisting}
-
-The declaration:
-
-\begin{lstlisting}[language=Java]
-<T extends Comparable<T>>
-\end{lstlisting}
-
-introduces a constraint stating that every valid type argument must provide
-a comparison operation compatible with the generic algorithm.
-
-The compiler verifies this constraint when the generic type is
-instantiated. A type that does not satisfy the required relationship is
-rejected statically.
-
-Therefore, Java generic constraints express properties that must hold for
-every valid substitution of the type parameter, allowing the type system to
-reason about generic programs independently from concrete types.
-
-\subsection{Type Erasure and Preservation of Static Type Safety}
-
-Java implements generics through type erasure. From the perspective of the
-type system, this means that generic parameters are used during static
-analysis but are not represented as independent types after the compilation
-process.
-
-The important property is that erasure does not remove the guarantees
-provided by the type system. Generic correctness is established before the
-erasure transformation occurs.
-
-For example:
-
-\begin{lstlisting}[language=Java]
-List<String> names = new ArrayList<>();
-
-names.add("Alice");
-
-String name = names.get(0);
-\end{lstlisting}
-
-The compiler verifies that:
-
-\begin{itemize}
-
-    \item
-    only values compatible with \texttt{String} can be inserted into the
-    list;
-
-    \item
-    every retrieval operation is interpreted as producing a value of type
-    \texttt{String}.
-
-\end{itemize}
-
-After the generic verification phase, the implementation no longer depends
-on the explicit parameter \texttt{String}. However, the soundness argument
-of the type system is based on the fact that all possible uses of the
-generic abstraction have already been checked.
-
-Consequently, Java separates the concepts of:
-
-\begin{itemize}
-
-    \item
-    \textit{static type correctness}, which is guaranteed by generic type
-    checking;
-
-    \item
-    \textit{type representation}, which is determined after the generic
-    analysis phase.
-
-\end{itemize}
-
-The type-erasure strategy therefore preserves type safety by shifting the
-responsibility for correctness entirely to compile-time verification.
-
-\subsection{Reification-Based Type Safety in C++ Templates}
-
-C++ templates adopt a different approach based on type reification. Instead
-of removing type parameters after checking, the compiler instantiates
-templates using concrete type arguments.
-
-Consider:
-
-\begin{lstlisting}[language=C++]
-template <typename T>
-class Box {
-
-private:
-
-    T value;
-
-public:
-
-    void set(T value) {
-        this->value = value;
-    }
-
-    T get() {
-        return value;
-    }
-};
-\end{lstlisting}
-
-A concrete use:
-
-\begin{lstlisting}[language=C++]
-Box<int> integerBox;
-
-integerBox.set(10);
-
-int value = integerBox.get();
-\end{lstlisting}
-
-causes the compiler to analyse the template using the concrete type
-\texttt{int}. Every operation involving \texttt{T} is therefore checked
-against the actual instantiated type.
-
-If an invalid operation is attempted:
-
-\begin{lstlisting}[language=C++]
-Box<int> box;
-
-box.set("text");
-\end{lstlisting}
-
-the compiler rejects the program because the instantiated type \texttt{int}
-does not accept a string value.
-
-From the perspective of type safety, C++ templates preserve the complete
-type information during template instantiation. The compiler verifies the
-correctness of each concrete specialization directly rather than checking an
-abstract erased representation.
-
-\subsection{Comparison of Java Generics and C++ Templates}
-\label{sec:java_cpp_type_safety_comparison}
-
-Java Generics and C++ Templates both provide compile-time guarantees through
-parametric polymorphism, but they preserve type information in different
-ways.
-
-Java follows the model:
-
-\begin{verbatim}
-Generic abstraction
-        |
-        v
-Static type checking
-        |
-        v
-Type erasure
-\end{verbatim}
-
-The type system verifies every substitution before removing the generic
-parameter from the resulting representation.
-
-C++ follows the model:
-
-\begin{verbatim}
-Template abstraction
-        |
-        v
-Instantiation with concrete type
-        |
-        v
-Static type checking of specialization
-\end{verbatim}
-
-The compiler retains the concrete type throughout template processing and
-verifies operations directly on the instantiated form.
-
-Therefore, the fundamental distinction is not whether type safety is
-provided, but how the type system associates abstract parameters with
-concrete types. Java achieves safety through static verification before
-erasure, whereas C++ achieves safety through compile-time reification of
-concrete types.
+Java generics extend the static type system with parameterized types,
+guaranteeing that substitutions of a type parameter cannot introduce
+operations violating the constraints established at declaration.
+
+\subsection{Static Type Checking}
+
+Given \texttt{class Box<T> \{ T value; void set(T v); T get(); \}}, the
+compiler treats \texttt{Box<String>} as a type in which every use of
+\texttt{T} must be compatible with \texttt{String}; \texttt{textBox.set(10)}
+is therefore rejected statically, since \texttt{Integer} does not satisfy
+the parameterization.
+
+\subsection{Bounded Type Parameters}
+
+Bounds such as \texttt{<T extends Comparable<T>>} restrict admissible
+substitutions to types providing the required operations (here,
+\texttt{compareTo}), and the compiler rejects any instantiation that fails
+to satisfy the bound.
+
+\subsection{Erasure and Preservation of Safety}
+
+Erasure does not weaken these guarantees: correctness is established before
+erasure occurs. For \texttt{List<String> names; names.add("Alice"); String
+s = names.get(0);}, the compiler verifies both insertion and retrieval
+against \texttt{String} before the generic parameter is discarded from the
+representation. Java therefore separates \emph{static type correctness},
+guaranteed by generic checking, from \emph{type representation}, determined
+only afterward by erasure.
+
+\subsection{Comparison with C++ Reification}
+
+C++ templates preserve type information through reification: each
+instantiation is checked against its concrete type directly, as in
+\texttt{Box<int> box; box.set("text");}, rejected because \texttt{int} does
+not accept a string. Java instead verifies every substitution before
+erasure removes the parameter. The distinction is therefore not whether
+type safety is provided, but at which stage type information is
+consumed: Java achieves safety through static verification prior to
+erasure, while C++ achieves safety through compile-time reification of
+concrete types that persist into the generated representation.
 
 % =====================================================================
 
 \section{Reflection and Runtime Type Information}
 
-The implementation of parametric polymorphism in Java is fundamentally based
-on \emph{type erasure}. Unlike languages adopting a reified representation of
-generic types, the Java compiler translates every parameterized type into a
-non-generic representation before bytecode generation. During compilation,
-each type parameter is replaced by its upper bound if one is declared, or by
-\texttt{java.lang.Object} otherwise. In addition, the compiler automatically
-inserts the necessary type casts to preserve static type safety and
-generates bridge methods when required to maintain binary compatibility
-under inheritance and method overriding.
+Java's type-erasure model determines the boundaries of its runtime
+reflection capabilities: since all parameterizations of a generic
+declaration share one erased runtime class, reflection can only observe
+the erased representation, never the original concrete type argument.
 
-Consequently, generic type parameters exist exclusively within the static
-type system enforced by the compiler. The generated JVM bytecode contains no
-runtime distinction between different instantiations of the same generic
-declaration. For example, the declarations \texttt{List<String>} and
-\texttt{List<Integer>} are both translated into the same runtime
-representation corresponding to the raw type \texttt{java.util.List}. The
-Java Virtual Machine therefore executes a single runtime implementation
-regardless of the concrete type arguments that were present in the source
-program.
+\subsection{The \texttt{Class} Object and Erasure}
 
-This compilation strategy implies that parameterized type arguments are not
-represented as independent runtime entities. The JVM preserves metadata
-describing the generic declaration itself through the class file's
-\emph{Signature} attribute, allowing reflective APIs to reconstruct generic
-declarations under specific circumstances. However, the runtime
-representation of ordinary object instances contains only the erased type,
-meaning that dynamically allocated objects do not retain the concrete type
-arguments with which they were instantiated.
+\texttt{List<String>} and \texttt{List<Integer>} both correspond to the
+same runtime class, \texttt{java.util.List}; the JVM retains generic
+declaration metadata in the class file's \texttt{Signature} attribute, but
+individual object instances carry only the erased type.
 
-\subsection{Reflection and RTTI Limitations}
+\subsection{RTTI Limitations}
 
-Java's Runtime Type Information (RTTI) mechanism is centered on the
-\texttt{java.lang.Class} object associated with every loaded class. Since
-all parameterized instantiations of a generic class are erased to the same
-runtime type, reflection operates exclusively on the erased representation
-rather than on the original parameterized form.
+Because parameterized arguments are erased, expressions such as
+\texttt{obj instanceof List<String>} are disallowed by the Java Language
+Specification, and \texttt{getClass()} returns identical class objects for
+\texttt{ArrayList<String>} and \texttt{ArrayList<Integer>}: the JVM has no
+runtime information capable of distinguishing them.
 
-A direct consequence is that parameterized generic types cannot participate
-in runtime type tests. The Java Language Specification explicitly prohibits
-expressions such as
+\subsection{Type Tokens}
 
-\begin{lstlisting}[language=Java]
-obj instanceof List<String>
-\end{lstlisting}
-
-because the runtime system has no information capable of distinguishing
-\texttt{List<String>} from \texttt{List<Integer>}. Allowing such expressions
-would incorrectly suggest that the JVM could recover type arguments that no
-longer exist after compilation.
-
-Similarly, the \texttt{getClass()} method always returns the runtime class
-corresponding to the erased type. Two objects instantiated with different
-generic arguments therefore produce identical runtime class descriptors.
-
-\begin{lstlisting}[language=Java]
-import java.util.*;
-
-public class ReflectionExample {
-
-    public static void main(String[] args) {
-
-        List<String> strings = new ArrayList<>();
-        List<Integer> integers = new ArrayList<>();
-
-        System.out.println(strings.getClass());
-        System.out.println(integers.getClass());
-
-        System.out.println(strings.getClass()
-                == integers.getClass());
-
-        // Compilation error:
-        // if (strings instanceof List<String>) { }
-    }
-
-}
-\end{lstlisting}
-
-The program produces equivalent runtime class objects for both lists,
-demonstrating that the generic arguments have been removed during
-compilation. The comparison evaluates to \texttt{true} because both
-variables reference instances of the same erased runtime class.
-
-Reflection APIs such as \texttt{Class}, \texttt{Method}, and \texttt{Field}
-therefore identify only erased runtime types during ordinary object
-inspection. Although generic declarations remain partially accessible
-through reflective interfaces such as \texttt{java.lang.reflect.Type} and
-\texttt{ParameterizedType}, this information originates from generic
-signatures stored in class metadata rather than from the runtime
-representation of individual object instances. Consequently, reflection
-cannot determine the concrete type argument associated with an arbitrary
-generic object unless that information has been preserved explicitly by the
-programmer.
-
-\subsection{Type Tokens as an Explicit Runtime Representation}
-
-Because type erasure removes concrete generic arguments from ordinary
-runtime objects, Java libraries frequently employ \emph{type tokens} to
-preserve type information explicitly. A type token consists of passing a
-\texttt{Class<T>} object alongside the generic value, thereby making the
-runtime type available independently of the erased generic parameter.
-
-The following example illustrates this approach.
-
-\begin{lstlisting}[language=Java]
-public class Box<T> {
-
-    private final Class<T> type;
-    private final T value;
-
-    public Box(Class<T> type, T value) {
-        this.type = type;
-        this.value = value;
-    }
-
-    public Class<T> getType() {
-        return type;
-    }
-
-    public T getValue() {
-        return value;
-    }
-
-    public static void main(String[] args) {
-
-        Box<String> box = new Box<>(String.class, "Hello");
-
-        System.out.println(box.getType().getName());
-
-        if (box.getType() == String.class) {
-            System.out.println("String detected.");
-        }
-    }
-
-}
-\end{lstlisting}
-
-The runtime type information in this example is not recovered from the
-generic parameter itself but from the explicitly supplied
-\texttt{Class<String>} object. This pattern is extensively employed by
-serialization frameworks, dependency injection containers, persistence
-libraries, and reflection-based infrastructures that require runtime
-knowledge of application types despite Java's erased implementation of
-generics.
+To recover runtime type information despite erasure, Java libraries pass an
+explicit \texttt{Class<T>} object alongside the generic value (a
+\emph{type token}), as in \texttt{Box(Class<T> type, T value)}, allowing
+frameworks such as serializers and dependency injectors to query the
+concrete type independently of the erased generic parameter.
 
 \subsection{Comparison with C++ Template RTTI}
 
-The reflection semantics of Java differ fundamentally from those of C++
-because the two languages adopt distinct implementation strategies for
-parametric polymorphism.
-
-C++ templates are implemented through \emph{monomorphization}. During
-compilation, every template specialization generates an independent
-concrete type with its own layout, member functions, and associated runtime
-type metadata. Consequently, specializations such as \texttt{std::vector<int>}
-and \texttt{std::vector<double>} constitute distinct runtime types rather
-than different views of a shared implementation.
-
-When Run-Time Type Information is enabled, the C++ runtime associates each
-polymorphic specialization with its own RTTI structures. Facilities such as
-\texttt{typeid} and \texttt{dynamic\_cast} therefore operate on specialized
-concrete types generated by template instantiation. Each specialization
-possesses an independent \texttt{std::type\_info} object corresponding to
-its unique runtime identity.
-
-Java follows the opposite approach. All parameterized instantiations of a
-generic declaration are translated into a single erased runtime class
-represented by one shared \texttt{java.lang.Class} object. Reflection
-therefore exposes the identity of the generic declaration after erasure
-rather than the original parameterized instantiation appearing in the
-source code.
-
-The distinction is summarized as follows:
-
-\begin{itemize}
-    \item Java implements parametric polymorphism through type erasure,
-          causing all parameterized instantiations of a generic class to
-          share a single runtime type.
-
-    \item Java reflection and RTTI operate exclusively on erased runtime
-          classes, preventing direct runtime discrimination between
-          different generic arguments.
-
-    \item C++ implements templates through monomorphization, generating
-          distinct concrete types for every specialization.
-
-    \item C++ RTTI associates independent runtime metadata with each
-          specialization, enabling facilities such as \texttt{typeid} and
-          \texttt{dynamic\_cast} to distinguish specialized template types
-          directly.
-\end{itemize}
-
-These contrasting implementation strategies illustrate the fundamental
-trade-off between preserving runtime type identity through reification, as
-in C++, and reducing runtime type diversity through type erasure, as
-adopted by the Java Virtual Machine.
+C++ monomorphization generates an independent concrete type--and
+independent RTTI metadata--for every specialization, so \texttt{typeid} and
+\texttt{dynamic\_cast} can distinguish \texttt{Vector<int>} from
+\texttt{Vector<double>} directly. Java's erasure model instead collapses
+all parameterizations into a single \texttt{Class} object, so reflection
+exposes only the identity of the generic declaration after erasure, never
+the parameterized instantiation present in the source. This contrast
+illustrates the underlying trade-off: C++ reification preserves runtime
+type identity per specialization, while Java erasure minimizes runtime type
+diversity at the cost of that same visibility.
 % =====================================================================
 % CHAPTER: C# GENERICS
 % =====================================================================
-
 \chapter{C\# Generics}
-
+C\# implements parametric polymorphism through \emph{generics}, adopting a
+runtime-oriented model in which the Common Language Runtime (CLR)
+preserves generic type parameters as metadata and instantiates concrete
+specializations only when required during execution, rather than during
+source compilation. This chapter examines when this runtime instantiation
+occurs, how the CLR combines specialization for value types with code
+sharing for reference types, and how this reified, JIT-driven model
+influences performance, static type safety, and the extensive runtime
+reflection capabilities it enables.
 \section{Instantiation Time}
 
-C\# generics adopt a runtime-oriented instantiation model that differs fundamentally
-from both the compile-time monomorphization strategy of C++ templates and the type
-erasure strategy of Java generics. The defining characteristic of the C\# approach is
-that generic type definitions are compiled before execution, while the generation of
-their concrete executable representation is delayed until runtime by the Common
-Language Runtime (CLR) and its Just-In-Time (JIT) compiler.
+C\# generics adopt a runtime-oriented instantiation model, distinct from both
+the compile-time monomorphization of C++ templates and the compile-time
+erasure of Java generics. Generic definitions are compiled ahead of
+execution, but their concrete executable representation is generated only at
+runtime by the Common Language Runtime (CLR) and its Just-In-Time (JIT)
+compiler.
 
-In C\#, generic declarations are not immediately expanded into specialized versions
-during compilation. Instead, the C\# compiler translates generic classes and methods
-into Common Intermediate Language (CIL), preserving generic parameters as metadata
-entities. The resulting assembly contains a generic type definition together with
-information about its type parameters and constraints, but it does not necessarily
-contain native code for each possible generic instantiation.
+\subsection{Generic Definition}
 
-For example, the generic definition:
+The C\# compiler translates a generic declaration into Common Intermediate
+Language (CIL), preserving type parameters as metadata rather than expanding
+them:
 
 \begin{lstlisting}[language=CSharp]
 class Container<T>
@@ -2255,171 +1227,59 @@ class Container<T>
 }
 \end{lstlisting}
 
-is compiled once into a generic CLI type definition. The compiler does not generate
-separate implementations such as:
+No specialized implementations such as \texttt{Container<int>} or
+\texttt{Container<double>} are generated at this stage; the assembly
+contains a single open generic definition.
 
-\begin{lstlisting}[language=CSharp]
-Container<int>
-Container<double>
-Container<string>
-\end{lstlisting}
+% ---------------------------------------------------------------------
 
-at compilation time. The concrete instantiation is postponed until execution.
+\subsection{Instantiation Trigger}
 
-\subsection{CLR and JIT Generic Instantiation Mechanism}
+Instantiation occurs when the CLR resolves a concrete constructed type
+during execution:
 
-The instantiation process begins when the CLR loads an assembly containing a generic
-definition. At this stage, the runtime knows the existence of the generic type but
-does not necessarily generate machine code for any concrete specialization.
-
-A concrete generic instantiation is created when program execution requires a specific
-constructed type. For example, when the runtime encounters:
-
+\begin{examplebox}
+\textbf{Example.}
 \begin{lstlisting}[language=CSharp]
 Container<int> c;
 \end{lstlisting}
+The CLR resolves \texttt{Container<T>} together with the argument
+\texttt{int}, producing the constructed type \texttt{Container<int>}. Only
+when native code is required does the JIT compiler translate the
+corresponding CIL into machine instructions.
+\end{examplebox}
 
-the CLR resolves the generic definition \texttt{Container<T>} together with the type
-argument \texttt{int}. This produces a runtime representation of the constructed
-generic type \texttt{Container<int>}.
+The instantiation timeline is: compiler emits generic CIL $\rightarrow$
+assembly loaded by the CLR $\rightarrow$ constructed type requested at
+execution $\rightarrow$ CLR materializes it $\rightarrow$ JIT generates
+native code when required.
 
-Only when executable code for this instantiation is required does the JIT compiler
-translate the corresponding CIL into native machine instructions. Therefore, the
-timeline of C\# generic instantiation can be summarized as:
+% ---------------------------------------------------------------------
 
-\begin{enumerate}
-    \item The C\# compiler generates a generic CIL definition.
-    \item The assembly is loaded by the CLR.
-    \item A concrete generic instantiation is requested during execution.
-    \item The CLR creates the constructed generic type.
-    \item The JIT compiler generates native code when required.
-\end{enumerate}
+\subsection{Hybrid Specialization Strategy}
 
-Consequently, C\# generics are instantiated at runtime rather than during source
-compilation.
+The JIT does not always generate an independent implementation per
+instantiation. For reference types, since all references share a compatible
+representation, a single implementation can be reused across
+\texttt{List<string>}, \texttt{List<object>}, \texttt{List<MyClass>}. For
+value types, differing memory layouts require the JIT to generate separate
+specializations: \texttt{List<int>} and \texttt{List<double>} trigger
+distinct JIT specialization events. The model is therefore hybrid: runtime
+instantiation always occurs, but reference types favor code sharing while
+value types trigger specialization.
 
-The CLR does not necessarily create a completely independent native implementation for
-every generic instantiation. Instead, the JIT compiler applies different strategies
-depending on the category of the type argument.
+% ---------------------------------------------------------------------
 
-For reference types, the CLR can usually share the same generated native code between
-different instantiations because all reference types have compatible managed reference
-representations. Therefore, instantiations such as:
+\subsection{Comparison with C++ and Java}
 
-\begin{lstlisting}[language=CSharp]
-List<string>
-List<object>
-List<MyClass>
-\end{lstlisting}
-
-may reuse a single JIT-generated implementation.
-
-For value types, the situation is different. Value types have different memory
-layouts and sizes, meaning that a single shared implementation cannot always be used.
-Therefore, the CLR JIT compiler generates specialized native code for different
-value-type instantiations:
-
-\begin{lstlisting}[language=CSharp]
-List<int>
-List<double>
-\end{lstlisting}
-
-represent separate JIT specialization events.
-
-Thus, the C\# instantiation model is hybrid: runtime instantiation occurs in both
-cases, but reference types generally use runtime code sharing, whereas value types
-trigger runtime specialization.
-
-\subsection{Comparison with C++ Templates: Runtime Instantiation vs Compile-Time Instantiation}
-
-The C\# runtime instantiation model differs from the C++ template model primarily
-because the moment at which specialization occurs is different.
-
-C++ templates use compile-time instantiation, commonly described as
-monomorphization. When the compiler encounters:
-
-\begin{lstlisting}[language=C++]
-Vector<int>
-Vector<double>
-\end{lstlisting}
-
-it generates separate concrete implementations during compilation. The executable
-produced by the compiler already contains the specialized versions before execution.
-
-The timeline is therefore:
-
-\begin{adjustbox}{max width=\linewidth}
-$
-\text{Template Definition}
-\rightarrow
-\text{Compile-Time Instantiation}
-\rightarrow
-\text{Native Code Generation}
-\rightarrow
-\text{Execution}
-$
-\end{adjustbox}
-
-In contrast, the C\# timeline is:
-
-\begin{adjustbox}{max width=\linewidth}
-$
-\text{Generic Definition}
-\rightarrow
-\text{CIL Generation}
-\rightarrow
-\text{Runtime Instantiation}
-\rightarrow
-\text{JIT Compilation}
-\rightarrow
-\text{Execution}
-$
-\end{adjustbox}
-
-The essential difference is that C++ performs specialization ahead of execution,
-whereas C\# delays specialization until the runtime environment determines that a
-specific generic instantiation is required.
-
-\subsection{Comparison with Java Generics: Runtime Instantiation vs Type Erasure}
-
-Java generics follow a fundamentally different model based on type erasure. During
-Java compilation, generic parameters are removed and replaced by their erasures.
-Consequently, the Java Virtual Machine does not instantiate generic types at runtime.
-
-For example:
-
-\begin{lstlisting}[language=Java]
-List<String>
-List<Integer>
-\end{lstlisting}
-
-are compiled into the same erased representation:
-
-\begin{lstlisting}[language=Java]
-List
-\end{lstlisting}
-
-The JVM executes a single non-specialized implementation, and no runtime generic
-instantiation event occurs.
-
-The timeline of Java generics is therefore:
-
-\begin{adjustbox}{max width=\linewidth}
-$
-\text{Generic Source Code}
-\rightarrow
-\text{Compile-Time Erasure}
-\rightarrow
-\text{Bytecode Generation}
-\rightarrow
-\text{Execution}
-$
-\end{adjustbox}
-
-This differs from C\#, where the generic definition survives compilation and concrete
-instantiation is performed during execution.
-
-Therefore, the three models can be summarized as:
+C++ performs specialization ahead of execution (Template Definition
+$\rightarrow$ Compile-Time Instantiation $\rightarrow$ Native Code
+$\rightarrow$ Execution); Java erases parameters at compile time with no
+runtime instantiation event (Generic Source $\rightarrow$ Erasure
+$\rightarrow$ Bytecode $\rightarrow$ Execution); C\# instead delays
+specialization until execution (Generic Definition $\rightarrow$ CIL
+$\rightarrow$ Runtime Instantiation $\rightarrow$ JIT $\rightarrow$
+Execution).
 
 \begin{table}[h]
 \centering
@@ -2434,317 +1294,88 @@ Java & Compile time & Type erasure, no specialization \\
 \end{tabular}
 \end{table}
 
-The defining property of C\# generics is therefore not merely the preservation of
-generic information, but the placement of the instantiation event: generic types are
-materialized by the runtime system when execution requires them, with the JIT compiler
-acting as the specialization mechanism.
+The defining property of C\# generics is therefore the placement of the
+instantiation event at runtime, with the JIT compiler acting as the
+specialization mechanism.
 
 % =====================================================================
 
 \section{Runtime Representation}
 
-C\# generics provide a runtime implementation of parametric polymorphism based on
-\emph{reification}. In a reified generic system, information about generic type
-parameters is preserved after compilation and remains available to the execution
-environment.
+C\# generics implement parametric polymorphism through \emph{reification}:
+generic type information is preserved after compilation and remains
+available to the execution environment, combined with selective JIT
+specialization. The pipeline is: C\# Source $\rightarrow$ CIL + Metadata
+$\rightarrow$ CLR Generic Instantiation $\rightarrow$ JIT Compilation
+$\rightarrow$ Native Code.
 
-From a theoretical perspective, parametric polymorphism allows a program component
-to operate independently from the concrete types on which it is instantiated. A
-generic definition can be represented as:
+\subsection{CIL Metadata Representation}
 
-\[
-G\langle T\rangle
-\]
-
-where $T$ is a type variable that can later be replaced by a concrete type argument.
-However, the concept of parametric polymorphism does not define how generic
-abstractions are represented at runtime. The implementation requires decisions about
-metadata representation, code generation, object layout, and execution mechanisms.
-
-The CLR implements generics through a hybrid model that combines runtime reification
-with selective specialization. Generic definitions are preserved inside compiled
-assemblies, while the final executable representation is generated dynamically by
-the Just-In-Time (JIT) compiler.
-
-Conceptually, the C\# compilation pipeline can be represented as:
-
-\begin{adjustbox}{max width=\linewidth}
-$
-\text{C\# Source}
-\rightarrow
-\text{CIL + Metadata}
-\rightarrow
-\text{CLR Generic Instantiation}
-\rightarrow
-\text{JIT Compilation}
-\rightarrow
-\text{Native Code}
-$
-\end{adjustbox}
-
-This architecture allows the runtime to preserve generic type identity while
-deciding dynamically whether a particular instantiation requires a specialized
-implementation or whether an existing implementation can be shared.
-
-\subsection{CLR Execution Engine and CIL Metadata Representation}
-
-The first stage of the CLR generic implementation occurs during compilation. The C\#
-compiler translates source code into \emph{Common Intermediate Language} (CIL) and
-generates metadata according to the Common Language Infrastructure (CLI) specification
-defined by ECMA-335.
-
-Unlike Java bytecode after type erasure, the generated assembly preserves explicit
-information about generic declarations. A generic type is represented as an open
-generic definition containing formal type parameters.
-
-For example:
-
-\[
-\texttt{List<T>}
-\]
-
-is stored as a generic type definition rather than as a concrete implementation.
-
-The CLR metadata system contains dedicated structures for representing generic
-relationships. The most relevant metadata tables include:
-
-\begin{itemize}
-    \item \texttt{GenericParam}, which stores information about generic parameters;
-    \item \texttt{GenericParamConstraint}, which stores constraints associated with
-    generic parameters;
-    \item \texttt{TypeSpec}, which represents constructed types;
-    \item \texttt{MethodSpec}, which represents constructed generic methods.
-\end{itemize}
-
-These structures allow the CLR loader and execution engine to reconstruct the
-relationship between a generic definition and its concrete arguments.
-
-For example, the runtime can represent:
-
-\[
-\texttt{List<T>}
-\rightarrow
-\texttt{List<int>}
-\]
-
-as an explicit construction relationship, preserved as part of the runtime type
-system rather than resolved away as in a type-erasure model.
+The compiler generates CIL and CLI metadata (ECMA-335) preserving explicit
+generic declarations: \texttt{List<T>} is stored as an open generic type
+definition, not a concrete implementation. Dedicated metadata tables --
+\texttt{GenericParam}, \texttt{GenericParamConstraint}, \texttt{TypeSpec},
+\texttt{MethodSpec} -- let the CLR reconstruct the relationship between a
+generic definition and its concrete arguments, e.g.\
+$\texttt{List<T>} \rightarrow \texttt{List<int>}$.
 
 \subsection{Runtime Instantiation and JIT Compilation}
 
-A fundamental characteristic of CLR generics is that instantiation occurs at runtime
-rather than during the initial compilation phase. The compiler emits generic
-definitions, while the CLR creates concrete representations when a closed constructed
-type is required.
-
-A generic definition:
-
-\[
-G\langle T\rangle
-\]
-
-becomes a runtime constructed type:
-
-\[
-G\langle U\rangle
-\]
-
-where $U$ is a concrete type argument.
-
-For example:
-
-\[
-\texttt{Dictionary<TKey,TValue>}
-\]
-
-may generate runtime instantiations such as:
-
-\[
-\texttt{Dictionary<int,string>}
-\]
-
-or:
-
-\[
-\texttt{Dictionary<Guid,Object>}
-\]
-
-The CLR execution engine resolves these constructed types and provides the necessary
-information to the JIT compiler. The JIT compiler then generates native machine code
-according to the characteristics of the supplied type arguments, performing this
-instantiation step as part of runtime execution rather than during compilation.
+A generic definition $G\langle T\rangle$ becomes a runtime constructed type
+$G\langle U\rangle$ only when required; \texttt{Dictionary<TKey,TValue>} may
+generate instantiations such as \texttt{Dictionary<int,string>} or
+\texttt{Dictionary<Guid,Object>} at runtime, with the JIT generating native
+code according to the supplied arguments.
 
 \subsection{Value-Type Specialization}
 
-When a generic type is instantiated with a value type, the CLR generally produces a
-specialized native implementation for that concrete type. Value types such as
-\texttt{int}, \texttt{double}, or user-defined structures have their own memory
-layouts and representation requirements. Consequently, sharing a single machine-code
-implementation between unrelated value types would require additional abstraction
-mechanisms.
-
-For example:
-
-\[
-\texttt{List<int>}
-\]
-
-and:
-
-\[
-\texttt{List<double>}
-\]
-
-require different representations of their stored elements. Therefore, the JIT
-compiler generates specialized code:
-
-\[
-JIT(\texttt{List<int>})
-=
-NativeCode_{int}
-\]
-
-and:
-
-\[
-JIT(\texttt{List<double>})
-=
-NativeCode_{double}
-\]
-
-The generated implementations contain concrete type information and operate directly
-on the corresponding value representation, produced by the CLR at runtime rather than
-by the compiler ahead of execution.
+Value types have distinct memory layouts, so the JIT generates specialized
+code per instantiation:
+$JIT(\texttt{List<int>}) = NativeCode_{int}$,
+$JIT(\texttt{List<double>}) = NativeCode_{double}$, each operating directly
+on the corresponding representation.
 
 \subsection{Reference-Type Code Sharing}
 
-Generic instantiations based on reference types follow a different execution strategy.
-Because all reference types share a common object-reference representation inside the
-CLR, the runtime can reuse the same native implementation for multiple generic
-instantiations.
+Because reference types share a uniform object-reference representation,
+the CLR can reuse a single implementation, $NativeCode_{reference}$, across
+instantiations such as \texttt{List<string>} and \texttt{List<object>},
+supplying type-specific information through runtime execution-engine
+structures rather than duplicating code.
 
-For example:
+\subsection{Runtime Generic Dictionaries}
 
-\[
-\texttt{List<string>}
-\]
-
-and:
-
-\[
-\texttt{List<object>}
-\]
-
-may share the same generated machine code.
-
-Conceptually, instead of producing:
-
-\[
-JIT(\texttt{List<string>})
-=
-NativeCode_{string}
-\]
-
-and:
-
-\[
-JIT(\texttt{List<object>})
-=
-NativeCode_{object}
-\]
-
-the CLR can generate a shared implementation:
-
-\[
-NativeCode_{reference}
-\]
-
-where runtime-specific information is supplied through additional execution-engine
-structures.
-
-This mechanism provides a balance between specialization and code reuse: the CLR
-avoids generating an independent implementation for every reference-type
-instantiation, while still retaining the exact generic type arguments needed to
-preserve type safety at runtime.
-
-\subsection{Runtime Dictionaries and Method Tables}
-
-To support shared generic implementations, the CLR uses runtime data structures that
-provide information about concrete generic arguments. These structures are commonly
-described as generic dictionaries or runtime generic contexts.
-
-When shared machine code executes, operations requiring type-specific information
-can access these runtime structures to resolve:
-
-\begin{itemize}
-    \item type descriptors;
-    \item method addresses;
-    \item field layouts;
-    \item interface implementations.
-\end{itemize}
-
-This mechanism is conceptually related to dictionary passing techniques used in
-implementations of parametric polymorphism. The generated code remains generic,
-while additional runtime information supplies the missing concrete type details --
-a mechanism that has no equivalent in either C++ template instantiation, where all
-parameters are resolved before execution, or Java's type-erasure model, where
-generic parameters are removed before bytecode execution rather than resolved at
-run time.
+Shared implementations rely on runtime generic dictionaries/contexts to
+resolve type descriptors, method addresses, field layouts, and interface
+implementations at execution time -- a dictionary-passing-like mechanism
+with no equivalent in C++ (resolved before execution) or Java (erased
+before execution).
 
 \subsection{Runtime Type Identity}
 
-A defining property of CLR reification is that constructed generic types maintain
-their runtime identity. The CLR considers different generic instantiations as distinct
-runtime types.
-
-Therefore:
-
-\[
-RuntimeType(\texttt{List<int>})
-\neq
-RuntimeType(\texttt{List<string>})
-\]
-
-This capability is fundamentally different from Java, where:
-
-\[
-RuntimeType(\texttt{List<String>})
-=
-RuntimeType(\texttt{List<Integer>})
-=
-\texttt{List}
-\]
-
-after erasure.
-
-C++ occupies a different position. Concrete template specializations may participate
-in RTTI if they correspond to runtime types, but the original template definition is
-not preserved as a runtime entity. The executable contains information about concrete
-types rather than about the generic abstraction that produced them. The reflection
-system built on top of this runtime type identity is discussed in
-Section~\ref{sec:csharp_reflection}.
+Constructed generic types retain distinct runtime identity:
+$RuntimeType(\texttt{List<int>}) \neq RuntimeType(\texttt{List<string>})$,
+unlike Java where both erase to the same \texttt{List}. C++ specializations
+may participate in RTTI as concrete types, but the original template
+definition itself is not preserved as a runtime entity.
 
 \subsection{Architectural Comparison}
 
-The runtime representation strategies can be summarized as follows:
-
 \begin{table}[h]
 \centering
-\begin{tabular}{|p{2.4cm}|p{3.1cm}|p{3.4cm}|p{3.1cm}|}
+\begin{tabular}{|p{2.3cm}|p{2.9cm}|p{3.1cm}|p{2.9cm}|}
 \hline
 Feature & C\# Generics & Java Generics & C++ Templates \\
 \hline
 Generic model & Reification & Type Erasure & Monomorphization \\
 \hline
-Metadata presence & Preserved in CLR & Removed from JVM execution & Not available \\
+Metadata & Preserved in CLR & Removed at execution & Not available \\
 \hline
-Instantiation time & Runtime/JIT & Compile-time only & Compile-time \\
+Instantiation & Runtime/JIT & Compile-time only & Compile-time \\
 \hline
-Code generation & Specialization and sharing & Single erased bytecode & Native specialization \\
+Code generation & Specialize + share & Single erased code & Native specialization \\
 \hline
-Runtime identity & Generic arguments preserved & Generic arguments removed & Concrete types only \\
-\hline
-Generic runtime object & Yes & No & No \\
+Runtime identity & Arguments preserved & Arguments removed & Concrete types only \\
 \hline
 \end{tabular}
 \caption{Comparison of generic runtime representation models.}
@@ -2754,893 +1385,193 @@ Generic runtime object & Yes & No & No \\
 
 \section{Performance Characteristics}
 
-C\# generics adopt a runtime reification model implemented by the .NET Common
-Language Runtime (CLR). Unlike Java Generics, where generic information is
-removed through type erasure, C\# generic type parameters are preserved inside
-the Common Intermediate Language (CIL) metadata and remain available during
-execution. This allows the runtime environment to
-distinguish different generic instantiations and apply different execution
-strategies depending on the concrete type.
-
-The CLR combines generic reification with Just-In-Time (JIT) compilation.
-Generic classes and methods are initially compiled into a type-independent CIL
-representation. When a concrete instantiation is required, the JIT compiler
-generates native machine code according to the characteristics of the involved
-type. Therefore, C\# generics do not correspond to a purely compile-time
-expansion mechanism as in C++ templates, but they are also not completely
-erased as in Java.
-
-The CLR execution strategy depends mainly on whether the generic parameter is
-a value type or a reference type:
+C\# generics combine runtime reification with JIT compilation: type
+parameters survive into CIL metadata, and the execution strategy depends on
+whether the argument is a value type (specialized native code) or a
+reference type (shared native code):
 
 \[
 \text{Generic<T> execution} =
 \begin{cases}
-\text{specialized native code} & \text{if } T \text{ is a value type}\\
-\text{shared native code} & \text{if } T \text{ is a reference type}
+\text{specialized code} & T \text{ value type}\\
+\text{shared code} & T \text{ reference type}
 \end{cases}
 \]
 
-For value types such as \texttt{int}, \texttt{float}, or user-defined
-structures, the JIT compiler generates specialized implementations because
-different value types have different sizes, alignment requirements, and calling
-conventions. This allows direct manipulation of the actual data representation
-without additional indirection.
+This hybrid model sits between C++'s full specialization and Java's fully
+erased execution.
 
-For reference types, instead, the CLR can share the same native implementation
-between different instantiations because object references have a uniform
-runtime representation. The execution engine maintains the required runtime type
-information through internal generic context structures, avoiding the need to
-generate duplicated machine code for every reference type.
+\subsection{Value-Type Instantiations}
 
-This hybrid model provides a compromise between the complete specialization of
-C++ templates and the erased execution model of Java Generics.
+For value-type instantiations, elements are stored directly inside the
+containing structure. A \texttt{Buffer<Vector3>} array stores contiguous
+structs rather than references, enabling sequential cache-friendly access
+and avoiding boxing entirely -- execution cost approximates
+$T_{value}=N(C_{load}+C_{operation})$, closer to specialized C++ code than
+to Java's boxed collections.
 
-\subsection{Value-Type Instantiations: Memory Layout and Cache Efficiency}
+\subsection{Reference-Type Instantiations}
 
-The main performance advantage of C\# generics appears when generic data
-structures are instantiated with value types. In this case, the elements are
-stored directly inside the containing structure, avoiding object allocation and
-reference indirection.
+For reference-type instantiations, e.g.\ \texttt{Buffer<VectorClass>}, the
+array stores pointers rather than objects, requiring an additional
+dereference per access:
+$T_{reference} = N(C_{load\ ref} + C_{pointer\ chase} + C_{operation})$,
+reducing spatial locality relative to value-type storage -- though, unlike
+Java, no boxing of primitives is ever required since C\# retains explicit
+runtime generic support.
 
-Consider the following example:
+\subsection{Comparison with C++ Monomorphization}
 
-\begin{lstlisting}[language=CSharp]
-public struct Vector3
-{
-    public float X;
-    public float Y;
-    public float Z;
-}
+C++ generates a fully independent specialization per instantiation ahead of
+execution (\texttt{Buffer<float>}, \texttt{Buffer<double>}), maximizing
+optimization opportunities (static dispatch, inlining) at the cost of
+increased code size. C\# avoids this duplication for reference types while
+still specializing value types via the JIT, trading some ahead-of-time
+optimization for reduced code bloat.
 
-public class Buffer<T>
-{
-    private T[] data;
+\subsection{Comparison with Java Type Erasure}
 
-    public Buffer(int size)
-    {
-        data = new T[size];
-    }
+Java's single erased implementation forces primitive values through
+boxing/unboxing ($int \rightarrow Integer \rightarrow reference$), adding
+$T_{Java} = T_{operation} + C_{boxing} + C_{indirection}$ relative to C\#,
+which avoids boxing for value-type generics entirely.
 
-    public float Compute()
-    {
-        float result = 0;
+\subsection{Comparative Summary}
 
-        for(int i = 0; i < data.Length; i++)
-        {
-            result += data[i].GetHashCode();
-        }
-
-        return result;
-    }
-}
-\end{lstlisting}
-
-When instantiated with a value type:
-
-\begin{lstlisting}[language=CSharp]
-Buffer<Vector3> points =
-    new Buffer<Vector3>(1000000);
-\end{lstlisting}
-
-the array contains the actual structures:
-
-\[
-\begin{array}{|c|c|c|}
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{2.6cm}|p{3.4cm}|p{3.4cm}|p{3.4cm}|}
 \hline
-(x_0,y_0,z_0)&(x_1,y_1,z_1)&(x_2,y_2,z_2)\\
+& C++ Templates & C\# Generics & Java Generics \\
 \hline
-\end{array}
-\]
-
-The memory representation is contiguous, allowing efficient sequential access.
-Because each element is stored directly inside the array, the processor can
-exploit spatial locality and efficiently use cache lines.
-
-The execution cost is approximately:
-
-\[
-T_{value}=N(C_{load}+C_{operation})
-\]
-
-where the memory access component is minimized by predictable sequential
-loads.
-
-Furthermore, no boxing operation is required. Primitive values and structures
-remain in their native representation, avoiding the additional memory accesses
-required by object wrappers. This makes C\# generic collections of value types
-closer to the execution model of specialized C++ template instantiations.
-
-\subsection{Reference-Type Instantiations: Indirection and Shared Code}
-
-When a generic parameter is a reference type, the CLR uses code sharing. For
-example:
-
-\begin{lstlisting}[language=CSharp]
-Buffer<VectorClass> objects =
-    new Buffer<VectorClass>(1000000);
-\end{lstlisting}
-
-where:
-
-\begin{lstlisting}[language=CSharp]
-public class VectorClass
-{
-    public float X;
-    public float Y;
-    public float Z;
-}
-\end{lstlisting}
-
-the array stores references rather than the objects themselves:
-
-\[
-\begin{array}{|c|c|c|}
+Representation & Compile-time specialization & Runtime reification & Type erasure \\
 \hline
-ptr_0&ptr_1&ptr_2\\
+Value storage & Direct & Direct & Usually boxed \\
 \hline
-\end{array}
-\]
-
-The actual objects are located elsewhere in memory. Accessing an element
-requires an additional pointer dereference:
-
-\[
-T_{reference}
-=
-N(C_{load\ reference}
-+
-C_{pointer\ chase}
-+
-C_{operation})
-\]
-
-The additional memory access can reduce cache efficiency because the referenced
-objects may not be stored contiguously. Consequently, large collections of
-reference types generally exhibit weaker spatial locality compared with
-value-type collections.
-
-However, unlike Java erased generics, this behavior does not require boxing of
-primitive values because C\# maintains explicit runtime support for generic
-types.
-
-\subsection{Comparison with C++ Template Monomorphization}
-
-C++ templates use compile-time monomorphization. For every concrete template
-instantiation, the compiler generates a separate specialized implementation
-before program execution.
-
-Example:
-
-\begin{lstlisting}[language=C++]
-template<typename T>
-class Buffer
-{
-    T* data;
-
-public:
-
-    T sum()
-    {
-        T result = 0;
-
-        for(int i = 0; i < size; i++)
-            result += data[i];
-
-        return result;
-    }
-};
-
-Buffer<float> a;
-Buffer<double> b;
-\end{lstlisting}
-
-The compiler produces two independent versions:
-
-\[
-Buffer<float>\rightarrow Code_{float}
-\]
-
-\[
-Buffer<double>\rightarrow Code_{double}
-\]
-
-This approach provides maximum optimization opportunities because the compiler
-has complete knowledge of the concrete type. The generated code can exploit
-static dispatch, aggressive inlining, and type-specific optimizations.
-
-Compared with C\#, C++ templates have the advantage that specialization happens
-before execution. However, every instantiation generates additional machine
-code, potentially increasing executable size and instruction-cache pressure.
-
-C\# generics avoid this duplication for reference types while still providing
-specialized execution for value types through JIT compilation.
-
-\subsection{Comparison with Java Type-Erased Generics}
-
-Java Generics follow a fundamentally different execution model based on type
-erasure. Generic parameters are removed during compilation and replaced with
-their upper bounds in the generated bytecode.
-A generic class:
-
-\begin{lstlisting}[language=Java]
-class Buffer<T>
-{
-    private T[] data;
-
-    T get(int index)
-    {
-        return data[index];
-    }
-}
-\end{lstlisting}
-
-is represented at runtime without knowledge of the original type parameter.
-
-Because the JVM does not generate specialized versions for primitive types,
-generic collections require wrapper objects:
-
-\[
-int \rightarrow Integer \rightarrow reference
-\]
-
-For example:
-
-\begin{lstlisting}[language=Java]
-ArrayList<Integer> values =
-    new ArrayList<Integer>();
-\end{lstlisting}
-
-stores references to objects rather than compact primitive values. Accessing an
-element requires additional indirection and possible boxing/unboxing
-operations.
-
-The resulting execution model introduces:
-
-\[
-T_{Java}
-=
-T_{operation}
-+
-C_{boxing}
-+
-C_{indirection}
-\]
-
-which can negatively affect memory locality and cache efficiency.
-
-\subsection{Summary of Runtime Performance Characteristics}
-
-The three approaches provide different trade-offs:
-
-\[
-\begin{array}{c|c|c|c}
-&
-\textbf{C++ Templates}
-&
-\textbf{C\# Generics}
-&
-\textbf{Java Generics}
-\\
+Code generation & AOT monomorphization & JIT specialization & Shared erased code \\
 \hline
-Generic representation
-&
-Compile-time specialization
-&
-Runtime reification
-&
-Type erasure
-\\
+Cache locality & Very high & High (value types) & Lower (indirection) \\
+\hline
+Runtime overhead & Minimal & Low & Higher for primitives \\
+\hline
+\end{tabular}
+\end{table}
 
-Value type storage
-&
-Direct
-&
-Direct
-&
-Usually boxed
-\\
-
-Code generation
-&
-AOT monomorphization
-&
-JIT specialization
-&
-Shared erased code
-\\
-
-Cache locality
-&
-Very high
-&
-High for value types
-&
-Lower due to indirection
-\\
-
-Runtime overhead
-&
-Minimal
-&
-Low
-&
-Higher for primitives
-\\
-\end{array}
-\]
-
-C\# generics therefore represent an intermediate solution between C++ and Java.
-They preserve runtime type information and allow efficient specialized execution
-for value types, while avoiding excessive code duplication through reference
-type sharing. In terms of execution performance, C\# approaches the efficiency
-of C++ templates for value-oriented workloads while providing a more flexible
-runtime model than Java erased generics.
+C\# therefore occupies an intermediate position: near-C++ efficiency for
+value-oriented workloads, with a more flexible runtime model than Java's
+erased generics.
 
 % =====================================================================
 
 \section{Type Safety}
 
-Type safety represents one of the fundamental properties of a sound type system.
-A type-safe language guarantees that well-typed programs cannot perform operations
-that violate the rules defined by the language type model. In the context of
-parametric polymorphism, type safety requires that generic abstractions preserve
-the relationships between type parameters and concrete types throughout the
-program.
-
-From a theoretical perspective, a sound type system is generally described through
-the properties of \emph{progress} and \emph{preservation}. The preservation property
-states that the evaluation of a well-typed expression cannot invalidate its typing
-judgment:
-
-\[
-\Gamma \vdash e : T \land e \rightarrow e'
-\implies
-\Gamma \vdash e' : T
-\]
-
-where $\Gamma$ represents the typing environment, $e$ is an expression, and $T$
-is the type assigned by the type system.
-
-The progress property states that a well-typed expression is either already a
-value or can perform a valid computation step:
-
-\[
-\Gamma \vdash e : T
-\implies
-e \text{ is a value or } e \rightarrow e'
-\]
-
-For generic programming, these principles imply that a generic abstraction must
-remain type-correct for every valid substitution of its type parameters. A generic
-definition cannot assume properties that are not guaranteed by the type system,
-and every operation performed on a type parameter must be justified by the
-available typing information.
-
-C\# generics implement parametric polymorphism while preserving these properties
-through static verification of generic type usage. The compiler verifies that all
-instantiations of a generic abstraction respect the constraints imposed by the
-generic declaration, preventing invalid substitutions from being accepted.
-
-\subsection{Static Type Checking of Generic Parameters}
-
-A generic type introduces a type variable whose concrete type is unknown during
-the declaration of the abstraction. However, this unknown type is not arbitrary:
-the type system reasons about it symbolically and ensures that every operation
-performed on the parameter is valid for all permitted substitutions.
-
-Consider the following generic container:
-
-\begin{lstlisting}[language=CSharp]
-public class Box<T>
-{
-    private T value;
-
-    public void Set(T value)
-    {
-        this.value = value;
-    }
-
-    public T Get()
-    {
-        return value;
-    }
-}
-\end{lstlisting}
-
-The type parameter $T$ represents an abstract type that will be replaced by a
-concrete type during generic instantiation. The type system guarantees that all
-values stored inside the container are compatible with the chosen instantiation.
-
-For example:
-
-\begin{lstlisting}[language=CSharp]
-Box<int> numbers = new Box<int>();
-
-numbers.Set(10);
-
-int value = numbers.Get();
-\end{lstlisting}
-
-The compiler verifies that the argument passed to \texttt{Set} is compatible with
-the type parameter substitution:
-
-\begin{lstlisting}[language=CSharp]
-Box<int> numbers = new Box<int>();
-
-numbers.Set("text");   // Type error
-\end{lstlisting}
-
-The assignment is rejected because the generic instance
-\texttt{Box<int>} defines a type invariant requiring every stored value to be an
-integer. The generic mechanism therefore does not weaken static typing but extends
-it by allowing reusable abstractions while preserving exact type relationships.
-
-\subsection{Generic Constraints as Type System Rules}
-
-In a generic declaration, a type parameter does not automatically provide access
-to arbitrary operations. The type system only permits operations that are valid
-for every possible type satisfying the current assumptions about the parameter.
-
-For example, the following generic method cannot assume that $T$ provides a
-specific member:
-
-\begin{lstlisting}[language=CSharp]
-public class Processor<T>
-{
-    public void Process(T value)
-    {
-        value.SpecialOperation();
-    }
-}
-\end{lstlisting}
-
-The compiler rejects this definition because the generic parameter does not
-guarantee the existence of \texttt{SpecialOperation}. The operation would violate
-type safety for substitutions where such a member does not exist.
-
-Generic constraints extend the typing environment by introducing additional
-assumptions about the parameter:
-
-\begin{lstlisting}[language=CSharp]
-public class Processor<T>
-    where T : IDisposable
-{
-    public void Process(T value)
-    {
-        value.Dispose();
-    }
-}
-\end{lstlisting}
-
-The constraint establishes that every valid substitution of $T$ must implement
-\texttt{IDisposable}. Therefore, the invocation of \texttt{Dispose()} is statically
-verified as safe.
-
-Constraints can be interpreted as additional typing rules restricting the set of
-types that can instantiate a generic abstraction. They do not represent runtime
-checks added after compilation, but rather static guarantees used by the type
-checker to prove correctness.
-
-\subsection{Variance and Type-Safe Generic Subtyping}
-
-Generic type safety also depends on the interaction between generics and
-subtyping. A naive interpretation of subtyping could incorrectly allow unsafe
-substitutions between parameterized types.
-
-For example, although \texttt{string} is a subtype of \texttt{object}, a mutable
-generic container containing strings cannot generally be considered a container
-of objects:
-
-\begin{lstlisting}[language=CSharp]
-List<string> strings = new List<string>();
-
-List<object> objects = strings;   // Invalid
-\end{lstlisting}
-
-Allowing this assignment would violate type safety because an object of another
-type could be inserted into the list through the \texttt{List<object>} reference.
-The generic type system therefore treats mutable generic classes as invariant.
-
-C\# explicitly supports variance annotations for generic interfaces and delegates
-when the substitution is type-safe. For example:
-
-\begin{lstlisting}[language=CSharp]
-IEnumerable<string> strings =
-    new List<string>();
-
-IEnumerable<object> objects = strings;
-\end{lstlisting}
-
-This assignment is valid because \texttt{IEnumerable<T>} only provides read-only
-access to elements. Since values are produced but never consumed through the
-generic interface, replacing a more specific type with a more general one cannot
-introduce an invalid operation.
-
-Covariance and contravariance therefore represent controlled extensions of the
-subtyping relation, where the type system permits only substitutions that preserve
-soundness.
-
-\subsection{Reified Generics and Preservation of Type Information}
-
-C\# generics are based on a reified model in which generic type parameters remain
-associated with the generic abstraction. From the perspective of type safety, this
-means that the relationship between a generic definition and its concrete type
-arguments is preserved.
-
-A generic type declaration:
-
-\begin{lstlisting}[language=CSharp]
-Box<T>
-\end{lstlisting}
-
-can be instantiated with different type arguments:
-
-\begin{lstlisting}[language=CSharp]
-Box<int>
-Box<string>
-\end{lstlisting}
-
-These represent different constructed types derived from the same generic
-definition. The type system maintains the distinction between these
-parameterizations, ensuring that operations performed through one constructed type
-cannot violate the invariants of another.
-
-This approach differs from type-erasure systems, where generic parameters are
-removed after compilation. In Java, for example, generic correctness is verified
-statically before erasure. The compiler guarantees that all uses of a generic
-abstraction are valid and may introduce implicit casts where necessary to preserve
-the source-level typing semantics.
-
-Conceptually:
-
-\begin{lstlisting}[language=Java]
-List<String> values = new ArrayList<>();
-
-String element = values.get(0);
-\end{lstlisting}
-
-is checked using the generic type information available during compilation, even
-though the executable representation does not preserve the original parameterized
-type.
-
-C\# follows a different type-system model: the association between the generic
-abstraction and its type parameter remains part of the program representation.
-Consequently, the generic type relationship is preserved rather than reconstructed
-after type erasure.
-
-\subsection{Comparison with C++ Templates from a Type System Perspective}
-
-C++ templates and C\# generics both support parametric programming, but they
-represent different approaches to expressing type relationships.
-
-In C++:
-
-\begin{lstlisting}[language=C++]
-template<typename T>
-class Box
-{
-    T value;
-};
-\end{lstlisting}
-
-the compiler verifies whether a concrete substitution satisfies the requirements
-of the template when the template is instantiated. The resulting type correctness
-depends on the validity of the substituted operations.
-
-C\# generics instead define a parameterized type inside the language type system.
-The generic abstraction itself has a type-level meaning, and constraints explicitly
-describe the requirements that valid substitutions must satisfy.
-
-Therefore, both mechanisms prevent invalid type usage, but they express generic
-correctness through different models:
-
-\begin{itemize}
-    \item C++ templates rely on compile-time template substitution and validation
-    of generated concrete types.
-    \item C\# generics represent parameterized types directly in the language type
-    system and preserve the relationship between generic definitions and type
-    arguments.
-\end{itemize}
-
-\subsection{Type Safety Guarantees of the C\# Generic Type System}
-
-The C\# generic system preserves type safety through a combination of static
-checking rules and a precise representation of parameterized types. The main
-guarantees provided by the type system are:
-
-\begin{itemize}
-    \item Every generic instantiation must satisfy the declared constraints of its
-    type parameters.
-
-    \item Operations performed on generic parameters are accepted only when they
-    are valid for every permitted substitution.
-
-    \item Generic subtyping relationships are restricted through variance rules
-    to prevent unsafe substitutions.
-
-    \item Generic abstractions preserve the association between type parameters and
-    concrete types, maintaining the consistency of typing relationships.
-
-    \item Invalid conversions between incompatible parameterized types are rejected
-    statically.
-\end{itemize}
-
-Consequently, C\# generics provide parametric polymorphism without sacrificing the
-guarantees of a statically typed language. The generic mechanism extends the
-expressiveness of the type system while preserving the fundamental property that
-well-typed programs cannot perform operations outside the set allowed by their
-declared types.
+C\# generics preserve type safety through static verification of generic
+usage, ensuring every instantiation respects the constraints declared by
+the generic abstraction.
+
+\subsection{Static Checking of Generic Parameters}
+
+Given \texttt{class Box<T> \{ T value; void Set(T v); T Get(); \}}, the
+compiler verifies that all values passed to \texttt{Set} match the chosen
+instantiation: \texttt{Box<int> numbers; numbers.Set("text");} is rejected
+because \texttt{Box<int>} requires every stored value to be an integer.
+
+\subsection{Generic Constraints}
+
+A parameter without constraints cannot assume arbitrary members are
+available: \texttt{value.SpecialOperation()} inside
+\texttt{Processor<T>} is rejected unless a constraint such as
+\texttt{where T : IDisposable} establishes that every valid substitution
+provides \texttt{Dispose()}. Constraints act as additional typing rules
+restricting admissible substitutions, verified statically rather than at
+runtime.
+
+\subsection{Variance and Safe Subtyping}
+
+Mutable generic containers are treated as invariant to prevent unsafe
+insertion: \texttt{List<object> objects = strings;} (from
+\texttt{List<string>}) is rejected. Read-only interfaces permit covariance
+instead: \texttt{IEnumerable<object> objects = strings;} is valid because
+values are only produced, never consumed, through the interface.
+
+\subsection{Reification and Preserved Type Information}
+
+Because C\# is reified, \texttt{Box<int>} and \texttt{Box<string>} remain
+distinct constructed types whose invariants cannot cross-contaminate. This
+contrasts with Java, where generic correctness is verified before erasure
+removes the parameter from the runtime representation, and with C++, where
+correctness is verified per template substitution during instantiation.
+
+\subsection{Type Safety Guarantees}
+
+C\# generics guarantee that: every instantiation satisfies its declared
+constraints; operations on parameters are valid for every permitted
+substitution; variance rules restrict subtyping to safe cases; the
+association between generic definitions and concrete arguments is
+preserved; and invalid conversions between incompatible constructed types
+are rejected statically.
 
 % =====================================================================
 
 \section{Reflection and Runtime Type Information}
-\label{sec:csharp_reflection}
 
-Unlike languages based on type erasure, the Common Language Runtime (CLR) implements
-a reified model of generics, where generic type information is preserved as part of
-the runtime representation of types. During compilation, C\# source code is translated
-into Common Intermediate Language (CIL) instructions together with a rich metadata
-representation stored inside the assembly. Generic declarations, constraints, and
-instantiation relationships are encoded explicitly in this metadata and remain
-available during program execution.
+The CLR implements a reified generic model: generic declarations,
+constraints, and instantiation relationships are encoded in assembly
+metadata and remain available during execution, exposed through
+\texttt{System.Type}.
 
-A generic type declaration compiled into CIL is represented through metadata tables
-that preserve the association between a generic type definition and its parameters.
-For example, the declaration:
+\subsection{Open and Closed Generic Types}
+
+\texttt{typeof(List<>)} represents an open generic definition;
+\texttt{typeof(List<int>)} represents a closed constructed type;
+\texttt{typeof(List<int>).GetGenericArguments()} retrieves the concrete
+runtime argument. Reflection therefore operates on actual runtime type
+entities rather than erased or compile-time-only abstractions.
+
+\subsection{Runtime Inspection Example}
 
 \begin{lstlisting}[language=CSharp]
-class Container<T>
+Type t = instance.GetType();
+if (t.IsGenericType)
 {
+    Type def = t.GetGenericTypeDefinition();
+    Type[] args = t.GetGenericArguments();
 }
 \end{lstlisting}
 
-is not transformed into a non-generic runtime entity. Instead, the CLR maintains a
-generic type definition with an explicit parameter placeholder. When a concrete
-instantiation such as:
+For a \texttt{List<int>} instance, this recovers both the generic
+definition \texttt{List<>} and the concrete argument \texttt{int}:
+$\texttt{List<int>} \rightarrow \texttt{List<>} + \texttt{int}$.
 
-\begin{lstlisting}[language=CSharp]
-Container<int>
-Container<string>
-\end{lstlisting}
+\subsection{Comparison with C++ RTTI}
 
-is requested, the runtime creates a closed constructed type whose metadata maintains
-the correspondence between the generic parameter and the concrete type argument.
+C++ monomorphization resolves template parameters at compile time; standard
+RTTI (\texttt{typeid}, \texttt{std::type\_info}) identifies the resulting
+concrete type but cannot query the original template argument as runtime
+metadata -- the template/parameter relationship exists only at compile
+time.
 
-This mechanism is commonly referred to as \emph{generic reification}, because the
-abstract structure of the generic type remains represented in the runtime type
-system. Consequently, both open generic types, where type parameters are not yet
-bound, and closed constructed types, where every parameter has been substituted by a
-concrete runtime type, can be inspected through the reflection subsystem.
+\subsection{Comparison with Java Reflection}
 
-The CLR exposes this information through the
-\texttt{System.Type} abstraction. A runtime type object contains intrinsic identity
-information describing the represented entity, including whether the type is generic,
-whether it represents a generic definition or a constructed instance, and which
-runtime types are associated with its generic parameters.
+Java erasure removes generic parameters from runtime object identity: two
+\texttt{ArrayList} instances built from different type arguments share the
+same runtime class. Reflection can recover declaration-level generic
+signatures (via the \texttt{Signature} attribute) but cannot recover the
+concrete argument used by an arbitrary instance.
 
-For example, the following distinctions are maintained by the runtime:
+\subsection{Comparative Summary}
 
-\begin{itemize}
-    \item \texttt{typeof(List<>)} represents an open generic type definition.
-    \item \texttt{typeof(List<int>)} represents a closed constructed generic type.
-    \item \texttt{typeof(List<int>).GetGenericArguments()} returns the concrete
-    runtime type argument associated with the instantiation.
-\end{itemize}
+C\# reifies generic parameters, exposing both open definitions and closed
+constructed types through \texttt{System.Reflection}; C++ resolves
+parameters at compile time, leaving RTTI to identify only concrete
+specialized types; Java erases parameters from runtime identity, leaving
+reflection able to inspect only declaration-level metadata. The CLR model
+therefore keeps generic structure part of the runtime type universe, while
+C++ and Java represent the two opposite design points -- compile-time
+expansion without runtime metadata, and runtime erasure of generic
+identity.
 
-Therefore, reflection over C\# generics operates on actual runtime type entities rather
-than on erased compile-time abstractions.
-
-\subsection{Runtime Inspection of Generic Types Using System.Reflection}
-
-The following example demonstrates how the reflection API can dynamically inspect a
-generic object, verify whether its runtime type is generic, identify the generic type
-definition, and retrieve the concrete type arguments used for instantiation.
-
-\begin{lstlisting}[language=CSharp]
-using System;
-using System.Collections.Generic;
-
-class ReflectionExample
-{
-    static void InspectType(object instance)
-    {
-        Type runtimeType = instance.GetType();
-
-        Console.WriteLine("Runtime type: " + runtimeType);
-
-        if (runtimeType.IsGenericType)
-        {
-            Console.WriteLine("The inspected type is generic.");
-
-            Type genericDefinition =
-                runtimeType.GetGenericTypeDefinition();
-
-            Console.WriteLine(
-                "Generic definition: " + genericDefinition);
-
-            Type[] arguments =
-                runtimeType.GetGenericArguments();
-
-            Console.WriteLine("Generic arguments:");
-
-            foreach (Type argument in arguments)
-            {
-                Console.WriteLine(argument.FullName);
-            }
-        }
-        else
-        {
-            Console.WriteLine("The inspected type is not generic.");
-        }
-    }
-
-    static void Main()
-    {
-        List<int> values = new List<int>();
-
-        InspectType(values);
-    }
-}
-\end{lstlisting}
-
-In this example, the call to \texttt{GetType()} retrieves the CLR runtime type
-descriptor associated with the object instance. The method
-\texttt{IsGenericType} verifies whether the runtime entity corresponds to a generic
-type. If this condition is satisfied, \texttt{GetGenericTypeDefinition()} extracts the
-original generic declaration, while \texttt{GetGenericArguments()} retrieves the
-concrete runtime types used to construct the closed generic instance.
-
-The result of the inspection is therefore equivalent to observing the following
-runtime relationship:
-
-\[
-\texttt{List<int>}
-\rightarrow
-\texttt{List<>}
-+
-\texttt{int}
-\]
-
-where both the generic declaration and the concrete type substitution remain
-available through reflection.
-
-\subsection{Comparison with C++ Templates and Java Generics}
-
-The reflection capabilities of C\# generics differ fundamentally from the runtime
-models adopted by C++ templates and Java generics. The distinction concerns the
-availability of generic type information after compilation and the possibility of
-recovering concrete type parameters through runtime introspection.
-
-\subsubsection{C++ Templates: Compile-Time Monomorphization and Limited RTTI}
-
-C++ templates follow a compile-time monomorphization model. A template definition
-acts as a compile-time pattern from which the compiler generates specialized
-entities for each concrete instantiation. The relationship between a template
-parameter and its instantiated type is therefore resolved during compilation rather
-than represented as a generic runtime object.
-
-For example:
-
-\begin{lstlisting}[language=C++]
-template<typename T>
-class Container
-{
-};
-
-Container<int> a;
-Container<double> b;
-\end{lstlisting}
-
-does not produce a runtime generic type equivalent to the CLR representation of
-\texttt{Container<T>}. Instead, the compiler materializes concrete types associated
-with the instantiated arguments. After compilation, the executable contains the
-resulting concrete classes but does not generally preserve a runtime representation
-of the original template abstraction.
-
-The C++ Runtime Type Information (RTTI) mechanism provides limited type
-introspection through facilities such as \texttt{typeid} and
-\texttt{std::type\_info}. RTTI can identify the dynamic type of polymorphic objects
-and expose implementation-defined type information, but it does not provide a
-reflection system capable of enumerating template parameters or reconstructing the
-template instantiation relationship.
-
-Consequently, an expression such as:
-
-\begin{lstlisting}[language=C++]
-typeid(Container<int>)
-\end{lstlisting}
-
-can identify the resulting concrete type, but standard C++ RTTI cannot query the
-template argument \texttt{int} as a runtime metadata element. The association between
-the template and its parameters exists primarily as a compile-time property.
-
-\subsubsection{Java Generics: Type Erasure and Residual Metadata}
-
-Java generics adopt a fundamentally different strategy based on type erasure. During
-compilation, generic type parameters are removed from the runtime representation and
-replaced according to erasure rules, typically by their upper bounds. The Java Virtual
-Machine therefore executes code where generic parameters are not represented as
-runtime type identities.
-
-For example:
-
-\begin{lstlisting}[language=Java]
-List<String> names = new ArrayList<>();
-\end{lstlisting}
-
-is compiled into a representation equivalent to a non-parameterized collection type
-from the perspective of runtime object identity. The JVM can identify that the object
-is an instance of \texttt{ArrayList}, but the concrete parameter
-\texttt{String} is not retained as part of the object's runtime type information.
-
-Java reflection can inspect generic declarations when metadata has been preserved in
-class files through structures such as the \texttt{Signature} attribute. However,
-this information describes declarations rather than runtime object instantiations.
-For example, reflection can determine that a class was declared as:
-
-\begin{lstlisting}[language=Java]
-class Box<T>
-\end{lstlisting}
-
-but it cannot directly recover the concrete argument used by an arbitrary runtime
-object:
-
-\begin{lstlisting}[language=Java]
-Box<String>
-\end{lstlisting}
-
-because the instantiated parameter is not part of the runtime type identity.
-
-Therefore, Java reflection operates on residual generic metadata associated with
-declarations, whereas C\# reflection operates on reified runtime type entities.
-
-\subsection{Comparative Summary of Runtime Generic Reflection}
-
-Considering only runtime metadata availability and type introspection capabilities,
-the three approaches can be summarized as follows:
-
-\begin{itemize}
-    \item \textbf{C\# Generics}: generic parameters are reified by the CLR. Both open
-    generic definitions and closed constructed types retain runtime metadata and can
-    be inspected through \texttt{System.Reflection}.
-
-    \item \textbf{C++ Templates}: template parameters are resolved through
-    compile-time monomorphization. Standard RTTI identifies concrete runtime types
-    but does not expose template parameter metadata.
-
-    \item \textbf{Java Generics}: generic parameters are erased from runtime type
-    identity. Reflection can access declaration-level generic information but cannot
-    directly inspect concrete type arguments of runtime instances.
-\end{itemize}
-
-The CLR generic model therefore provides a reflection system in which generic type
-structure remains part of the runtime type universe, whereas C++ and Java represent
-opposite design points: compile-time expansion without generic runtime metadata in
-C++, and runtime abstraction through type erasure in Java. 
-
-\chapter{MetaProgramming}
-\section{Overview of Metaprogramming}
+\chapter{Metaprogramming}
 
 Metaprogramming is a programming technique in which a program can generate,
 analyze, or transform program entities rather than manipulating only runtime
@@ -3650,13 +1581,13 @@ modification and inspection of program structures during execution. The
 specific implementation of metaprogramming depends on the language
 compilation model and runtime architecture.
 
-In \textbf{C++}, metaprogramming is primarily performed at compile time through
-template metaprogramming and constant expression evaluation mechanisms such
-as \texttt{constexpr}. Template instantiation allows the compiler to
-generate specialized program entities during translation, while
-\texttt{constexpr} enables the evaluation of deterministic expressions before
-runtime. Therefore, C++ metaprogramming is tightly integrated with the
-compiler and the static type system.
+In \textbf{C++}, metaprogramming is primarily performed at compile time
+through template metaprogramming and constant expression evaluation
+mechanisms such as \texttt{constexpr}. Template instantiation allows the
+compiler to generate specialized program entities during translation, while
+\texttt{constexpr} enables the evaluation of deterministic expressions
+before runtime. C++ metaprogramming is therefore tightly integrated with
+the compiler and the static type system.
 
 In \textbf{Java}, metaprogramming is mainly based on runtime mechanisms
 provided by the Java Virtual Machine (JVM), particularly reflection,
@@ -3666,41 +1597,36 @@ processors. Due to type erasure, generic type parameters are generally not
 available in ordinary runtime objects, reducing the ability to perform
 type-based compile-time transformations.
 
-In \textbf{C\#}, metaprogramming combines compile-time and runtime approaches.
-Compile-time mechanisms include source generators, which produce additional
-code during compilation, while runtime mechanisms are provided by reflection,
-attributes, expression trees, and dynamic code generation facilities of the
-Common Language Runtime (CLR). Unlike Java, C\# preserves generic type
-information at runtime through reified generics, enabling more extensive
-runtime type inspection.
+In \textbf{C\#}, metaprogramming combines compile-time and runtime
+approaches. Compile-time mechanisms include source generators, which
+produce additional code during compilation, while runtime mechanisms are
+provided by reflection, attributes, expression trees, and dynamic code
+generation facilities of the Common Language Runtime (CLR). Unlike Java,
+C\# preserves generic type information at runtime through reified
+generics, enabling more extensive runtime type inspection.
 
-Therefore, the main difference between these languages lies in when
-metaprogramming is performed: C++ emphasizes compile-time computation,
-Java primarily relies on runtime introspection, and C\# provides a hybrid
-model combining compile-time generation with runtime analysis.
+The main difference between these languages therefore lies in \emph{when}
+metaprogramming is performed: C++ emphasizes compile-time computation, Java
+primarily relies on runtime introspection, and C\# provides a hybrid model
+combining compile-time generation with runtime analysis.
 
-\section{Compile-Time Computation Mechanisms in C++}
+% =====================================================================
 
-C++ supports compile-time computation through language mechanisms that allow
-the compiler to evaluate expressions before runtime. The two primary
-mechanisms are recursive template instantiation and constant expression
-evaluation through \texttt{constexpr} functions. Although both approaches
-produce values known during compilation, they rely on different compiler
-rules: template metaprogramming performs computation through generation and
-substitution of template entities, whereas \texttt{constexpr} relies on
-compile-time evaluation of valid constant expressions.
+\section{Compile-Time Computation in C++}
 
-The following examples assume a C++17 or later implementation.
+C++ supports compile-time computation through two mechanisms relying on
+different compiler rules: recursive template instantiation, which performs
+computation through generation and substitution of template entities, and
+\texttt{constexpr} evaluation, which relies on direct interpretation of
+valid constant expressions. The following examples assume C++17 or later.
 
-\subsection{Recursive Template Metaprogramming: Compile-Time Factorial}
+\subsection{Recursive Template Metaprogramming}
 
 Traditional template metaprogramming performs computation by recursively
-instantiating templates. Each template specialization represents a distinct
-compile-time entity generated during semantic analysis.
+instantiating templates, each specialization representing a distinct
+compile-time entity:
 
 \begin{lstlisting}[language=C++]
-#include <iostream>
-
 template<unsigned N>
 struct Factorial
 {
@@ -3714,1072 +1640,421 @@ struct Factorial<0>
     static constexpr unsigned value = 1;
 };
 
-int main()
-{
-    constexpr unsigned result = Factorial<6>::value;
-
-    std::cout << result << '\n';
-
-    return 0;
-}
+constexpr unsigned result = Factorial<6>::value;
 \end{lstlisting}
 
-The expression:
+Resolving \texttt{Factorial<6>::value} recursively instantiates
+$\texttt{Factorial<6>} \rightarrow \texttt{Factorial<5>} \rightarrow \cdots
+\rightarrow \texttt{Factorial<0>}$, the last specialization terminating the
+recursion. The compiler reduces the instantiated chain to the constant
+$720$ during semantic analysis; no runtime recursive execution is
+generated, since template arguments are fully known during translation.
+
+The same mechanism applies to computations with multiple recursive
+dependencies, such as the Fibonacci sequence:
 
 \begin{lstlisting}[language=C++]
-Factorial<6>::value
-\end{lstlisting}
-
-requires the compiler to instantiate the corresponding template
-specializations. Template instantiation recursively generates the required
-compile-time entities:
-
-\[
-\texttt{Factorial<6>}
-\rightarrow
-\texttt{Factorial<5>}
-\rightarrow
-\texttt{Factorial<4>}
-\rightarrow
-\cdots
-\rightarrow
-\texttt{Factorial<0>}
-\]
-
-The specialization:
-
-\begin{lstlisting}[language=C++]
-template<>
-struct Factorial<0>
-\end{lstlisting}
-
-terminates the recursive instantiation. During constant evaluation, the
-compiler substitutes the previously instantiated values:
-
-\[
-Factorial(6)=6 \times 5 \times 4 \times 3 \times 2 \times 1=720
-\]
-
-The resulting value is available before code generation. The compiler does
-not emit instructions implementing recursive factorial evaluation. Instead,
-the instantiated expression is reduced to the constant value:
-
-\begin{lstlisting}[language=C++]
-720
-\end{lstlisting}
-
-inside the compiler's intermediate representation. The template recursion
-exists only during compilation and is eliminated after semantic analysis.
-If subsequent optimization performs constant propagation, the generated
-assembly contains only the use of the already computed constant rather than
-runtime multiplication or recursive calls.
-
-This behavior is guaranteed by the C++ template instantiation rules: all
-template arguments are known during translation, and template specialization
-resolution occurs before program execution. Therefore, the computation is
-completed entirely before runtime.
-
-\subsection{Recursive Template Metaprogramming: Compile-Time Fibonacci}
-
-Template instantiation can also represent recursive computations with
-multiple dependencies. The following example evaluates the Fibonacci
-sequence during compilation.
-
-\begin{lstlisting}[language=C++]
-#include <iostream>
-
 template<unsigned N>
 struct Fibonacci
 {
     static constexpr unsigned value =
-        Fibonacci<N - 1>::value +
-        Fibonacci<N - 2>::value;
+        Fibonacci<N - 1>::value + Fibonacci<N - 2>::value;
 };
 
-template<>
-struct Fibonacci<0>
-{
-    static constexpr unsigned value = 0;
-};
-
-template<>
-struct Fibonacci<1>
-{
-    static constexpr unsigned value = 1;
-};
-
-int main()
-{
-    constexpr unsigned result = Fibonacci<10>::value;
-
-    std::cout << result << '\n';
-
-    return 0;
-}
+template<> struct Fibonacci<0> { static constexpr unsigned value = 0; };
+template<> struct Fibonacci<1> { static constexpr unsigned value = 1; };
 \end{lstlisting}
 
-When resolving:
+Instantiating \texttt{Fibonacci<10>::value} generates the dependency tree
+implementing $F(n) = F(n-1) + F(n-2)$ until reaching the terminating
+specializations, yielding the constant $55$ before code generation; the
+recursive structure exists only as a compile-time artifact.
+
+\subsection{\texttt{constexpr} Function Evaluation}
+
+Since C++11, the \texttt{constexpr} specifier allows ordinary functions to
+participate in constant expression evaluation without generating
+specialized template entities:
 
 \begin{lstlisting}[language=C++]
-Fibonacci<10>::value
-\end{lstlisting}
-
-the compiler recursively instantiates the required specializations until
-reaching the terminating cases:
-
-\begin{lstlisting}[language=C++]
-Fibonacci<0>
-Fibonacci<1>
-\end{lstlisting}
-
-The instantiated dependency structure represents the mathematical recurrence:
-
-\[
-F(n)=F(n-1)+F(n-2)
-\]
-
-After all required specializations have been generated, the compiler
-evaluates the constant expressions and obtains:
-
-\[
-Fibonacci(10)=55
-\]
-
-The generated program does not contain the recursive Fibonacci computation.
-The template instantiation tree is a compile-time artifact used by the
-compiler to derive the final constant. After constant evaluation, references
-to the template member value are replaced by the computed result.
-
-\subsection{Compile-Time Evaluation Using \texttt{constexpr} Functions}
-
-Since C++11, the \texttt{constexpr} specifier allows functions to participate
-in constant expression evaluation. Unlike template metaprogramming, this
-mechanism does not generate specialized template entities. Instead, the
-compiler evaluates the function according to the rules defining valid
-constant expressions.
-
-\begin{lstlisting}[language=C++]
-#include <iostream>
-
 constexpr unsigned factorial(unsigned n)
 {
-    if (n == 0)
-        return 1;
-
+    if (n == 0) return 1;
     return n * factorial(n - 1);
 }
 
-int main()
-{
-    constexpr unsigned result = factorial(6);
-
-    std::cout << result << '\n';
-
-    return 0;
-}
+constexpr unsigned result = factorial(6);
 \end{lstlisting}
 
-Because \texttt{result} is declared as:
+Because \texttt{result} is declared \texttt{constexpr}, the initializer
+must be evaluated during translation: the compiler's constant expression
+evaluator interprets the function body directly, producing $720$, which is
+substituted into the program representation. The final executable contains
+no recursive runtime call.
+
+Both mechanisms complete the transformation \emph{compile-time expression}
+$\rightarrow$ \emph{constant evaluation} $\rightarrow$ \emph{generated
+representation} before runtime execution begins; template metaprogramming
+performs this through instantiation and substitution, while
+\texttt{constexpr} performs it through direct evaluation of the function
+body against the constant-expression rules of the standard.
+
+% =====================================================================
+
+\section{Compile-Time Overload Selection: SFINAE and Concepts}
+\label{sec:sfinae}
+
+SFINAE (\emph{Substitution Failure Is Not An Error}) enables compile-time
+selection of function overloads by controlling whether a template
+declaration participates in overload resolution. The following example uses
+\texttt{std::enable\_if} to select an implementation according to a
+compile-time property of the argument type:
 
 \begin{lstlisting}[language=C++]
-constexpr unsigned result
-\end{lstlisting}
-
-the initialization expression:
-
-\begin{lstlisting}[language=C++]
-factorial(6)
-\end{lstlisting}
-
-must be evaluated during translation. The compiler invokes its constant
-expression evaluator, which interprets the function body according to the
-constant expression rules defined by the C++ standard.
-
-The evaluation proceeds conceptually as:
-
-\[
-\begin{aligned}
-factorial(6)
-&=6 \times factorial(5)\\
-&=6 \times 5 \times factorial(4)\\
-&=\cdots\\
-&=720
-\end{aligned}
-\]
-
-After constant evaluation completes, the compiler substitutes the result into
-the program representation:
-
-\begin{lstlisting}[language=C++]
-constexpr unsigned result = 720;
-\end{lstlisting}
-
-No runtime recursive execution is generated. The function body is used only
-by the compiler's constant evaluator during translation. The final executable
-contains only the operations required to use the computed value.
-
-The guarantee that the computation occurs before runtime derives from the
-\texttt{constexpr} rules: an expression used to initialize a
-\texttt{constexpr} object must be a constant expression, meaning that its
-value must be determinable during compilation.
-
-\subsection{Compiler-Level Execution Model}
-
-Template metaprogramming and \texttt{constexpr} evaluation achieve
-compile-time computation through different compiler mechanisms.
-
-Template-based computation is performed during semantic analysis through
-template instantiation, specialization matching, and substitution of
-template arguments. The compiler generates compile-time entities, evaluates
-their associated expressions, and replaces template references with the
-resulting values.
-
-Conversely, \texttt{constexpr} computation is performed through constant
-expression evaluation. The compiler executes the function in an internal
-evaluation environment over its intermediate representation or abstract
-syntax tree, provided that every operation satisfies the constant expression
-requirements.
-
-In both cases, the essential compilation transformation is:
-
-\[
-\text{compile-time expression}
-\rightarrow
-\text{constant evaluation}
-\rightarrow
-\text{generated program representation}
-\]
-
-The runtime program therefore begins execution only after the compile-time
-computation has already been completed.
-
-\subsection{Compile-Time Overload Resolution with SFINAE and C++20 Concepts}
-
-SFINAE (\textit{Substitution Failure Is Not An Error}) enables compile-time
-selection of function overloads by controlling whether a template declaration
-participates in the overload resolution process. The following example uses
-\texttt{std::enable\_if} to select different implementations according to
-compile-time properties of the template argument.
-
-\begin{lstlisting}[language=C++, caption={SFINAE-based overload selection using std::enable\_if}]
-#include <iostream>
-#include <type_traits>
-
-struct CustomType {};
-
 template <typename T>
 typename std::enable_if<std::is_integral<T>::value>::type
-process(T value)
-{
-    std::cout << "Integral type: " << value << '\n';
-}
+process(T value) { std::cout << "Integral: " << value; }
 
 template <typename T>
 typename std::enable_if<std::is_floating_point<T>::value>::type
-process(T value)
-{
-    std::cout << "Floating-point type: " << value << '\n';
-}
-
-template <typename T>
-typename std::enable_if<
-    !std::is_integral<T>::value &&
-    !std::is_floating_point<T>::value
->::type
-process(T)
-{
-    std::cout << "Custom or non-arithmetic type\n";
-}
-
-int main()
-{
-    process(42);             // Integral overload
-    process(3.14);           // Floating-point overload
-    process(CustomType{});   // Custom type overload
-}
+process(T value) { std::cout << "Floating-point: " << value; }
 \end{lstlisting}
 
-During template argument substitution, the compiler attempts to instantiate
-each candidate function by replacing the template parameter \texttt{T} with the
-deduced argument type. The expression contained in \texttt{std::enable\_if} is
-evaluated during this substitution phase.
+During argument substitution, the compiler attempts to instantiate each
+candidate. For \texttt{process(42)}, $T = int$ makes
+\texttt{std::enable\_if<true>::type} well-formed, so the integral overload
+remains viable; the floating-point overload instead produces
+\texttt{std::enable\_if<false>}, which lacks a nested \texttt{type} member,
+so substitution fails and the overload is silently discarded rather than
+triggering a compilation error. This behavior applies only within the
+immediate context of substitution during template argument deduction.
 
-If the condition evaluates to \texttt{true}, \texttt{std::enable\_if<T>::type}
-is defined and the resulting function declaration remains part of the overload
-resolution set. For example, for the call:
+C++20 Concepts express the same constraints explicitly rather than through
+substitution failure:
 
 \begin{lstlisting}[language=C++]
-process(42);
+template <typename T> requires std::integral<T>
+void process(T value) { std::cout << "Integral: " << value; }
+
+template <typename T> requires std::floating_point<T>
+void process(T value) { std::cout << "Floating-point: " << value; }
 \end{lstlisting}
 
-the template parameter is deduced as \texttt{T = int}. The integral overload is
-transformed into:
+The compiler evaluates each \texttt{requires} clause before overload
+resolution, discarding candidates whose constraints are not satisfied --
+providing the same compile-time specialization behavior as SFINAE while
+stating the type requirements directly rather than relying on incidental
+substitution failure.
+
+% =====================================================================
+
+\section{Variadic Templates and Related C++ Techniques}
+
+\subsection{Variadic Templates}
+
+Variadic templates, introduced in C++11, allow a template to accept an
+arbitrary number of type or non-type arguments through a parameter pack,
+enabling generic components whose arity is not fixed in advance:
 
 \begin{lstlisting}[language=C++]
-typename std::enable_if<true>::type process(int);
-\end{lstlisting}
-
-which is a valid declaration because the nested type member exists.
-
-Conversely, the floating-point overload undergoes the same substitution:
-
-\begin{lstlisting}[language=C++]
-typename std::enable_if<false>::type process(int);
-\end{lstlisting}
-
-In this case, \texttt{std::enable\_if<false>} does not provide a nested
-\texttt{type} member. The substitution therefore fails, causing this overload
-to be removed from the overload resolution set.
-
-The failure is not considered a compilation error because SFINAE applies
-specifically during the substitution phase of template argument deduction.
-Invalid template substitutions eliminate the corresponding candidate instead of
-terminating compilation. A hard compilation error would occur only if the
-invalid expression appeared outside the immediate context of substitution or
-after overload resolution had already selected a candidate.
-
-C++20 Concepts provide a more explicit mechanism for expressing the same
-compile-time constraints. Instead of relying on substitution failure,
-constraints are directly attached to template declarations and evaluated by the
-compiler during overload resolution.
-
-\begin{lstlisting}[language=C++, caption={C++20 Concepts-based overload selection}]
-#include <iostream>
-#include <concepts>
-
-struct CustomType {};
-
 template <typename T>
-requires std::integral<T>
-void process(T value)
-{
-    std::cout << "Integral type: " << value << '\n';
-}
-
-template <typename T>
-requires std::floating_point<T>
-void process(T value)
-{
-    std::cout << "Floating-point type: " << value << '\n';
-}
-
-template <typename T>
-requires (!std::integral<T> && !std::floating_point<T>)
-void process(T)
-{
-    std::cout << "Custom or non-arithmetic type\n";
-}
-
-int main()
-{
-    process(42);             // Integral overload
-    process(3.14);           // Floating-point overload
-    process(CustomType{});   // Custom type overload
-}
-\end{lstlisting}
-
-With Concepts, the compiler evaluates the associated constraints before
-performing overload resolution. A function template whose constraints are not
-satisfied is discarded from the overload resolution set directly, providing the
-same compile-time specialization behavior as SFINAE while expressing the type
-requirements explicitly.
-
-\section{Compile-Time Overload Resolution with SFINAE and C++20 Concepts}
-
-SFINAE (\textit{Substitution Failure Is Not An Error}) enables compile-time
-selection of function overloads by controlling whether a template declaration
-participates in the overload resolution process. The following example uses
-\texttt{std::enable\_if} to select different implementations according to
-compile-time properties of the template argument.
-
-\begin{lstlisting}[language=C++, caption={SFINAE-based overload selection using std::enable\_if}]
-#include <iostream>
-#include <type_traits>
-
-struct CustomType {};
-
-template <typename T>
-typename std::enable_if<std::is_integral<T>::value>::type
-process(T value)
-{
-    std::cout << "Integral type: " << value << '\n';
-}
-
-template <typename T>
-typename std::enable_if<std::is_floating_point<T>::value>::type
-process(T value)
-{
-    std::cout << "Floating-point type: " << value << '\n';
-}
-
-template <typename T>
-typename std::enable_if<
-    !std::is_integral<T>::value &&
-    !std::is_floating_point<T>::value
->::type
-process(T)
-{
-    std::cout << "Custom or non-arithmetic type\n";
-}
-
-int main()
-{
-    process(42);             // Integral overload
-    process(3.14);           // Floating-point overload
-    process(CustomType{});   // Custom type overload
-}
-\end{lstlisting}
-
-During template argument substitution, the compiler attempts to instantiate
-each candidate function by replacing the template parameter \texttt{T} with the
-deduced argument type. The expression contained in \texttt{std::enable\_if} is
-evaluated during this substitution phase.
-
-If the condition evaluates to \texttt{true}, \texttt{std::enable\_if<T>::type}
-is defined and the resulting function declaration remains part of the overload
-resolution set. For example, for the call:
-
-\begin{lstlisting}[language=C++]
-process(42);
-\end{lstlisting}
-
-the template parameter is deduced as \texttt{T = int}. The integral overload is
-transformed into:
-
-\begin{lstlisting}[language=C++]
-typename std::enable_if<true>::type process(int);
-\end{lstlisting}
-
-which is a valid declaration because the nested type member exists.
-
-Conversely, the floating-point overload undergoes the same substitution:
-
-\begin{lstlisting}[language=C++]
-typename std::enable_if<false>::type process(int);
-\end{lstlisting}
-
-In this case, \texttt{std::enable\_if<false>} does not provide a nested
-\texttt{type} member. The substitution therefore fails, causing this overload
-to be removed from the overload resolution set.
-
-The failure is not considered a compilation error because SFINAE applies
-specifically during the substitution phase of template argument deduction.
-Invalid template substitutions eliminate the corresponding candidate instead of
-terminating compilation. A hard compilation error would occur only if the
-invalid expression appeared outside the immediate context of substitution or
-after overload resolution had already selected a candidate.
-
-C++20 Concepts provide a more explicit mechanism for expressing the same
-compile-time constraints. Instead of relying on substitution failure,
-constraints are directly attached to template declarations and evaluated by the
-compiler during overload resolution.
-
-\begin{lstlisting}[language=C++, caption={C++20 Concepts-based overload selection}]
-#include <iostream>
-#include <concepts>
-
-struct CustomType {};
-
-template <typename T>
-requires std::integral<T>
-void process(T value)
-{
-    std::cout << "Integral type: " << value << '\n';
-}
-
-template <typename T>
-requires std::floating_point<T>
-void process(T value)
-{
-    std::cout << "Floating-point type: " << value << '\n';
-}
-
-template <typename T>
-requires (!std::integral<T> && !std::floating_point<T>)
-void process(T)
-{
-    std::cout << "Custom or non-arithmetic type\n";
-}
-
-int main()
-{
-    process(42);             // Integral overload
-    process(3.14);           // Floating-point overload
-    process(CustomType{});   // Custom type overload
-}
-\end{lstlisting}
-
-With Concepts, the compiler evaluates the associated constraints before
-performing overload resolution. A function template whose constraints are not
-satisfied is discarded from the overload resolution set directly, providing the
-same compile-time specialization behavior as SFINAE while expressing the type
-requirements explicitly.
-
-\section{Variadic C++ Template and other Metaprogramming Techniques}
-
-Variadic templates extend the C++ template system by allowing a template 
-to accept an arbitrary number of type or non-type template arguments.
-
-Introduced in C++11, they provide compile-time parameter pack abstraction, 
-enabling the definition of generic components whose arity is not known a priori.
-
-Traditional function or class templates require a fixed number of template 
-parameters and cannot directly represent operations over heterogeneous 
-collections of arbitrary size.
-
-A typical application is recursive compile-time expansion of parameter packs:
-
-\begin{lstlisting}[language=C++]
-#include <iostream>
-
-template <typename T>
-void print(T value) {
-    std::cout << value << '\n';
-}
+void print(T value) { std::cout << value << ' '; }
 
 template <typename T, typename... Ts>
 void print(T first, Ts... rest) {
     std::cout << first << ' ';
     print(rest...);
 }
-
-int main() {
-    print(1, 2.5, "text");
-}
 \end{lstlisting}
 
-The template parameter pack $\texttt{Ts...}$ represents an arbitrary 
-sequence of types.
-
-During template instantiation, the compiler generates specialized versions 
-for each concrete argument list and recursively expands the pack until the 
-base case is reached.
-
-The mechanism is completely resolved at compile time through template 
-instantiation and overload resolution.
-
+The parameter pack \texttt{Ts...} represents an arbitrary type sequence;
+the compiler recursively expands it during instantiation until the
+single-argument base case is reached, with the entire expansion resolved
+at compile time through overload resolution.
 
 \subsection{Template Template Parameters}
 
-Template template parameters allow a template to receive another template 
-as an argument.
-
-They enable higher-order generic programming, where a class template operates 
-on a family of compatible class templates rather than on individual 
-instantiated types.
-
-Ordinary templates cannot express abstractions over template structures 
-themselves because their parameters represent types rather than templates.
-
-A generic container adapter can be implemented as follows:
+Template template parameters allow a template to receive another template
+as an argument, enabling higher-order generic programming over families of
+compatible templates rather than over individual types:
 
 \begin{lstlisting}[language=C++]
-#include <vector>
-#include <list>
-
 template <typename T, template <typename> class Container>
 class Stack {
-
     Container<T> data;
-
 public:
-
-    void push(const T& value) {
-        data.push_back(value);
-    }
-
-    T pop() {
-        T value = data.back();
-        data.pop_back();
-        return value;
-    }
+    void push(const T& value) { data.push_back(value); }
 };
 
-int main() {
-
-    Stack<int, std::vector> a;
-    Stack<int, std::list> b;
-}
+Stack<int, std::vector> a;
+Stack<int, std::list>   b;
 \end{lstlisting}
 
-The parameter $\texttt{Container}$ represents a template accepting a type 
-parameter.
-
-During compilation, the compiler substitutes the provided template argument 
-and instantiates the resulting specialization.
-
-This mechanism enables abstraction over template families while preserving 
-compile-time type checking.
-
+The compiler substitutes the supplied template argument for
+\texttt{Container} and instantiates the resulting specialization,
+preserving compile-time type checking across the abstraction.
 
 \subsection{Curiously Recurring Template Pattern (CRTP)}
 
-The Curiously Recurring Template Pattern (CRTP) is a template-based 
-inheritance technique in which a derived class passes itself as a template 
-argument to its base class.
-
-It enables static polymorphism by allowing the base class to invoke 
-derived-class functionality through compile-time binding instead of runtime 
-dynamic dispatch.
-
-A minimal CRTP implementation is:
+CRTP is a template-based inheritance technique in which a derived class
+passes itself as the template argument to its base class, enabling static
+polymorphism through compile-time binding rather than runtime dynamic
+dispatch:
 
 \begin{lstlisting}[language=C++]
-#include <iostream>
-
 template <typename Derived>
 class Interface {
-
 public:
-
-    void execute() {
-        static_cast<Derived*>(this)->implementation();
-    }
+    void execute() { static_cast<Derived*>(this)->implementation(); }
 };
-
 
 class Concrete : public Interface<Concrete> {
-
 public:
-
-    void implementation() {
-        std::cout << "Concrete implementation";
-    }
+    void implementation() { std::cout << "Concrete implementation"; }
 };
-
-
-int main() {
-
-    Concrete obj;
-    obj.execute();
-}
 \end{lstlisting}
 
-The base class template is instantiated with the derived type, producing a 
-specialized class where calls to derived operations are resolved during 
-compilation.
+The base template is instantiated with the derived type, so calls to
+derived operations are resolved during compilation; the compiler generates
+a concrete implementation for each participating derived type, without
+requiring a runtime virtual interface.
 
-Unlike ordinary class templates, CRTP addresses the problem of expressing 
-polymorphic relationships between types without requiring a runtime interface.
+% =====================================================================
 
-The mechanism relies on template instantiation and static dispatch, with the 
-compiler generating a concrete implementation for each derived type 
-participating in the pattern.
+\section{Bounded Polymorphism in Java: Constraints Without Substitution}
 
-\section{Limits of Java Generics in Replicating C++ SFINAE and Type Traits}
-
-Java generics provide bounded polymorphism through explicit type constraints, 
-allowing the compiler to restrict the set of admissible type arguments.
-
-A generic parameter can specify an upper bound, enabling compile-time 
-verification of operations supported by the bound:
+Java generics express bounded polymorphism through explicit type
+constraints restricting admissible type arguments:
 
 \begin{lstlisting}[language=Java]
 public class Calculator<T extends Number> {
-
     public double square(T value) {
         return value.doubleValue() * value.doubleValue();
     }
 }
-
-public class Main {
-
-    public static void main(String[] args) {
-        Calculator<Integer> c1 = new Calculator<>();
-        Calculator<Double> c2 = new Calculator<>();
-    }
-}
 \end{lstlisting}
 
-The constraint $\texttt{T extends Number}$ performs compile-time bounds 
-checking: only types satisfying the declared subtype relationship can 
-instantiate the generic class.
-
-However, Java generic bounds express only admissible type relationships and 
-the operations provided by the bound; they cannot introduce conditional 
-compile-time branching based on the concrete identity of $\texttt{T}$.
-
-Unlike C++ templates, Java generics do not support SFINAE-style overload 
-selection because generic instantiation does not generate independent 
-specialized versions of generic code for each concrete type.
-
-In C++, template substitution and type-traits evaluation occur during 
-compilation, allowing the compiler to select or discard overloads depending 
-on whether expressions involving a type are valid.
-
-This behavior relies on compile-time type substitution and template 
-monomorphization.
-
-Java generics are instead implemented through type erasure.
-
-After compilation, generic type parameters are removed from the generated 
-bytecode, and generic classes are represented using their erased upper 
-bounds.
-
-Consequently, a generic method cannot perform compile-time branching based 
-on properties that are specific to an unknown type parameter:
+The bound \texttt{T extends Number} performs compile-time checking that
+only types satisfying the declared relationship may instantiate the class.
+However, this expresses only the operations guaranteed by the bound; it
+cannot introduce conditional compile-time branching based on the concrete
+identity of \texttt{T}, because Java generics are implemented through type
+erasure rather than instantiation-time substitution. Since no specialized
+version of generic code is generated per concrete type, a method such as
 
 \begin{lstlisting}[language=Java]
 public static <T> void process(T value) {
-
-    // Impossible:
-    // select implementation depending on properties of T
+    // cannot select an implementation based on properties of T
 }
 \end{lstlisting}
 
-The compiler cannot instantiate separate versions of $\texttt{process}$ for 
-different values of $\texttt{T}$, nor can it use the concrete type argument 
-to enable or disable overloads during compilation.
+cannot be compiled into distinct versions depending on \texttt{T}. Any
+type-dependent behavior must therefore rely on mechanisms available only
+after erasure, such as runtime type information, rather than on
+compile-time substitution analysis as in SFINAE (Section~\ref{sec:sfinae}).
 
-Any type-dependent behavior must therefore rely on mechanisms available after 
-erasure, such as explicit runtime type information, rather than compile-time 
-substitution analysis.
+% =====================================================================
 
-Therefore, Java bounded polymorphism provides static constraints on generic 
-parameters but cannot reproduce the compile-time introspection and 
-conditional specialization capabilities of C++ SFINAE and type traits.
+\section{Constrained Generics in C\#: Approximating Type Traits}
 
-\section{Limits of C\# Generics in Replicating C++ SFINAE and Type Traits}
+C\# does not provide a direct equivalent of SFINAE or compile-time type
+traits, since its generic constraints express bounded polymorphism rather
+than substitution-based overload resolution. However, \texttt{where}
+clauses combined with static abstract interface members (introduced in
+.NET 7) allow a restricted form of trait-oriented generic programming.
 
-C\# does not provide a direct equivalent of C++ SFINAE or compile-time type traits, 
-since generic constraints are based on bounded polymorphism rather than 
-substitution-based overload resolution.
-
-However, the combination of generic constraints introduced by the `where` clause 
-and static abstract interface members introduced in .NET 7 allows C\# to express 
-a restricted form of trait-oriented generic programming.
-
-
-A classical C++ type-traits pattern uses SFINAE to enable an overload only when 
-a type satisfies a compile-time property:
+Where a C++ trait pattern conditionally enables an overload via SFINAE:
 
 \begin{lstlisting}[language=C++]
 template<typename T>
-auto add(T a, T b) -> 
-    std::enable_if_t<std::is_arithmetic_v<T>, T>
+auto add(T a, T b) -> std::enable_if_t<std::is_arithmetic_v<T>, T>
+{ return a + b; }
+\end{lstlisting}
+
+the closest C\# approximation constrains the parameter directly:
+
+\begin{lstlisting}[language=CSharp]
+static T Add<T>(T a, T b) where T : INumber<T>
 {
     return a + b;
 }
 \end{lstlisting}
 
+Static abstract interface members extend this further into a trait-like
+contract:
 
-During template argument substitution, the compiler attempts to instantiate 
-the candidate function.
-
-If the required type property is not satisfied, the substitution failure removes 
-the overload from the candidate set without generating a compilation error.
-
-
-The closest C\# abstraction is obtained through constrained generic parameters:
-
-\begin{lstlisting}[language={[Sharp]C}]
-static T Add<T>(T a, T b)
-    where T : INumber<T>
-{
-    return a + b;
-}
-\end{lstlisting}
-
-
-The constraint `where T : INumber<T>` restricts the admissible type arguments 
-to types implementing the required numeric contract.
-
-The compiler validates the generic instantiation against the declared bounded 
-polymorphic constraint, ensuring that all operations required by the generic 
-algorithm are available for the selected type.
-
-
-The interface-based approach enabled by static abstract interface members 
-provides a trait-like mechanism:
-
-\begin{lstlisting}[language={[Sharp]C}]
-public interface IAddable<TSelf>
-    where TSelf : IAddable<TSelf>
+\begin{lstlisting}[language=CSharp]
+public interface IAddable<TSelf> where TSelf : IAddable<TSelf>
 {
     static abstract TSelf operator +(TSelf x, TSelf y);
 }
 \end{lstlisting}
 
+The compiler validates the presence of required static members during
+generic instantiation, conceptually resembling C++ concepts, though more
+restricted. This is possible because .NET generics use runtime
+reification: type arguments and constraints are preserved in CLR metadata
+and remain available for validation, unlike Java's erased generics.
+Nevertheless, C\# constraint violations are ordinary compilation errors,
+not substitution failures that selectively remove candidates during
+overload resolution -- the language provides no general compile-time
+reflection over type structure or unrestricted compile-time computation.
 
-A generic algorithm can therefore depend on operations defined by a 
-type-level contract.
+% =====================================================================
 
-The compiler checks the presence of the required static members during generic 
-type validation, providing functionality conceptually similar to C++ concepts 
-and type traits, although with a more restricted expressive model.
+\section{Instantiation-Time Checking and Structural Capability Detection}
 
+The distinction explored in the previous two sections follows from a more
+general property: C++ templates perform semantic checking \emph{after}
+argument substitution, during instantiation, so a dependent expression's
+validity need not be known until a concrete type is supplied. Java and C\#
+generics instead require declarations to be type-correct independently of
+any future instantiation, permitting only operations guaranteed by the
+declared bounds.
 
-This capability allows C\# to approximate C++ trait-based programming more closely 
-than Java generics.
-
-The reason is that .NET generics use runtime reification: generic type arguments 
-and constraints are preserved in metadata and remain available to the CLR type system.
-
-Therefore, the compiler and runtime can reason about the actual generic arguments 
-and their implemented interfaces.
-
-
-Java generics, based on type erasure, cannot provide equivalent guarantees over 
-generic type capabilities.
-
-
-Nevertheless, C\# generic constraints cannot implement true SFINAE.
-
-Constraint violations are compilation errors rather than substitution failures 
-that selectively remove invalid candidates during overload resolution.
-
-
-The C\# type system does not provide arbitrary compile-time reflection over type 
-structure, conditional declaration generation, or unrestricted compile-time 
-computation.
-
-Generic constraints express statically known relationships between types, 
-but they do not form a general compile-time metaprogramming mechanism.
-
-
-This limitation follows from the different implementation strategies of the two 
-languages.
-
-C++ templates rely on compile-time substitution and monomorphization, where 
-templates are instantiated into concrete program fragments after AST-level 
-substitution.
-
-This enables arbitrary type-dependent specialization and compile-time computation.
-
-
-C\# generics instead rely on runtime reification, where generic definitions remain 
-associated with CLR metadata and are validated according to declared constraints.
-
-Consequently, C\# generic constraints and generic math provide trait-like 
-abstractions, but they cannot reproduce the substitution-based metaprogramming 
-model of C++ templates.
-
-\section{Instantiation-Time Checking and Metaprogramming Expressiveness}
-
-C++ templates perform semantic checking after template argument substitution, during the instantiation phase. The
-template definition may contain dependent expressions whose validity cannot be determined until a concrete type is
-provided. This delayed checking enables compile-time selection mechanisms in which the existence or absence of
-operations on a type influences overload resolution. Java and C\# generics adopt a different model: generic
-declarations must be type-correct independently of future instantiations, and only operations guaranteed by the
-declared bounds are permitted. Consequently, generic code cannot express arbitrary structural requirements that are
-discovered only when a type is substituted.
-
-A representative C++ technique enabled by instantiation-time checking is SFINAE (Substitution Failure Is Not An
-Error). During overload resolution, if substituting a template argument makes a dependent expression invalid, the
-candidate is removed rather than producing a compilation error:
+This lets C++ detect structural capabilities -- whether a type happens to
+provide a given member -- without an explicit interface:
 
 \begin{lstlisting}[language=C++]
-#include <type_traits>
-
 template <typename T>
 auto process(T value) -> decltype(value.serialize(), void())
-{
-    value.serialize();
-}
+{ value.serialize(); }
 
 template <typename T>
-void process(T)
-{
-    // fallback implementation
-}
+void process(T) { /* fallback */ }
 \end{lstlisting}
 
-For a type providing a \texttt{serialize()} member function, substitution succeeds and the first overload is selected.
-For a type without such a member, the expression \texttt{value.serialize()} becomes invalid during substitution; the
-failure is discarded by SFINAE and the fallback overload remains viable. The compiler therefore performs a form of
-structural capability detection without requiring an explicit interface or inheritance relationship.
+If \texttt{T} provides \texttt{serialize()}, the first overload is
+selected; otherwise substitution of \texttt{value.serialize()} fails and
+SFINAE falls back to the second overload -- capability detection with no
+inheritance relationship involved.
 
-The same mechanism cannot be directly expressed in Java or C\# generics because generic declarations are checked
-before concrete type arguments are substituted. A generic method cannot contain an operation whose validity depends
-on members not guaranteed by the declared type bound:
+Java and C\# cannot express this directly, since generic bodies must
+already be valid for every admissible argument:
 
 \begin{lstlisting}[language=Java]
 static <T> void process(T value) {
-    value.serialize(); // compilation error
+    value.serialize(); // compilation error: no guarantee T has serialize()
 }
 \end{lstlisting}
 
-The declaration is rejected because the type parameter \texttt{T} does not provide any guarantee that a
-\texttt{serialize()} operation exists. The compiler cannot defer this validity check until a future instantiation
-with a specific type. The only available mechanism is to explicitly encode the requirement through bounded
-polymorphism:
+The only available option is to encode the requirement explicitly through
+bounded polymorphism:
 
-\begin{lstlisting}[language=Csharp]
-interface ISerializable {
-    void Serialize();
-}
+\begin{lstlisting}[language=CSharp]
+interface ISerializable { void Serialize(); }
 
 static void Process<T>(T value) where T : ISerializable
-{
-    value.Serialize();
-}
+    => value.Serialize();
 \end{lstlisting}
 
-However, this constraint must be declared before generic instantiation and cannot be inferred from the structural
-properties of an arbitrary type. Unlike C++ template substitution, bounded polymorphism in Java and C\# cannot
-perform compile-time capability detection based on the presence of members. The limitation follows directly from
-declaration-time checking: generic bodies must already be valid for all admissible type arguments, whereas C++
-allows validity to be determined only after substitution during template instantiation.
-\section{External Metaprogramming Workarounds in Java and C\#}
+but such a constraint must be declared ahead of time and cannot be
+inferred from the structural properties of an arbitrary type. The
+limitation follows directly from declaration-time checking: generic bodies
+are validated once, for all admissible arguments, whereas C++ defers
+validity to each individual instantiation.
 
-Unlike C++ templates, whose instantiation mechanism is intrinsically integrated into the language type system
-and compiler pipeline, Java and C\# generics do not provide native facilities for arbitrary compile-time program
-generation or type-directed code transformation.
+% =====================================================================
 
-Their generic systems primarily express parametric polymorphism through constrained type abstraction,
-while metaprogramming capabilities are provided through additional mechanisms operating outside
-the generic type system.
+\section{External Metaprogramming Mechanisms in Java and C\#}
 
-\subsection{Java Reflection, Annotation Processing, and Code Generation}
+Because Java and C\# generics do not integrate compile-time program
+generation into their type systems, both languages rely on auxiliary
+mechanisms, external to the generic abstraction itself, to approximate
+capabilities native to C++ templates.
 
-Java commonly relies on runtime reflection as a mechanism to recover and manipulate structural information
-that is unavailable through ordinary generic operations.
+\subsection{Java: Reflection, Annotation Processing, and Code Generation}
 
-Reflection operates after compilation, using the metadata stored in class files to inspect classes,
-methods, fields, annotations, and runtime types.
+Java relies on runtime \emph{reflection} to recover structural information
+unavailable through generic operations, inspecting classes, methods,
+fields, and annotations from metadata stored in class files after
+compilation. Reflection is runtime introspection: it does not participate
+in generic instantiation or compiler-driven specialization.
 
-Although it enables dynamic behavior based on type information, it does not participate in generic instantiation
-or compiler-driven code specialization.
+Compile-time generation is instead handled by \emph{annotation processors}
+(Java Annotation Processing API), which run during compilation, analyze
+annotated source elements through the compiler's language model API, and
+generate auxiliary source files. Libraries such as Lombok extend this
+through direct AST manipulation, injecting methods or constructors that
+developers would otherwise write by hand. In both cases, these are
+external compiler extensions: the generic type system remains responsible
+only for type abstraction and checking, while generation is performed by a
+separate framework rather than by generic substitution itself.
 
-The reflective model therefore represents runtime introspection rather than compile-time metaprogramming.
+\subsection{C\#: Source Generators and T4 Templates}
 
-Compile-time metaprogramming in Java is instead commonly implemented through annotation processors
-based on the Java Annotation Processing API.
-
-These processors execute during compilation and analyze annotated source elements through
-compiler-provided abstract representations of the program, such as the language model API.
-
-They can generate additional source files, modify compilation workflows, or produce auxiliary classes,
-but they do not extend the semantics of Java generics.
-
-The generated artifacts are independent program units produced before compilation rather than
-specialized instances created by the generic type system.
-
-Code generation libraries such as Lombok extend this approach by performing source-level transformations
-during compilation.
-
-Lombok modifies compiler representations, commonly through abstract syntax tree manipulation,
-to inject methods, constructors, or other structural elements that developers would otherwise write manually.
-
-However, these transformations are external compiler extensions and are not part of Java's generic
-substitution mechanism.
-
-The generic system remains responsible only for type abstraction and checking, while the generation
-framework separately alters program structure.
-
-Consequently, Java metaprogramming workarounds operate either dynamically through reflection
-or externally to the compiler type system through annotation-driven generation.
-
-They do not provide a mechanism equivalent to C++ template instantiation, where template definitions
-themselves are evaluated by the compiler as parameterized program fragments.
-
-
-\subsection{C\# Source Generators and T4 Templates}
-
-C\# provides more integrated compile-time generation mechanisms than Java, but these remain
-architecturally separate from the generic type system.
-
-Source generators, introduced with the Roslyn compiler platform, execute during compilation
-and analyze the program's syntax trees and semantic models.
-
-They can emit additional C\# source code that becomes part of the compilation unit,
-allowing automatic generation of serialization code, boilerplate implementations,
-or type-specific helpers.
-
-Despite operating within the compilation pipeline, source generators do not participate in
-generic type instantiation.
-
-A generic declaration is still processed according to the CLR generic model,
-while generated source code represents additional compilation input produced by an external
+C\# offers more integrated compile-time generation through Roslyn
+\emph{source generators}, which run during compilation, analyze syntax
+trees and semantic models, and emit additional C\# source that becomes
+part of the compilation unit -- e.g.\ serialization code or boilerplate
+implementations. Despite operating inside the compiler pipeline, source
+generators do not participate in generic instantiation: generic
+declarations are still processed by the ordinary CLR generic model, while
+generated code is simply additional input produced by a separate
 transformation phase.
 
-The generator does not extend generic constraints into a general compile-time evaluation mechanism
-and cannot directly replace the template instantiation model of C++.
+\emph{T4 (Text Template Transformation Toolkit)} templates operate earlier
+still, as an independent preprocessing stage that emits source files from
+explicit transformation rules before ordinary compilation begins.
 
-Another common mechanism is the use of T4
-(Text Template Transformation Toolkit) templates,
-which perform code generation through template files processed before compilation.
+In both Java and C\#, generics describe reusable abstractions within the
+language type system, while reflection, annotation processors, source
+generators, and T4 templates remain auxiliary transformation layers around
+the compiler or runtime. C++ templates, by contrast, unify parametric
+polymorphism and compile-time generation in a single construct, where
+template parameters directly drive compiler substitution and
+specialization.
 
-T4 templates are independent generation programs that produce source files according to
-explicit transformation rules.
+% =====================================================================
 
-Their execution resembles a preprocessing stage rather than a semantic phase of the C\# type system,
-since the generated code is compiled afterward as ordinary C\#.
-
-The fundamental distinction is that Java and C\# generics describe reusable abstractions within
-the language type system, whereas reflection, annotation processors, source generators,
-and T4 templates are auxiliary transformation mechanisms layered around the compiler
-or runtime environment.
-
-C++ templates combine parametric polymorphism and compile-time program generation in a single
-language construct: template parameters directly control compiler evaluation,
-substitution, and specialization.
-
-In Java and C\#, equivalent behavior requires separate metaprogramming infrastructures
-that generate or inspect code outside the native generic abstraction mechanisms.
-\section{Summary Practical Limits of Metaprogramming in C++, Java, and C\# Generics}
+\section{Summary: Metaprogramming Capabilities Across the Three Models}
 
 \begin{table}[h]
 \centering
-\begin{tabular}{|p{3cm}|p{4cm}|p{4cm}|p{4cm}|}
+\begin{tabular}{|p{2.8cm}|p{3.8cm}|p{3.8cm}|p{3.8cm}|}
 \hline
-\textbf{Capability} &
-\textbf{C++ Templates} &
-\textbf{Java Generics} &
-\textbf{C\# Generics} \\
+\textbf{Capability} & \textbf{C++ Templates} & \textbf{Java Generics} & \textbf{C\# Generics} \\
 \hline
 
-\textbf{Compile-time computation} &
-\textbf{Supported} --- Template metaprogramming and
-\texttt{constexpr} evaluation allow computations to be performed
-during compilation through template instantiation and compile-time
-evaluation. &
-\textbf{Not supported} --- Generic instantiation does not execute
-compile-time computations because Java generics are implemented through
-type erasure and are absent from runtime specialization. &
-\textbf{Partially supported} --- Generic constraints and compile-time
-type checking provide limited static reasoning, but C\# does not offer
-general compile-time computation over generic types. \\
+Compile-time computation &
+\textbf{Supported} -- template metaprogramming and \texttt{constexpr}
+evaluate computations during compilation. &
+\textbf{Not supported} -- type erasure removes generic specialization
+entirely. &
+\textbf{Partially supported} -- constraints allow static reasoning but not
+general compile-time computation. \\
 \hline
 
-\textbf{Conditional compilation based on type properties} &
-\textbf{Supported} --- SFINAE, type traits, and Concepts enable
-compile-time selection of implementations according to properties of
-template arguments. &
-\textbf{Not supported} --- Type erasure prevents compile-time branching
-on concrete type properties because generic parameters do not retain
-specialization information. &
-\textbf{Partially supported} --- Generic constraints allow selection
-based on declared type relationships, but they cannot express arbitrary
-compile-time predicates over types. \\
+Conditional selection by type properties &
+\textbf{Supported} -- SFINAE, type traits, and Concepts select
+implementations by compile-time properties. &
+\textbf{Not supported} -- erasure removes concrete type properties before
+runtime. &
+\textbf{Partially supported} -- constraints select by declared
+relationships, not arbitrary predicates. \\
 \hline
 
-\textbf{Code generation per type} &
-\textbf{Supported} --- Template monomorphization generates separate
-specialized code for each instantiated type during compilation. &
-\textbf{Not supported} --- Type erasure produces shared generic
-implementations that operate on erased types rather than generating
-specialized code per type argument. &
-\textbf{Supported for value types and limited for reference types} ---
-CLR reification enables JIT-generated specialized implementations for
-value types while reference types generally share generic code. \\
+Code generation per type &
+\textbf{Supported} -- monomorphization generates independent code per
+instantiation. &
+\textbf{Not supported} -- erasure yields one shared implementation for all
+instantiations. &
+\textbf{Supported for value types, shared for reference types} -- CLR
+reification specializes value-type instantiations via JIT. \\
 \hline
 
-\textbf{Runtime type introspection} &
-\textbf{Partially supported} --- RTTI provides runtime information about
-concrete objects, but template parameters are not generally preserved as
-runtime metadata after compilation. &
-\textbf{Partially supported} --- Reified class objects exist for some
-generic information, but type erasure removes most generic type
-arguments from runtime representation. &
-\textbf{Supported} --- CLR reification preserves generic type
-information in metadata, allowing runtime inspection of instantiated
-generic types. \\
+Runtime type introspection &
+\textbf{Partially supported} -- RTTI exposes concrete object types, not
+template parameters. &
+\textbf{Partially supported} -- reflection sees declaration-level generic
+metadata, not runtime arguments. &
+\textbf{Supported} -- CLR metadata preserves generic arguments for runtime
+inspection. \\
 \hline
 
 \end{tabular}
-\caption{Practical limits of metaprogramming capabilities in C++,
-Java, and C\# generics.}
+\caption{Practical limits of metaprogramming capabilities in C++, Java, and
+C\# generics.}
 \label{tab:metaprogramming_limits}
 \end{table}
 
