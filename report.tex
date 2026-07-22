@@ -865,10 +865,6 @@ runtime reification, and standard RTTI mechanisms provide runtime access to
 the identity of concrete instantiated types without constituting a complete
 reflection system.
 
-
-% =====================================================================
-% CHAPTER: JAVA GENERICS
-% =====================================================================
 % =====================================================================
 % CHAPTER: JAVA GENERICS
 % =====================================================================
@@ -3642,4 +3638,1150 @@ The CLR generic model therefore provides a reflection system in which generic ty
 structure remains part of the runtime type universe, whereas C++ and Java represent
 opposite design points: compile-time expansion without generic runtime metadata in
 C++, and runtime abstraction through type erasure in Java. 
+
+\chapter{MetaProgramming}
+\section{Overview of Metaprogramming}
+
+Metaprogramming is a programming technique in which a program can generate,
+analyze, or transform program entities rather than manipulating only runtime
+data. Its main objective is to move part of the computation to an earlier
+stage of the software lifecycle, such as compilation, or to enable dynamic
+modification and inspection of program structures during execution. The
+specific implementation of metaprogramming depends on the language
+compilation model and runtime architecture.
+
+In \textbf{C++}, metaprogramming is primarily performed at compile time through
+template metaprogramming and constant expression evaluation mechanisms such
+as \texttt{constexpr}. Template instantiation allows the compiler to
+generate specialized program entities during translation, while
+\texttt{constexpr} enables the evaluation of deterministic expressions before
+runtime. Therefore, C++ metaprogramming is tightly integrated with the
+compiler and the static type system.
+
+In \textbf{Java}, metaprogramming is mainly based on runtime mechanisms
+provided by the Java Virtual Machine (JVM), particularly reflection,
+annotations, dynamic proxies, and bytecode generation. Compile-time
+metaprogramming is more limited and is mainly supported through annotation
+processors. Due to type erasure, generic type parameters are generally not
+available in ordinary runtime objects, reducing the ability to perform
+type-based compile-time transformations.
+
+In \textbf{C\#}, metaprogramming combines compile-time and runtime approaches.
+Compile-time mechanisms include source generators, which produce additional
+code during compilation, while runtime mechanisms are provided by reflection,
+attributes, expression trees, and dynamic code generation facilities of the
+Common Language Runtime (CLR). Unlike Java, C\# preserves generic type
+information at runtime through reified generics, enabling more extensive
+runtime type inspection.
+
+Therefore, the main difference between these languages lies in when
+metaprogramming is performed: C++ emphasizes compile-time computation,
+Java primarily relies on runtime introspection, and C\# provides a hybrid
+model combining compile-time generation with runtime analysis.
+
+\section{Compile-Time Computation Mechanisms in C++}
+
+C++ supports compile-time computation through language mechanisms that allow
+the compiler to evaluate expressions before runtime. The two primary
+mechanisms are recursive template instantiation and constant expression
+evaluation through \texttt{constexpr} functions. Although both approaches
+produce values known during compilation, they rely on different compiler
+rules: template metaprogramming performs computation through generation and
+substitution of template entities, whereas \texttt{constexpr} relies on
+compile-time evaluation of valid constant expressions.
+
+The following examples assume a C++17 or later implementation.
+
+\subsection{Recursive Template Metaprogramming: Compile-Time Factorial}
+
+Traditional template metaprogramming performs computation by recursively
+instantiating templates. Each template specialization represents a distinct
+compile-time entity generated during semantic analysis.
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template<unsigned N>
+struct Factorial
+{
+    static constexpr unsigned value =
+        N * Factorial<N - 1>::value;
+};
+
+template<>
+struct Factorial<0>
+{
+    static constexpr unsigned value = 1;
+};
+
+int main()
+{
+    constexpr unsigned result = Factorial<6>::value;
+
+    std::cout << result << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+The expression:
+
+\begin{lstlisting}[language=C++]
+Factorial<6>::value
+\end{lstlisting}
+
+requires the compiler to instantiate the corresponding template
+specializations. Template instantiation recursively generates the required
+compile-time entities:
+
+\[
+\texttt{Factorial<6>}
+\rightarrow
+\texttt{Factorial<5>}
+\rightarrow
+\texttt{Factorial<4>}
+\rightarrow
+\cdots
+\rightarrow
+\texttt{Factorial<0>}
+\]
+
+The specialization:
+
+\begin{lstlisting}[language=C++]
+template<>
+struct Factorial<0>
+\end{lstlisting}
+
+terminates the recursive instantiation. During constant evaluation, the
+compiler substitutes the previously instantiated values:
+
+\[
+Factorial(6)=6 \times 5 \times 4 \times 3 \times 2 \times 1=720
+\]
+
+The resulting value is available before code generation. The compiler does
+not emit instructions implementing recursive factorial evaluation. Instead,
+the instantiated expression is reduced to the constant value:
+
+\begin{lstlisting}[language=C++]
+720
+\end{lstlisting}
+
+inside the compiler's intermediate representation. The template recursion
+exists only during compilation and is eliminated after semantic analysis.
+If subsequent optimization performs constant propagation, the generated
+assembly contains only the use of the already computed constant rather than
+runtime multiplication or recursive calls.
+
+This behavior is guaranteed by the C++ template instantiation rules: all
+template arguments are known during translation, and template specialization
+resolution occurs before program execution. Therefore, the computation is
+completed entirely before runtime.
+
+\subsection{Recursive Template Metaprogramming: Compile-Time Fibonacci}
+
+Template instantiation can also represent recursive computations with
+multiple dependencies. The following example evaluates the Fibonacci
+sequence during compilation.
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template<unsigned N>
+struct Fibonacci
+{
+    static constexpr unsigned value =
+        Fibonacci<N - 1>::value +
+        Fibonacci<N - 2>::value;
+};
+
+template<>
+struct Fibonacci<0>
+{
+    static constexpr unsigned value = 0;
+};
+
+template<>
+struct Fibonacci<1>
+{
+    static constexpr unsigned value = 1;
+};
+
+int main()
+{
+    constexpr unsigned result = Fibonacci<10>::value;
+
+    std::cout << result << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+When resolving:
+
+\begin{lstlisting}[language=C++]
+Fibonacci<10>::value
+\end{lstlisting}
+
+the compiler recursively instantiates the required specializations until
+reaching the terminating cases:
+
+\begin{lstlisting}[language=C++]
+Fibonacci<0>
+Fibonacci<1>
+\end{lstlisting}
+
+The instantiated dependency structure represents the mathematical recurrence:
+
+\[
+F(n)=F(n-1)+F(n-2)
+\]
+
+After all required specializations have been generated, the compiler
+evaluates the constant expressions and obtains:
+
+\[
+Fibonacci(10)=55
+\]
+
+The generated program does not contain the recursive Fibonacci computation.
+The template instantiation tree is a compile-time artifact used by the
+compiler to derive the final constant. After constant evaluation, references
+to the template member value are replaced by the computed result.
+
+\subsection{Compile-Time Evaluation Using \texttt{constexpr} Functions}
+
+Since C++11, the \texttt{constexpr} specifier allows functions to participate
+in constant expression evaluation. Unlike template metaprogramming, this
+mechanism does not generate specialized template entities. Instead, the
+compiler evaluates the function according to the rules defining valid
+constant expressions.
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+constexpr unsigned factorial(unsigned n)
+{
+    if (n == 0)
+        return 1;
+
+    return n * factorial(n - 1);
+}
+
+int main()
+{
+    constexpr unsigned result = factorial(6);
+
+    std::cout << result << '\n';
+
+    return 0;
+}
+\end{lstlisting}
+
+Because \texttt{result} is declared as:
+
+\begin{lstlisting}[language=C++]
+constexpr unsigned result
+\end{lstlisting}
+
+the initialization expression:
+
+\begin{lstlisting}[language=C++]
+factorial(6)
+\end{lstlisting}
+
+must be evaluated during translation. The compiler invokes its constant
+expression evaluator, which interprets the function body according to the
+constant expression rules defined by the C++ standard.
+
+The evaluation proceeds conceptually as:
+
+\[
+\begin{aligned}
+factorial(6)
+&=6 \times factorial(5)\\
+&=6 \times 5 \times factorial(4)\\
+&=\cdots\\
+&=720
+\end{aligned}
+\]
+
+After constant evaluation completes, the compiler substitutes the result into
+the program representation:
+
+\begin{lstlisting}[language=C++]
+constexpr unsigned result = 720;
+\end{lstlisting}
+
+No runtime recursive execution is generated. The function body is used only
+by the compiler's constant evaluator during translation. The final executable
+contains only the operations required to use the computed value.
+
+The guarantee that the computation occurs before runtime derives from the
+\texttt{constexpr} rules: an expression used to initialize a
+\texttt{constexpr} object must be a constant expression, meaning that its
+value must be determinable during compilation.
+
+\subsection{Compiler-Level Execution Model}
+
+Template metaprogramming and \texttt{constexpr} evaluation achieve
+compile-time computation through different compiler mechanisms.
+
+Template-based computation is performed during semantic analysis through
+template instantiation, specialization matching, and substitution of
+template arguments. The compiler generates compile-time entities, evaluates
+their associated expressions, and replaces template references with the
+resulting values.
+
+Conversely, \texttt{constexpr} computation is performed through constant
+expression evaluation. The compiler executes the function in an internal
+evaluation environment over its intermediate representation or abstract
+syntax tree, provided that every operation satisfies the constant expression
+requirements.
+
+In both cases, the essential compilation transformation is:
+
+\[
+\text{compile-time expression}
+\rightarrow
+\text{constant evaluation}
+\rightarrow
+\text{generated program representation}
+\]
+
+The runtime program therefore begins execution only after the compile-time
+computation has already been completed.
+
+\subsection{Compile-Time Overload Resolution with SFINAE and C++20 Concepts}
+
+SFINAE (\textit{Substitution Failure Is Not An Error}) enables compile-time
+selection of function overloads by controlling whether a template declaration
+participates in the overload resolution process. The following example uses
+\texttt{std::enable\_if} to select different implementations according to
+compile-time properties of the template argument.
+
+\begin{lstlisting}[language=C++, caption={SFINAE-based overload selection using std::enable\_if}]
+#include <iostream>
+#include <type_traits>
+
+struct CustomType {};
+
+template <typename T>
+typename std::enable_if<std::is_integral<T>::value>::type
+process(T value)
+{
+    std::cout << "Integral type: " << value << '\n';
+}
+
+template <typename T>
+typename std::enable_if<std::is_floating_point<T>::value>::type
+process(T value)
+{
+    std::cout << "Floating-point type: " << value << '\n';
+}
+
+template <typename T>
+typename std::enable_if<
+    !std::is_integral<T>::value &&
+    !std::is_floating_point<T>::value
+>::type
+process(T)
+{
+    std::cout << "Custom or non-arithmetic type\n";
+}
+
+int main()
+{
+    process(42);             // Integral overload
+    process(3.14);           // Floating-point overload
+    process(CustomType{});   // Custom type overload
+}
+\end{lstlisting}
+
+During template argument substitution, the compiler attempts to instantiate
+each candidate function by replacing the template parameter \texttt{T} with the
+deduced argument type. The expression contained in \texttt{std::enable\_if} is
+evaluated during this substitution phase.
+
+If the condition evaluates to \texttt{true}, \texttt{std::enable\_if<T>::type}
+is defined and the resulting function declaration remains part of the overload
+resolution set. For example, for the call:
+
+\begin{lstlisting}[language=C++]
+process(42);
+\end{lstlisting}
+
+the template parameter is deduced as \texttt{T = int}. The integral overload is
+transformed into:
+
+\begin{lstlisting}[language=C++]
+typename std::enable_if<true>::type process(int);
+\end{lstlisting}
+
+which is a valid declaration because the nested type member exists.
+
+Conversely, the floating-point overload undergoes the same substitution:
+
+\begin{lstlisting}[language=C++]
+typename std::enable_if<false>::type process(int);
+\end{lstlisting}
+
+In this case, \texttt{std::enable\_if<false>} does not provide a nested
+\texttt{type} member. The substitution therefore fails, causing this overload
+to be removed from the overload resolution set.
+
+The failure is not considered a compilation error because SFINAE applies
+specifically during the substitution phase of template argument deduction.
+Invalid template substitutions eliminate the corresponding candidate instead of
+terminating compilation. A hard compilation error would occur only if the
+invalid expression appeared outside the immediate context of substitution or
+after overload resolution had already selected a candidate.
+
+C++20 Concepts provide a more explicit mechanism for expressing the same
+compile-time constraints. Instead of relying on substitution failure,
+constraints are directly attached to template declarations and evaluated by the
+compiler during overload resolution.
+
+\begin{lstlisting}[language=C++, caption={C++20 Concepts-based overload selection}]
+#include <iostream>
+#include <concepts>
+
+struct CustomType {};
+
+template <typename T>
+requires std::integral<T>
+void process(T value)
+{
+    std::cout << "Integral type: " << value << '\n';
+}
+
+template <typename T>
+requires std::floating_point<T>
+void process(T value)
+{
+    std::cout << "Floating-point type: " << value << '\n';
+}
+
+template <typename T>
+requires (!std::integral<T> && !std::floating_point<T>)
+void process(T)
+{
+    std::cout << "Custom or non-arithmetic type\n";
+}
+
+int main()
+{
+    process(42);             // Integral overload
+    process(3.14);           // Floating-point overload
+    process(CustomType{});   // Custom type overload
+}
+\end{lstlisting}
+
+With Concepts, the compiler evaluates the associated constraints before
+performing overload resolution. A function template whose constraints are not
+satisfied is discarded from the overload resolution set directly, providing the
+same compile-time specialization behavior as SFINAE while expressing the type
+requirements explicitly.
+
+\section{Compile-Time Overload Resolution with SFINAE and C++20 Concepts}
+
+SFINAE (\textit{Substitution Failure Is Not An Error}) enables compile-time
+selection of function overloads by controlling whether a template declaration
+participates in the overload resolution process. The following example uses
+\texttt{std::enable\_if} to select different implementations according to
+compile-time properties of the template argument.
+
+\begin{lstlisting}[language=C++, caption={SFINAE-based overload selection using std::enable\_if}]
+#include <iostream>
+#include <type_traits>
+
+struct CustomType {};
+
+template <typename T>
+typename std::enable_if<std::is_integral<T>::value>::type
+process(T value)
+{
+    std::cout << "Integral type: " << value << '\n';
+}
+
+template <typename T>
+typename std::enable_if<std::is_floating_point<T>::value>::type
+process(T value)
+{
+    std::cout << "Floating-point type: " << value << '\n';
+}
+
+template <typename T>
+typename std::enable_if<
+    !std::is_integral<T>::value &&
+    !std::is_floating_point<T>::value
+>::type
+process(T)
+{
+    std::cout << "Custom or non-arithmetic type\n";
+}
+
+int main()
+{
+    process(42);             // Integral overload
+    process(3.14);           // Floating-point overload
+    process(CustomType{});   // Custom type overload
+}
+\end{lstlisting}
+
+During template argument substitution, the compiler attempts to instantiate
+each candidate function by replacing the template parameter \texttt{T} with the
+deduced argument type. The expression contained in \texttt{std::enable\_if} is
+evaluated during this substitution phase.
+
+If the condition evaluates to \texttt{true}, \texttt{std::enable\_if<T>::type}
+is defined and the resulting function declaration remains part of the overload
+resolution set. For example, for the call:
+
+\begin{lstlisting}[language=C++]
+process(42);
+\end{lstlisting}
+
+the template parameter is deduced as \texttt{T = int}. The integral overload is
+transformed into:
+
+\begin{lstlisting}[language=C++]
+typename std::enable_if<true>::type process(int);
+\end{lstlisting}
+
+which is a valid declaration because the nested type member exists.
+
+Conversely, the floating-point overload undergoes the same substitution:
+
+\begin{lstlisting}[language=C++]
+typename std::enable_if<false>::type process(int);
+\end{lstlisting}
+
+In this case, \texttt{std::enable\_if<false>} does not provide a nested
+\texttt{type} member. The substitution therefore fails, causing this overload
+to be removed from the overload resolution set.
+
+The failure is not considered a compilation error because SFINAE applies
+specifically during the substitution phase of template argument deduction.
+Invalid template substitutions eliminate the corresponding candidate instead of
+terminating compilation. A hard compilation error would occur only if the
+invalid expression appeared outside the immediate context of substitution or
+after overload resolution had already selected a candidate.
+
+C++20 Concepts provide a more explicit mechanism for expressing the same
+compile-time constraints. Instead of relying on substitution failure,
+constraints are directly attached to template declarations and evaluated by the
+compiler during overload resolution.
+
+\begin{lstlisting}[language=C++, caption={C++20 Concepts-based overload selection}]
+#include <iostream>
+#include <concepts>
+
+struct CustomType {};
+
+template <typename T>
+requires std::integral<T>
+void process(T value)
+{
+    std::cout << "Integral type: " << value << '\n';
+}
+
+template <typename T>
+requires std::floating_point<T>
+void process(T value)
+{
+    std::cout << "Floating-point type: " << value << '\n';
+}
+
+template <typename T>
+requires (!std::integral<T> && !std::floating_point<T>)
+void process(T)
+{
+    std::cout << "Custom or non-arithmetic type\n";
+}
+
+int main()
+{
+    process(42);             // Integral overload
+    process(3.14);           // Floating-point overload
+    process(CustomType{});   // Custom type overload
+}
+\end{lstlisting}
+
+With Concepts, the compiler evaluates the associated constraints before
+performing overload resolution. A function template whose constraints are not
+satisfied is discarded from the overload resolution set directly, providing the
+same compile-time specialization behavior as SFINAE while expressing the type
+requirements explicitly.
+
+\section{Variadic C++ Template and other Metaprogramming Techniques}
+
+Variadic templates extend the C++ template system by allowing a template 
+to accept an arbitrary number of type or non-type template arguments.
+
+Introduced in C++11, they provide compile-time parameter pack abstraction, 
+enabling the definition of generic components whose arity is not known a priori.
+
+Traditional function or class templates require a fixed number of template 
+parameters and cannot directly represent operations over heterogeneous 
+collections of arbitrary size.
+
+A typical application is recursive compile-time expansion of parameter packs:
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template <typename T>
+void print(T value) {
+    std::cout << value << '\n';
+}
+
+template <typename T, typename... Ts>
+void print(T first, Ts... rest) {
+    std::cout << first << ' ';
+    print(rest...);
+}
+
+int main() {
+    print(1, 2.5, "text");
+}
+\end{lstlisting}
+
+The template parameter pack $\texttt{Ts...}$ represents an arbitrary 
+sequence of types.
+
+During template instantiation, the compiler generates specialized versions 
+for each concrete argument list and recursively expands the pack until the 
+base case is reached.
+
+The mechanism is completely resolved at compile time through template 
+instantiation and overload resolution.
+
+
+\subsection{Template Template Parameters}
+
+Template template parameters allow a template to receive another template 
+as an argument.
+
+They enable higher-order generic programming, where a class template operates 
+on a family of compatible class templates rather than on individual 
+instantiated types.
+
+Ordinary templates cannot express abstractions over template structures 
+themselves because their parameters represent types rather than templates.
+
+A generic container adapter can be implemented as follows:
+
+\begin{lstlisting}[language=C++]
+#include <vector>
+#include <list>
+
+template <typename T, template <typename> class Container>
+class Stack {
+
+    Container<T> data;
+
+public:
+
+    void push(const T& value) {
+        data.push_back(value);
+    }
+
+    T pop() {
+        T value = data.back();
+        data.pop_back();
+        return value;
+    }
+};
+
+int main() {
+
+    Stack<int, std::vector> a;
+    Stack<int, std::list> b;
+}
+\end{lstlisting}
+
+The parameter $\texttt{Container}$ represents a template accepting a type 
+parameter.
+
+During compilation, the compiler substitutes the provided template argument 
+and instantiates the resulting specialization.
+
+This mechanism enables abstraction over template families while preserving 
+compile-time type checking.
+
+
+\subsection{Curiously Recurring Template Pattern (CRTP)}
+
+The Curiously Recurring Template Pattern (CRTP) is a template-based 
+inheritance technique in which a derived class passes itself as a template 
+argument to its base class.
+
+It enables static polymorphism by allowing the base class to invoke 
+derived-class functionality through compile-time binding instead of runtime 
+dynamic dispatch.
+
+A minimal CRTP implementation is:
+
+\begin{lstlisting}[language=C++]
+#include <iostream>
+
+template <typename Derived>
+class Interface {
+
+public:
+
+    void execute() {
+        static_cast<Derived*>(this)->implementation();
+    }
+};
+
+
+class Concrete : public Interface<Concrete> {
+
+public:
+
+    void implementation() {
+        std::cout << "Concrete implementation";
+    }
+};
+
+
+int main() {
+
+    Concrete obj;
+    obj.execute();
+}
+\end{lstlisting}
+
+The base class template is instantiated with the derived type, producing a 
+specialized class where calls to derived operations are resolved during 
+compilation.
+
+Unlike ordinary class templates, CRTP addresses the problem of expressing 
+polymorphic relationships between types without requiring a runtime interface.
+
+The mechanism relies on template instantiation and static dispatch, with the 
+compiler generating a concrete implementation for each derived type 
+participating in the pattern.
+
+\section{Limits of Java Generics in Replicating C++ SFINAE and Type Traits}
+
+Java generics provide bounded polymorphism through explicit type constraints, 
+allowing the compiler to restrict the set of admissible type arguments.
+
+A generic parameter can specify an upper bound, enabling compile-time 
+verification of operations supported by the bound:
+
+\begin{lstlisting}[language=Java]
+public class Calculator<T extends Number> {
+
+    public double square(T value) {
+        return value.doubleValue() * value.doubleValue();
+    }
+}
+
+public class Main {
+
+    public static void main(String[] args) {
+        Calculator<Integer> c1 = new Calculator<>();
+        Calculator<Double> c2 = new Calculator<>();
+    }
+}
+\end{lstlisting}
+
+The constraint $\texttt{T extends Number}$ performs compile-time bounds 
+checking: only types satisfying the declared subtype relationship can 
+instantiate the generic class.
+
+However, Java generic bounds express only admissible type relationships and 
+the operations provided by the bound; they cannot introduce conditional 
+compile-time branching based on the concrete identity of $\texttt{T}$.
+
+Unlike C++ templates, Java generics do not support SFINAE-style overload 
+selection because generic instantiation does not generate independent 
+specialized versions of generic code for each concrete type.
+
+In C++, template substitution and type-traits evaluation occur during 
+compilation, allowing the compiler to select or discard overloads depending 
+on whether expressions involving a type are valid.
+
+This behavior relies on compile-time type substitution and template 
+monomorphization.
+
+Java generics are instead implemented through type erasure.
+
+After compilation, generic type parameters are removed from the generated 
+bytecode, and generic classes are represented using their erased upper 
+bounds.
+
+Consequently, a generic method cannot perform compile-time branching based 
+on properties that are specific to an unknown type parameter:
+
+\begin{lstlisting}[language=Java]
+public static <T> void process(T value) {
+
+    // Impossible:
+    // select implementation depending on properties of T
+}
+\end{lstlisting}
+
+The compiler cannot instantiate separate versions of $\texttt{process}$ for 
+different values of $\texttt{T}$, nor can it use the concrete type argument 
+to enable or disable overloads during compilation.
+
+Any type-dependent behavior must therefore rely on mechanisms available after 
+erasure, such as explicit runtime type information, rather than compile-time 
+substitution analysis.
+
+Therefore, Java bounded polymorphism provides static constraints on generic 
+parameters but cannot reproduce the compile-time introspection and 
+conditional specialization capabilities of C++ SFINAE and type traits.
+
+\section{Limits of C\# Generics in Replicating C++ SFINAE and Type Traits}
+
+C\# does not provide a direct equivalent of C++ SFINAE or compile-time type traits, 
+since generic constraints are based on bounded polymorphism rather than 
+substitution-based overload resolution.
+
+However, the combination of generic constraints introduced by the `where` clause 
+and static abstract interface members introduced in .NET 7 allows C\# to express 
+a restricted form of trait-oriented generic programming.
+
+
+A classical C++ type-traits pattern uses SFINAE to enable an overload only when 
+a type satisfies a compile-time property:
+
+\begin{lstlisting}[language=C++]
+template<typename T>
+auto add(T a, T b) -> 
+    std::enable_if_t<std::is_arithmetic_v<T>, T>
+{
+    return a + b;
+}
+\end{lstlisting}
+
+
+During template argument substitution, the compiler attempts to instantiate 
+the candidate function.
+
+If the required type property is not satisfied, the substitution failure removes 
+the overload from the candidate set without generating a compilation error.
+
+
+The closest C\# abstraction is obtained through constrained generic parameters:
+
+\begin{lstlisting}[language={[Sharp]C}]
+static T Add<T>(T a, T b)
+    where T : INumber<T>
+{
+    return a + b;
+}
+\end{lstlisting}
+
+
+The constraint `where T : INumber<T>` restricts the admissible type arguments 
+to types implementing the required numeric contract.
+
+The compiler validates the generic instantiation against the declared bounded 
+polymorphic constraint, ensuring that all operations required by the generic 
+algorithm are available for the selected type.
+
+
+The interface-based approach enabled by static abstract interface members 
+provides a trait-like mechanism:
+
+\begin{lstlisting}[language={[Sharp]C}]
+public interface IAddable<TSelf>
+    where TSelf : IAddable<TSelf>
+{
+    static abstract TSelf operator +(TSelf x, TSelf y);
+}
+\end{lstlisting}
+
+
+A generic algorithm can therefore depend on operations defined by a 
+type-level contract.
+
+The compiler checks the presence of the required static members during generic 
+type validation, providing functionality conceptually similar to C++ concepts 
+and type traits, although with a more restricted expressive model.
+
+
+This capability allows C\# to approximate C++ trait-based programming more closely 
+than Java generics.
+
+The reason is that .NET generics use runtime reification: generic type arguments 
+and constraints are preserved in metadata and remain available to the CLR type system.
+
+Therefore, the compiler and runtime can reason about the actual generic arguments 
+and their implemented interfaces.
+
+
+Java generics, based on type erasure, cannot provide equivalent guarantees over 
+generic type capabilities.
+
+
+Nevertheless, C\# generic constraints cannot implement true SFINAE.
+
+Constraint violations are compilation errors rather than substitution failures 
+that selectively remove invalid candidates during overload resolution.
+
+
+The C\# type system does not provide arbitrary compile-time reflection over type 
+structure, conditional declaration generation, or unrestricted compile-time 
+computation.
+
+Generic constraints express statically known relationships between types, 
+but they do not form a general compile-time metaprogramming mechanism.
+
+
+This limitation follows from the different implementation strategies of the two 
+languages.
+
+C++ templates rely on compile-time substitution and monomorphization, where 
+templates are instantiated into concrete program fragments after AST-level 
+substitution.
+
+This enables arbitrary type-dependent specialization and compile-time computation.
+
+
+C\# generics instead rely on runtime reification, where generic definitions remain 
+associated with CLR metadata and are validated according to declared constraints.
+
+Consequently, C\# generic constraints and generic math provide trait-like 
+abstractions, but they cannot reproduce the substitution-based metaprogramming 
+model of C++ templates.
+
+\section{Instantiation-Time Checking and Metaprogramming Expressiveness}
+
+C++ templates perform semantic checking after template argument substitution, during the instantiation phase. The
+template definition may contain dependent expressions whose validity cannot be determined until a concrete type is
+provided. This delayed checking enables compile-time selection mechanisms in which the existence or absence of
+operations on a type influences overload resolution. Java and C\# generics adopt a different model: generic
+declarations must be type-correct independently of future instantiations, and only operations guaranteed by the
+declared bounds are permitted. Consequently, generic code cannot express arbitrary structural requirements that are
+discovered only when a type is substituted.
+
+A representative C++ technique enabled by instantiation-time checking is SFINAE (Substitution Failure Is Not An
+Error). During overload resolution, if substituting a template argument makes a dependent expression invalid, the
+candidate is removed rather than producing a compilation error:
+
+\begin{lstlisting}[language=C++]
+#include <type_traits>
+
+template <typename T>
+auto process(T value) -> decltype(value.serialize(), void())
+{
+    value.serialize();
+}
+
+template <typename T>
+void process(T)
+{
+    // fallback implementation
+}
+\end{lstlisting}
+
+For a type providing a \texttt{serialize()} member function, substitution succeeds and the first overload is selected.
+For a type without such a member, the expression \texttt{value.serialize()} becomes invalid during substitution; the
+failure is discarded by SFINAE and the fallback overload remains viable. The compiler therefore performs a form of
+structural capability detection without requiring an explicit interface or inheritance relationship.
+
+The same mechanism cannot be directly expressed in Java or C\# generics because generic declarations are checked
+before concrete type arguments are substituted. A generic method cannot contain an operation whose validity depends
+on members not guaranteed by the declared type bound:
+
+\begin{lstlisting}[language=Java]
+static <T> void process(T value) {
+    value.serialize(); // compilation error
+}
+\end{lstlisting}
+
+The declaration is rejected because the type parameter \texttt{T} does not provide any guarantee that a
+\texttt{serialize()} operation exists. The compiler cannot defer this validity check until a future instantiation
+with a specific type. The only available mechanism is to explicitly encode the requirement through bounded
+polymorphism:
+
+\begin{lstlisting}[language=Csharp]
+interface ISerializable {
+    void Serialize();
+}
+
+static void Process<T>(T value) where T : ISerializable
+{
+    value.Serialize();
+}
+\end{lstlisting}
+
+However, this constraint must be declared before generic instantiation and cannot be inferred from the structural
+properties of an arbitrary type. Unlike C++ template substitution, bounded polymorphism in Java and C\# cannot
+perform compile-time capability detection based on the presence of members. The limitation follows directly from
+declaration-time checking: generic bodies must already be valid for all admissible type arguments, whereas C++
+allows validity to be determined only after substitution during template instantiation.
+\section{External Metaprogramming Workarounds in Java and C\#}
+
+Unlike C++ templates, whose instantiation mechanism is intrinsically integrated into the language type system
+and compiler pipeline, Java and C\# generics do not provide native facilities for arbitrary compile-time program
+generation or type-directed code transformation.
+
+Their generic systems primarily express parametric polymorphism through constrained type abstraction,
+while metaprogramming capabilities are provided through additional mechanisms operating outside
+the generic type system.
+
+\subsection{Java Reflection, Annotation Processing, and Code Generation}
+
+Java commonly relies on runtime reflection as a mechanism to recover and manipulate structural information
+that is unavailable through ordinary generic operations.
+
+Reflection operates after compilation, using the metadata stored in class files to inspect classes,
+methods, fields, annotations, and runtime types.
+
+Although it enables dynamic behavior based on type information, it does not participate in generic instantiation
+or compiler-driven code specialization.
+
+The reflective model therefore represents runtime introspection rather than compile-time metaprogramming.
+
+Compile-time metaprogramming in Java is instead commonly implemented through annotation processors
+based on the Java Annotation Processing API.
+
+These processors execute during compilation and analyze annotated source elements through
+compiler-provided abstract representations of the program, such as the language model API.
+
+They can generate additional source files, modify compilation workflows, or produce auxiliary classes,
+but they do not extend the semantics of Java generics.
+
+The generated artifacts are independent program units produced before compilation rather than
+specialized instances created by the generic type system.
+
+Code generation libraries such as Lombok extend this approach by performing source-level transformations
+during compilation.
+
+Lombok modifies compiler representations, commonly through abstract syntax tree manipulation,
+to inject methods, constructors, or other structural elements that developers would otherwise write manually.
+
+However, these transformations are external compiler extensions and are not part of Java's generic
+substitution mechanism.
+
+The generic system remains responsible only for type abstraction and checking, while the generation
+framework separately alters program structure.
+
+Consequently, Java metaprogramming workarounds operate either dynamically through reflection
+or externally to the compiler type system through annotation-driven generation.
+
+They do not provide a mechanism equivalent to C++ template instantiation, where template definitions
+themselves are evaluated by the compiler as parameterized program fragments.
+
+
+\subsection{C\# Source Generators and T4 Templates}
+
+C\# provides more integrated compile-time generation mechanisms than Java, but these remain
+architecturally separate from the generic type system.
+
+Source generators, introduced with the Roslyn compiler platform, execute during compilation
+and analyze the program's syntax trees and semantic models.
+
+They can emit additional C\# source code that becomes part of the compilation unit,
+allowing automatic generation of serialization code, boilerplate implementations,
+or type-specific helpers.
+
+Despite operating within the compilation pipeline, source generators do not participate in
+generic type instantiation.
+
+A generic declaration is still processed according to the CLR generic model,
+while generated source code represents additional compilation input produced by an external
+transformation phase.
+
+The generator does not extend generic constraints into a general compile-time evaluation mechanism
+and cannot directly replace the template instantiation model of C++.
+
+Another common mechanism is the use of T4
+(Text Template Transformation Toolkit) templates,
+which perform code generation through template files processed before compilation.
+
+T4 templates are independent generation programs that produce source files according to
+explicit transformation rules.
+
+Their execution resembles a preprocessing stage rather than a semantic phase of the C\# type system,
+since the generated code is compiled afterward as ordinary C\#.
+
+The fundamental distinction is that Java and C\# generics describe reusable abstractions within
+the language type system, whereas reflection, annotation processors, source generators,
+and T4 templates are auxiliary transformation mechanisms layered around the compiler
+or runtime environment.
+
+C++ templates combine parametric polymorphism and compile-time program generation in a single
+language construct: template parameters directly control compiler evaluation,
+substitution, and specialization.
+
+In Java and C\#, equivalent behavior requires separate metaprogramming infrastructures
+that generate or inspect code outside the native generic abstraction mechanisms.
+\section{Summary Practical Limits of Metaprogramming in C++, Java, and C\# Generics}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{3cm}|p{4cm}|p{4cm}|p{4cm}|}
+\hline
+\textbf{Capability} &
+\textbf{C++ Templates} &
+\textbf{Java Generics} &
+\textbf{C\# Generics} \\
+\hline
+
+\textbf{Compile-time computation} &
+\textbf{Supported} --- Template metaprogramming and
+\texttt{constexpr} evaluation allow computations to be performed
+during compilation through template instantiation and compile-time
+evaluation. &
+\textbf{Not supported} --- Generic instantiation does not execute
+compile-time computations because Java generics are implemented through
+type erasure and are absent from runtime specialization. &
+\textbf{Partially supported} --- Generic constraints and compile-time
+type checking provide limited static reasoning, but C\# does not offer
+general compile-time computation over generic types. \\
+\hline
+
+\textbf{Conditional compilation based on type properties} &
+\textbf{Supported} --- SFINAE, type traits, and Concepts enable
+compile-time selection of implementations according to properties of
+template arguments. &
+\textbf{Not supported} --- Type erasure prevents compile-time branching
+on concrete type properties because generic parameters do not retain
+specialization information. &
+\textbf{Partially supported} --- Generic constraints allow selection
+based on declared type relationships, but they cannot express arbitrary
+compile-time predicates over types. \\
+\hline
+
+\textbf{Code generation per type} &
+\textbf{Supported} --- Template monomorphization generates separate
+specialized code for each instantiated type during compilation. &
+\textbf{Not supported} --- Type erasure produces shared generic
+implementations that operate on erased types rather than generating
+specialized code per type argument. &
+\textbf{Supported for value types and limited for reference types} ---
+CLR reification enables JIT-generated specialized implementations for
+value types while reference types generally share generic code. \\
+\hline
+
+\textbf{Runtime type introspection} &
+\textbf{Partially supported} --- RTTI provides runtime information about
+concrete objects, but template parameters are not generally preserved as
+runtime metadata after compilation. &
+\textbf{Partially supported} --- Reified class objects exist for some
+generic information, but type erasure removes most generic type
+arguments from runtime representation. &
+\textbf{Supported} --- CLR reification preserves generic type
+information in metadata, allowing runtime inspection of instantiated
+generic types. \\
+\hline
+
+\end{tabular}
+\caption{Practical limits of metaprogramming capabilities in C++,
+Java, and C\# generics.}
+\label{tab:metaprogramming_limits}
+\end{table}
+
+
 \end{document}
