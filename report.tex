@@ -1020,23 +1020,12 @@ program execution. In this way, incorrect type interactions are detected
 during compilation rather than being deferred to runtime.
 
 Different implementations of parametric polymorphism achieve static type
-safety through different mechanisms. Some approaches eliminate generic type
-information after compilation through type erasure, while others preserve
-type information and generate concrete implementations for each instantiated
-type. C++ templates belong to the second category and adopt a reified
-implementation strategy based on the template instantiation and
-monomorphization process described in Section~\ref{sec:monomorphization}.
-
-Both implementation strategies preserve static type safety, although they
-achieve this objective differently. In implementations based on type
-erasure, generic correctness is verified entirely during compilation.
-Although type parameters disappear from the generated executable,
-compiler-inserted casts preserve the guarantees established by the static
-type system. Implementations based on reified generics retain complete type
-information throughout compilation and generate type-specific
-implementations directly. Since each specialization corresponds to a
-concrete type, correctness is preserved without requiring erased
-representations or implicit runtime casts.
+safety through different mechanisms, as introduced in the overview of
+implementation strategies. C++ templates adopt a reified implementation
+strategy based on the template instantiation and monomorphization process
+described in Section~\ref{sec:monomorphization}: type parameters are never
+erased, and every instantiation is checked against a concrete, fully
+specialized implementation.
 
 From a type system perspective, reification allows the compiler to retain
 complete information about the actual types involved in every specialization.
@@ -1147,25 +1136,10 @@ erased representations or compiler-generated runtime casts.
 \section{Reflection and Runtime Type Information}
 \label{sec:cpp_reflection}
 
-The availability of generic type information at runtime depends directly on
-the representation strategy adopted by the programming language
-implementation. In systems based on type erasure, generic parameters are
-removed or abstracted during compilation, preventing direct access to the
-original concrete type arguments during execution. Consequently, runtime
-inspection mechanisms can only operate on the residual type information
-preserved after erasure. Reflection facilities applied to erased generic
-structures therefore provide limited information about the original
-instantiations, since the relationship between the generic abstraction and
-its concrete type parameters is no longer explicitly represented.
-
-Conversely, implementations based on reified generics preserve concrete type
-information throughout compilation and execution. In such systems, runtime
-reflection or runtime type identification mechanisms can access metadata
-associated with the actual instantiated generic types, enabling operations
-such as generic type inspection, runtime metadata analysis, and specialized
-processing based on concrete type information.
-
-C++ templates follow the reified model described in
+As introduced in the overview of implementation strategies, the availability
+of generic type information at runtime depends directly on whether the
+implementation follows a type-erasure or a reified model. C++ templates
+follow the reified model described in
 Section~\ref{sec:cpp_template_runtime}: template parameters are not
 represented as a single runtime generic entity, and monomorphization
 preserves the identity of the concrete types used during compilation.
@@ -1297,10 +1271,14 @@ reflection system.
 % =====================================================================
 % CHAPTER: JAVA GENERICS
 % =====================================================================
+% =====================================================================
+% CHAPTER: JAVA GENERICS
+% =====================================================================
 
 \chapter{Java Generics}
 
 \section{Instantiation Time}
+
 Java Generics adopt a compilation strategy based on compile-time instantiation
 followed by type erasure. During compilation, the Java compiler associates
 concrete type arguments with generic declarations in order to perform static
@@ -1308,15 +1286,15 @@ type checking. However, this association does not lead to the generation of a
 new specialized class representation.
 
 This design differs fundamentally from the approach adopted by C++ templates.
-While Java uses instantiation only as a compile-time type verification mechanism,
-C++ performs template instantiation through monomorphization, generating a
-separate specialization for every concrete type argument
+While Java uses instantiation only as a compile-time type verification
+mechanism, C++ performs template instantiation through monomorphization,
+generating a separate specialization for every concrete type argument.
 
 \subsection{The Java Generic Instantiation Model}
 
 Consider the following generic declaration:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 class Box<T> {
     private T value;
 
@@ -1324,18 +1302,17 @@ class Box<T> {
         return value;
     }
 }
-\end{verbatim}
+\end{lstlisting}
 
 When the compiler encounters:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 Box<String> box = new Box<String>();
-\end{verbatim}
+\end{lstlisting}
 
-the type parameter $T$ is instantiated with the argument
-\texttt{String} for the purpose of compile-time verification. The compiler
-therefore checks that every operation involving \texttt{box} respects the
-constraint:
+the type parameter $T$ is instantiated with the argument \texttt{String} for
+the purpose of compile-time verification. The compiler therefore checks that
+every operation involving \texttt{box} respects the constraint:
 
 \[
 T = String
@@ -1343,29 +1320,18 @@ T = String
 
 However, this instantiation does not generate a new runtime class:
 
-\begin{verbatim}
+\[
 Box<String>
-\end{verbatim}
+\]
 
 Instead, Java produces a single generic class representation that is shared by
 all possible instantiations.
 
-This behavior contrasts with C++ templates, where:
-
-\begin{verbatim}
-Box<std::string>
-Box<int>
-\end{verbatim}
-
-represent distinct compile-time entities. The C++ compiler generates separate
-specialized implementations containing the concrete type information required
-for native code generation.
-
 \subsection{Type Erasure Pipeline}
 
 After generic type checking, the Java compiler applies type erasure. The type
-parameter is removed and replaced by its erasure according to the rules defined
-by the Java Language Specification.
+parameter is removed and replaced by its erasure according to the rules
+defined by the Java Language Specification.
 
 For an unbounded parameter:
 
@@ -1381,40 +1347,36 @@ Object
 
 Therefore:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 class Box<T>
-\end{verbatim}
+\end{lstlisting}
 
 is transformed into a representation equivalent to:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 class Box {
     Object value;
 
     Object get()
 }
-\end{verbatim}
+\end{lstlisting}
 
-At this point, Java has completed the generic instantiation process. No additional
-class corresponding to:
+At this point, Java has completed the generic instantiation process. No
+additional class corresponding to:
 
-\begin{verbatim}
+\[
 Box<String>
-\end{verbatim}
+\]
 
 exists in the JVM.
-
-This differs from C++ template compilation, where the instantiation phase does
-not remove the concrete type information but instead materializes it into a
-specialized implementation.
 
 \subsection{Instantiation with Type Bounds}
 
 When a Java generic parameter has a bound:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 class NumericBox<T extends Number>
-\end{verbatim}
+\end{lstlisting}
 
 the compiler verifies that every instantiation satisfies:
 
@@ -1423,38 +1385,27 @@ T <: Number
 \]
 
 The bound also determines the erasure type. According to the Java Language
-Specification, the erasure of a type variable corresponds to the erasure of its
-leftmost bound
+Specification, the erasure of a type variable corresponds to the erasure of
+its leftmost bound.
 
 Therefore:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 NumericBox<Integer>
 NumericBox<Double>
-\end{verbatim}
+\end{lstlisting}
 
 are both translated into a representation equivalent to:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 NumericBox
-\end{verbatim}
+\end{lstlisting}
 
 with:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 Number value;
-\end{verbatim}
-
-Conversely, a C++ template:
-
-\begin{verbatim}
-NumericBox<int>
-NumericBox<double>
-\end{verbatim}
-
-would generate two independent specializations with different internal
-representations
-
+\end{lstlisting}
 
 \subsection{Compiler Adaptation After Erasure}
 
@@ -1464,25 +1415,32 @@ during compile-time instantiation.
 
 For example:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 String s = box.get();
-\end{verbatim}
+\end{lstlisting}
 
 is compiled into a call returning:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 Object get()
-\end{verbatim}
+\end{lstlisting}
 
 followed by an inserted cast:
 
-\begin{verbatim}
+\begin{lstlisting}
 checkcast java/lang/String
-\end{verbatim}
+\end{lstlisting}
 
-C++ templates do not require this mechanism because the generated function
-already contains the concrete instantiated type. The specialization itself
-encodes the required type information at compile time
+Across all these mechanisms, the Java instantiation model consistently
+contrasts with C++ template compilation: whereas C++ monomorphization
+generates a distinct specialization for every concrete type argument, with
+type information encoded directly into each generated implementation, Java
+instantiation is entirely a compile-time verification step that resolves to
+a single shared runtime representation, requiring the compiler to insert
+casts and rely on erasure rules precisely because no specialized,
+type-specific code is produced.
+
+% =====================================================================
 
 \section{Runtime Representation}
 
@@ -1497,13 +1455,7 @@ parameterizations of the same generic class share a single runtime
 representation. For example, the source-level types
 
 \[
-List<String>
-\]
-
-and
-
-\[
-List<Integer>
+List<String> \quad \text{and} \quad List<Integer>
 \]
 
 do not correspond to two different classes inside the JVM. Instead, both are
@@ -1519,13 +1471,13 @@ implementations for different generic arguments.
 \subsection{Erasure of Generic Type Parameters}
 
 The Java compiler transforms parameterized types by replacing type variables
-with their erasures. According to the Java Language Specification, the erasure
-of an unbounded type variable is \texttt{Object}, while a bounded type variable
-is replaced by the erasure of its first bound.
+with their erasures. According to the Java Language Specification, the
+erasure of an unbounded type variable is \texttt{Object}, while a bounded type
+variable is replaced by the erasure of its first bound.
 
 Consider the generic declaration:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 class Box<T> {
     private T value;
 
@@ -1533,11 +1485,11 @@ class Box<T> {
         return value;
     }
 }
-\end{verbatim}
+\end{lstlisting}
 
 After erasure, the runtime representation is equivalent to:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 class Box {
     private Object value;
 
@@ -1545,7 +1497,7 @@ class Box {
         return value;
     }
 }
-\end{verbatim}
+\end{lstlisting}
 
 The JVM therefore executes a representation where the type variable $T$ has
 been replaced by its erased type. The runtime system has no knowledge that the
@@ -1587,8 +1539,8 @@ is represented after erasure as:
 Object\ value
 \]
 
-The JVM stores a reference to an object rather than a value specialized for the
-concrete generic type.
+The JVM stores a reference to an object rather than a value specialized for
+the concrete generic type.
 
 For example, an instance of:
 
@@ -1611,44 +1563,6 @@ monomorphization, where each concrete instantiation may generate a distinct
 object layout and specialized machine code. In Java, the same erased
 representation is reused for all parameterizations.
 
-\subsection{Runtime Type Information}
-
-Java runtime type information is based on classes and interfaces, not on
-generic parameters.
-
-The JVM can determine:
-
-\[
-object instanceof ArrayList
-\]
-
-because the class identity is preserved.
-
-However, it cannot determine:
-
-\[
-object instanceof ArrayList<String>
-\]
-
-because the generic argument has been erased.
-
-Therefore, generic type information has a limited runtime presence. The class
-file may contain a \texttt{Signature} attribute preserving generic
-declarations for tools, compilers, and reflection APIs, but this metadata does
-not participate in JVM execution, object layout, or dynamic dispatch.
-
-The runtime system effectively observes:
-
-\[
-ArrayList
-\]
-
-rather than:
-
-\[
-ArrayList<String>
-\]
-
 \subsection{Inserted Runtime Casts}
 
 Since generic parameters are removed before execution, the compiler inserts
@@ -1657,19 +1571,18 @@ treated as a more specific type.
 
 Example:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 String s = list.get(0);
-\end{verbatim}
+\end{lstlisting}
 
 The erased execution model becomes equivalent to:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 Object tmp = list.get(0);
 String s = (String) tmp;
-\end{verbatim}
+\end{lstlisting}
 
-At the bytecode level, the JVM executes a
-\texttt{checkcast} instruction.
+At the bytecode level, the JVM executes a \texttt{checkcast} instruction.
 
 The runtime sequence is therefore:
 
@@ -1682,9 +1595,9 @@ The runtime sequence is therefore:
 \]
 
 The runtime verification concerns the concrete class of the object, not the
-generic argument. The JVM checks whether the object is a
-\texttt{String}, but it does not verify the existence of an original
-\texttt{List<String>} instantiation.
+generic argument. The JVM checks whether the object is a \texttt{String}, but
+it does not verify the existence of an original \texttt{List<String>}
+instantiation.
 
 \subsection{Bridge Methods}
 
@@ -1694,7 +1607,7 @@ synthetic \emph{bridge methods}.
 
 Example:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 class Node<T> {
     T get();
 }
@@ -1702,7 +1615,7 @@ class Node<T> {
 class StringNode extends Node<String> {
     String get();
 }
-\end{verbatim}
+\end{lstlisting}
 
 Before erasure, the overriding relationship is:
 
@@ -1730,11 +1643,11 @@ get():String
 
 Since the JVM method descriptors differ, the compiler generates a bridge:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 Object get() {
     return get();
 }
-\end{verbatim}
+\end{lstlisting}
 
 The bridge method adapts the specialized method to the erased representation,
 allowing normal JVM method dispatch to operate correctly.
@@ -1772,8 +1685,8 @@ Integer
 Object
 \]
 
-The primitive value is converted into an object representation through boxing,
-and retrieved values require unboxing.
+The primitive value is converted into an object representation through
+boxing, and retrieved values require unboxing.
 
 This behavior follows directly from the erased representation: since every
 generic parameter is mapped to a reference type, the JVM cannot create a
@@ -1822,224 +1735,24 @@ whereas:
 For Java, the generic type parameter is a compile-time concept. For C++,
 template instantiation becomes part of the generated runtime representation.
 
-\section{Reflection and Runtime Type Information}
+% =====================================================================
 
-The implementation of parametric polymorphism in Java is fundamentally
-based on \emph{type erasure}. Unlike languages adopting a reified
-representation of generic types, the Java compiler translates every
-parameterized type into a non-generic representation before bytecode
-generation. During compilation, each type parameter is replaced by its
-upper bound if one is declared, or by \texttt{java.lang.Object}
-otherwise. In addition, the compiler automatically inserts the necessary
-type casts to preserve static type safety and generates bridge methods
-when required to maintain binary compatibility under inheritance and
-method overriding.
+\section{Performance Characteristics}
 
-Consequently, generic type parameters exist exclusively within the static
-type system enforced by the compiler. The generated JVM bytecode
-contains no runtime distinction between different instantiations of the
-same generic declaration. For example, the declarations
-\texttt{List<String>} and \texttt{List<Integer>} are both translated
-into the same runtime representation corresponding to the raw type
-\texttt{java.util.List}. The Java Virtual Machine therefore executes a
-single runtime implementation regardless of the concrete type arguments
-that were present in the source program.
-
-This compilation strategy implies that parameterized type arguments are
-not represented as independent runtime entities. The JVM preserves
-metadata describing the generic declaration itself through the class
-file's \emph{Signature} attribute, allowing reflective APIs to
-reconstruct generic declarations under specific circumstances. However,
-the runtime representation of ordinary object instances contains only the
-erased type, meaning that dynamically allocated objects do not retain the
-concrete type arguments with which they were instantiated.
-
-\subsection{Reflection and RTTI Limitations}
-
-Java's Runtime Type Information (RTTI) mechanism is centered on the
-\texttt{java.lang.Class} object associated with every loaded class.
-Since all parameterized instantiations of a generic class are erased to
-the same runtime type, reflection operates exclusively on the erased
-representation rather than on the original parameterized form.
-
-A direct consequence is that parameterized generic types cannot
-participate in runtime type tests. The Java Language Specification
-explicitly prohibits expressions such as
-
-\begin{verbatim}
-obj instanceof List<String>
-\end{verbatim}
-
-because the runtime system has no information capable of distinguishing
-\texttt{List<String>} from \texttt{List<Integer>}. Allowing such
-expressions would incorrectly suggest that the JVM could recover type
-arguments that no longer exist after compilation.
-
-Similarly, the \texttt{getClass()} method always returns the runtime
-class corresponding to the erased type. Two objects instantiated with
-different generic arguments therefore produce identical runtime class
-descriptors.
-
-\begin{verbatim}
-import java.util.*;
-
-public class ReflectionExample {
-
-    public static void main(String[] args) {
-
-        List<String> strings = new ArrayList<>();
-        List<Integer> integers = new ArrayList<>();
-
-        System.out.println(strings.getClass());
-        System.out.println(integers.getClass());
-
-        System.out.println(strings.getClass()
-                == integers.getClass());
-
-        // Compilation error:
-        // if (strings instanceof List<String>) { }
-    }
-
-}
-\end{verbatim}
-
-The program produces equivalent runtime class objects for both lists,
-demonstrating that the generic arguments have been removed during
-compilation. The comparison evaluates to \texttt{true} because both
-variables reference instances of the same erased runtime class.
-
-Reflection APIs such as \texttt{Class}, \texttt{Method}, and
-\texttt{Field} therefore identify only erased runtime types during
-ordinary object inspection. Although generic declarations remain
-partially accessible through reflective interfaces such as
-\texttt{java.lang.reflect.Type} and \texttt{ParameterizedType}, this
-information originates from generic signatures stored in class metadata
-rather than from the runtime representation of individual object
-instances.
-Consequently, reflection cannot determine the concrete type argument
-associated with an arbitrary generic object unless that information has
-been preserved explicitly by the programmer.
-
-\subsection{Type Tokens as an Explicit Runtime Representation}
-
-Because type erasure removes concrete generic arguments from ordinary
-runtime objects, Java libraries frequently employ \emph{type tokens} to
-preserve type information explicitly. A type token consists of passing a
-\texttt{Class<T>} object alongside the generic value, thereby making the
-runtime type available independently of the erased generic parameter.
-
-The following example illustrates this approach.
-
-\begin{verbatim}
-public class Box<T> {
-
-    private final Class<T> type;
-    private final T value;
-
-    public Box(Class<T> type, T value) {
-        this.type = type;
-        this.value = value;
-    }
-
-    public Class<T> getType() {
-        return type;
-    }
-
-    public T getValue() {
-        return value;
-    }
-
-    public static void main(String[] args) {
-
-        Box<String> box = new Box<>(String.class, "Hello");
-
-        System.out.println(box.getType().getName());
-
-        if (box.getType() == String.class) {
-            System.out.println("String detected.");
-        }
-    }
-
-}
-\end{verbatim}
-
-The runtime type information in this example is not recovered from the
-generic parameter itself but from the explicitly supplied
-\texttt{Class<String>} object. This pattern is extensively employed by
-serialization frameworks, dependency injection containers, persistence
-libraries, and reflection-based infrastructures that require runtime
-knowledge of application types despite Java's erased implementation of
-generics.
-
-\subsection{Comparison with C++ Template RTTI}
-
-The reflection semantics of Java differ fundamentally from those of C++
-because the two languages adopt distinct implementation strategies for
-parametric polymorphism.
-
-C++ templates are implemented through
-\emph{monomorphization}. During compilation, every template
-specialization generates an independent concrete type with its own
-layout, member functions, and associated runtime type metadata.
-Consequently, specializations such as \texttt{std::vector<int>} and
-\texttt{std::vector<double>} constitute distinct runtime types rather
-than different views of a shared implementation.
-
-When Run-Time Type Information is enabled, the C++ runtime associates
-each polymorphic specialization with its own RTTI structures.
-Facilities such as \texttt{typeid} and
-\texttt{dynamic\_cast} therefore operate on specialized concrete types
-generated by template instantiation. Each specialization possesses an
-independent \texttt{std::type\_info} object corresponding to its unique
-runtime identity.
-
-Java follows the opposite approach. All parameterized instantiations of
-a generic declaration are translated into a single erased runtime class
-represented by one shared \texttt{java.lang.Class} object. Reflection
-therefore exposes the identity of the generic declaration after erasure
-rather than the original parameterized instantiation appearing in the
-source code.
-
-The distinction is summarized as follows:
-
-\begin{itemize}
-    \item Java implements parametric polymorphism through type erasure,
-          causing all parameterized instantiations of a generic class to
-          share a single runtime type.
-
-    \item Java reflection and RTTI operate exclusively on erased runtime
-          classes, preventing direct runtime discrimination between
-          different generic arguments.
-
-    \item C++ implements templates through monomorphization, generating
-          distinct concrete types for every specialization.
-
-    \item C++ RTTI associates independent runtime metadata with each
-          specialization, enabling facilities such as
-          \texttt{typeid} and \texttt{dynamic\_cast} to distinguish
-          specialized template types directly.
-\end{itemize}
-
-These contrasting implementation strategies illustrate the fundamental
-trade-off between preserving runtime type identity through reification,
-as in C++, and reducing runtime type diversity through type erasure, as
-adopted by the Java Virtual Machine.
-
-\section{Performance}
-
-The execution performance of generic programming is strongly determined by the
-translation strategy adopted by the language implementation. Java Generics and
-C++ templates represent two fundamentally different approaches: Java employs a
-\emph{type erasure} model, whereas C++ relies on compile-time instantiation and
-\emph{monomorphization}. These strategies produce different runtime
-representations and consequently different execution characteristics.
+The execution performance of generic programming is strongly determined by
+the translation strategy adopted by the language implementation. Java
+Generics and C++ templates represent two fundamentally different approaches:
+Java employs a \emph{type erasure} model, whereas C++ relies on compile-time
+instantiation and \emph{monomorphization}. These strategies produce different
+runtime representations and consequently different execution
+characteristics.
 
 Java Generics are implemented through type erasure, as specified by the Java
-Language Specification. During compilation, generic type parameters are removed
-from the generated bytecode and replaced by their upper bounds, typically
-\texttt{Object}. Generic information is preserved only in metadata attributes
-used by the compiler and runtime tools, but it does not determine the actual
-machine representation of executed objects.
+Language Specification. During compilation, generic type parameters are
+removed from the generated bytecode and replaced by their upper bounds,
+typically \texttt{Object}. Generic information is preserved only in metadata
+attributes used by the compiler and runtime tools, but it does not determine
+the actual machine representation of executed objects.
 
 For example, the generic class:
 
@@ -2068,13 +1781,12 @@ class Container {
 \end{lstlisting}
 
 Consequently, the JVM executes a single implementation shared by all generic
-instantiations. A \texttt{Container<String>} and a
-\texttt{Container<Integer>} therefore use the same erased runtime
-representation.
+instantiations. A \texttt{Container<String>} and a \texttt{Container<Integer>}
+therefore use the same erased runtime representation.
 
-C++ templates follow a different execution model. Template instantiation occurs
-during compilation, and the compiler generates a specialized version of the
-code for every concrete type used by the program. For example:
+C++ templates follow a different execution model. Template instantiation
+occurs during compilation, and the compiler generates a specialized version
+of the code for every concrete type used by the program. For example:
 
 \begin{lstlisting}[language=C++]
 template <typename T>
@@ -2097,20 +1809,21 @@ Container<int> a;
 Container<double> b;
 \end{lstlisting}
 
-produces two independent implementations specialized for
-\texttt{int} and \texttt{double}. This process, known as monomorphization,
-allows the compiler to exploit complete type information during optimization.
+produces two independent implementations specialized for \texttt{int} and
+\texttt{double}. This process, known as monomorphization, allows the compiler
+to exploit complete type information during optimization.
 
-Therefore, Java preserves a uniform runtime representation by removing generic
-type information, while C++ exchanges additional generated code for
+Therefore, Java preserves a uniform runtime representation by removing
+generic type information, while C++ exchanges additional generated code for
 type-specific machine implementations.
 
 \subsection{Memory Representation and Pointer Indirection}
 
 The main performance consequence of Java type erasure is that generic
 structures operate primarily on object references rather than direct values.
-In the JVM object model, reference variables contain pointers to heap objects,
-requiring additional memory accesses compared with direct value storage.
+In the JVM object model, reference variables contain pointers to heap
+objects, requiring additional memory accesses compared with direct value
+storage.
 
 For example:
 
@@ -2136,8 +1849,8 @@ runtime representation consists of a reference to an \texttt{Integer} object:
 Accessing an element therefore requires additional pointer dereferencing and
 memory accesses.
 
-In contrast, C++ templates combined with value semantics allow direct storage of
-objects inside contiguous memory regions. For example:
+In contrast, C++ templates combined with value semantics allow direct storage
+of objects inside contiguous memory regions. For example:
 
 \begin{lstlisting}[language=C++]
 std::vector<int> values;
@@ -2155,24 +1868,17 @@ stores integer values directly:
 \text{int}
 \]
 
-The absence of intermediate references reduces memory latency and improves the
-ability of the processor to exploit cache locality.
-
-It is important to note that the advantage comes from the combination of
-template specialization and value representation. C++ containers storing
-pointers, such as:
-
-\begin{lstlisting}[language=C++]
-std::vector<Object*>
-\end{lstlisting}
-
-present similar indirection problems to Java reference-based structures.
+The absence of intermediate references reduces memory latency and improves
+the ability of the processor to exploit cache locality (a systematic
+comparison with C++ is given in
+Section~\ref{sec:java_cpp_perf_comparison}).
 
 \subsection{Boxing and Unboxing Overhead}
 
 A significant limitation of Java Generics is the inability to directly
-instantiate generic types with primitive values. Generic parameters must always
-refer to object types; therefore primitive values require wrapper objects.
+instantiate generic types with primitive values. Generic parameters must
+always refer to object types; therefore primitive values require wrapper
+objects.
 
 For example:
 
@@ -2205,24 +1911,16 @@ The boxing process introduces additional execution costs:
 
 \end{itemize}
 
-These overheads are particularly relevant for numerical workloads, where large
-collections of primitive values are processed repeatedly.
-
-C++ templates avoid this limitation because specialization occurs before
-execution. A template instantiated with a primitive type directly manipulates
-the native representation:
-
-\begin{lstlisting}[language=C++]
-std::vector<int> values;
-\end{lstlisting}
-
-No wrapper objects, conversions, or additional indirections are required.
+These overheads are particularly relevant for numerical workloads, where
+large collections of primitive values are processed repeatedly (C++
+templates avoid this limitation entirely, as discussed in
+Section~\ref{sec:java_cpp_perf_comparison}).
 
 \subsection{Runtime Effects of Type Erasure: Casts and Bridge Methods}
 
-Type erasure also requires Java to preserve type safety through inserted casts.
-Since the JVM executes erased bytecode, the compiler introduces runtime checks
-when retrieving values from generic structures.
+Type erasure also requires Java to preserve type safety through inserted
+casts. Since the JVM executes erased bytecode, the compiler introduces
+runtime checks when retrieving values from generic structures.
 
 For example:
 
@@ -2238,7 +1936,8 @@ String value = (String) list.get(0);
 
 The cast introduces an additional runtime verification step. Modern JVM
 implementations can frequently eliminate redundant checks through JIT
-optimization, but unpredictable execution paths may prevent complete removal.
+optimization, but unpredictable execution paths may prevent complete
+removal.
 
 Another consequence of type erasure is the generation of synthetic bridge
 methods. Consider:
@@ -2296,118 +1995,85 @@ A Java container containing reference types generally follows the layout:
 \text{Value}
 \]
 
-Objects may be distributed across different regions of memory, reducing spatial
-locality. During sequential traversal, the processor may need to load multiple
-independent cache lines because consecutive logical elements are not necessarily
-physically adjacent.
+Objects may be distributed across different regions of memory, reducing
+spatial locality. During sequential traversal, the processor may need to load
+multiple independent cache lines because consecutive logical elements are not
+necessarily physically adjacent.
 
-This increases cache misses and reduces effective memory bandwidth.
-
-C++ templates allow direct storage of values when instantiated with concrete
-types. A structure such as:
-
-\begin{lstlisting}[language=C++]
-std::vector<double>
-\end{lstlisting}
-
-stores elements sequentially, enabling efficient cache-line utilization and
-hardware prefetching.
-
-Furthermore, because the compiler knows the exact representation and alignment
-of elements, it can apply additional optimizations such as vectorization and
-loop transformations.
-
-\subsection{Instruction Cache Effects and Code Generation Trade-offs}
-
-The two models also produce different effects on instruction cache behavior.
-
-Java type erasure generates a single implementation shared among all generic
-types. This reduces executable size and avoids duplicated machine code.
-However, the generated code cannot always exploit concrete type information.
-
-C++ monomorphization generates separate implementations for each instantiated
-type. This increases executable size and may produce instruction-cache
-pressure, a phenomenon commonly referred to as code bloat.
-
-However, specialized code enables stronger optimization opportunities,
-including:
-
-\begin{itemize}
-
-    \item complete function inlining;
-    \item constant propagation;
-    \item removal of abstraction layers;
-    \item compile-time dispatch resolution;
-    \item architecture-specific optimization.
-
-\end{itemize}
-
-Therefore, C++ trades increased code size for potentially higher execution
-throughput.
+This increases cache misses and reduces effective memory bandwidth, in
+contrast with the contiguous value storage achievable through C++ templates
+(Section~\ref{sec:java_cpp_perf_comparison}).
 
 \subsection{JVM Just-In-Time Optimization Techniques}
 
-Although Java Generics introduce runtime overheads, modern JVM implementations
-attempt to reduce these costs through adaptive optimization.
+Although Java Generics introduce runtime overheads, modern JVM
+implementations attempt to reduce these costs through adaptive
+optimization.
 
-The HotSpot JVM performs runtime profiling and dynamically generates optimized
-machine code for frequently executed paths. Relevant techniques include:
+The HotSpot JVM performs runtime profiling and dynamically generates
+optimized machine code for frequently executed paths. Relevant techniques
+include:
 
 \begin{itemize}
 
-    \item \textbf{Devirtualization}: replacing dynamic method resolution with
-    direct calls when the receiver type is predictable.
+    \item \textbf{Devirtualization}: replacing dynamic method resolution
+    with direct calls when the receiver type is predictable.
 
     \item \textbf{Inline caching}: recording observed runtime types at call
     sites to optimize repeated method invocations.
 
-    \item \textbf{Escape analysis}: determining whether objects remain local to
-    a method and enabling scalar replacement or elimination of unnecessary
-    allocations.
+    \item \textbf{Escape analysis}: determining whether objects remain local
+    to a method and enabling scalar replacement or elimination of
+    unnecessary allocations.
 
 \end{itemize}
 
 For example, if an object created inside a method never escapes, the JVM may
-replace the object allocation with direct scalar values, reducing memory access
-overhead.
+replace the object allocation with direct scalar values, reducing memory
+access overhead. However, these optimizations remain speculative and depend
+on runtime profiling, unlike the ahead-of-time specialization guaranteed by
+C++ templates.
 
-However, these optimizations are speculative and depend on runtime profiling.
-Unlike C++ templates, Java cannot guarantee specialization before execution.
+\subsection{Comparison with C++ Templates}
+\label{sec:java_cpp_perf_comparison}
 
-\subsection{Static Optimization versus Dynamic Optimization}
+The preceding subsections isolate individual runtime costs introduced by
+Java's type-erasure model; this section consolidates them into a single
+systematic comparison with C++ templates.
 
-The fundamental difference between the two approaches is the moment at which
-optimization decisions are performed.
+At the representation level, Java containers store object references,
+introducing pointer indirection and additional memory accesses, whereas C++
+templates instantiated with concrete types allow direct, contiguous value
+storage. This layout difference directly affects cache behavior: Java's
+reference-based objects can be scattered across the heap, increasing cache
+misses during traversal, while C++ value layouts enable efficient cache-line
+utilization, hardware prefetching, and vectorization.
 
-C++ performs optimization during ahead-of-time compilation:
+At the level of primitive handling, Java's inability to instantiate generics
+with primitive types forces boxing and unboxing whenever numeric values are
+stored in generic structures, adding allocation and conversion costs absent
+from C++, where a template instantiated with a primitive type manipulates
+its native representation directly.
 
-\[
-\text{Template instantiation}
-\rightarrow
-\text{Specialized code generation}
-\rightarrow
-\text{Optimized machine code}
-\]
+At the level of code generation, the two models also diverge on instruction
+cache behavior. Java type erasure generates a single implementation shared
+among all generic instantiations, keeping executable size small but
+preventing the generated code from exploiting concrete type information. C++
+monomorphization instead generates a separate implementation per
+instantiated type: this increases executable size and can introduce
+instruction-cache pressure (``code bloat''), but enables stronger
+optimizations such as complete function inlining, constant propagation, and
+architecture-specific code generation.
 
-The compiler has complete information about data representation, memory layout,
-and available operations.
-
-Java instead follows a dynamic model:
-
-\[
-\text{Generic bytecode}
-\rightarrow
-\text{Runtime profiling}
-\rightarrow
-\text{JIT optimized machine code}
-\]
-
-The JVM can exploit information collected during execution, but optimization
-depends on runtime behavior.
-
-Consequently, C++ provides predictable specialization, while Java provides
-adaptive optimization capable of exploiting information unavailable during
-static compilation.
+Finally, the two models differ in \emph{when} optimization decisions are
+made. C++ performs optimization during ahead-of-time compilation, with the
+compiler having complete information about data representation, memory
+layout, and available operations before the program ever runs. Java follows
+a dynamic model instead, in which the JVM profiles the running program and
+generates JIT-optimized machine code based on observed behavior.
+Consequently, C++ provides predictable, guaranteed specialization, while Java
+provides adaptive optimization capable of exploiting information that is
+only available at runtime.
 
 \subsection{Comparative Performance Summary}
 
@@ -2463,14 +2129,17 @@ Improved through value layouts
 \caption{Runtime performance comparison between Java Generics and C++ templates.}
 
 \end{table}
+
+% =====================================================================
+
 \section{Type Safety}
 
 Type safety is a fundamental property of statically typed programming
 languages and defines the ability of a type system to prevent invalid
-operations on values before program execution. In the context of
-parametric polymorphism, type safety requires that abstract type
-parameters can be substituted with concrete types without introducing
-operations that violate the constraints established by the program.
+operations on values before program execution. In the context of parametric
+polymorphism, type safety requires that abstract type parameters can be
+substituted with concrete types without introducing operations that violate
+the constraints established by the program.
 
 A sound type system guarantees that every expression accepted by the
 compiler respects the typing rules of the language. This property is
@@ -2488,21 +2157,16 @@ traditionally described through two fundamental principles:
 
 \end{itemize}
 
-Parametric polymorphism extends these guarantees by allowing the
-definition of algorithms and data structures independently from specific
-types. However, the implementation strategy adopted by a language
-determines how type information is preserved during compilation and how
-the type system guarantees correctness.
+Parametric polymorphism extends these guarantees by allowing the definition
+of algorithms and data structures independently from specific types.
+However, the implementation strategy adopted by a language determines how
+type information is preserved during compilation and how the type system
+guarantees correctness.
 
-Java Generics and C++ Templates represent two different approaches.
-Java uses a type-erasure strategy, where generic correctness is verified
-statically and type parameters are removed after compilation. C++ uses a
-reification-based strategy, where templates are instantiated with
-concrete types and type information remains available during compilation.
-
-The difference between the two approaches concerns the mechanism used to
-preserve type safety rather than the presence or absence of static type
-checking.
+The implementation strategy adopted by Java and C++ differs in how type
+information is preserved after compilation; this distinction is examined in
+detail in Section~\ref{sec:java_cpp_type_safety_comparison}, once the
+static type checking rules of Java Generics have been introduced.
 
 \subsection{Static Type Checking in Java Generics}
 
@@ -2512,7 +2176,7 @@ correctness depends on the constraints imposed on their type parameters.
 
 Consider the following generic class:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 class Box<T> {
 
     private T value;
@@ -2525,35 +2189,35 @@ class Box<T> {
         return value;
     }
 }
-\end{verbatim}
+\end{lstlisting}
 
-The type parameter \texttt{T} represents an abstract type that is
-determined when the generic class is instantiated.
+The type parameter \texttt{T} represents an abstract type that is determined
+when the generic class is instantiated.
 
 For example:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 Box<String> textBox = new Box<>();
 
 textBox.set("Java");
 
 String value = textBox.get();
-\end{verbatim}
+\end{lstlisting}
 
-The compiler interprets \texttt{Box<String>} as a type where every use
-of \texttt{T} must be compatible with \texttt{String}. Therefore, the
-following operation is rejected:
+The compiler interprets \texttt{Box<String>} as a type where every use of
+\texttt{T} must be compatible with \texttt{String}. Therefore, the following
+operation is rejected:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 textBox.set(10);
-\end{verbatim}
+\end{lstlisting}
 
 because the argument type \texttt{Integer} does not satisfy the type
 constraint established by the parameterization.
 
 The type system therefore prevents the creation of inconsistent states:
-after the declaration of \texttt{Box<String>}, every value inserted into
-the container must conform to the declared type argument.
+after the declaration of \texttt{Box<String>}, every value inserted into the
+container must conform to the declared type argument.
 
 The same principle applies to method invocations. If a generic method
 requires a specific type relationship, the compiler verifies that all
@@ -2562,7 +2226,7 @@ program.
 
 For example:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 static <T> T identity(T value) {
 
     return value;
@@ -2570,7 +2234,7 @@ static <T> T identity(T value) {
 
 
 String result = identity("example");
-\end{verbatim}
+\end{lstlisting}
 
 The compiler infers the type argument and ensures that the inferred
 substitution preserves the validity of the expression.
@@ -2582,7 +2246,7 @@ system to restrict the set of admissible substitutions.
 
 For example:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 class Maximum<T extends Comparable<T>> {
 
     T max(T a, T b) {
@@ -2590,46 +2254,45 @@ class Maximum<T extends Comparable<T>> {
         return a.compareTo(b) > 0 ? a : b;
     }
 }
-\end{verbatim}
+\end{lstlisting}
 
 The declaration:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 <T extends Comparable<T>>
-\end{verbatim}
+\end{lstlisting}
 
-introduces a constraint stating that every valid type argument must
-provide a comparison operation compatible with the generic algorithm.
+introduces a constraint stating that every valid type argument must provide
+a comparison operation compatible with the generic algorithm.
 
 The compiler verifies this constraint when the generic type is
 instantiated. A type that does not satisfy the required relationship is
 rejected statically.
 
-Therefore, Java generic constraints express properties that must hold
-for every valid substitution of the type parameter, allowing the type
-system to reason about generic programs independently from concrete
-types.
+Therefore, Java generic constraints express properties that must hold for
+every valid substitution of the type parameter, allowing the type system to
+reason about generic programs independently from concrete types.
 
 \subsection{Type Erasure and Preservation of Static Type Safety}
 
-Java implements generics through type erasure. From the perspective of
-the type system, this means that generic parameters are used during
-static analysis but are not represented as independent types after the
-compilation process.
+Java implements generics through type erasure. From the perspective of the
+type system, this means that generic parameters are used during static
+analysis but are not represented as independent types after the compilation
+process.
 
 The important property is that erasure does not remove the guarantees
-provided by the type system. Generic correctness is established before
-the erasure transformation occurs.
+provided by the type system. Generic correctness is established before the
+erasure transformation occurs.
 
 For example:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Java]
 List<String> names = new ArrayList<>();
 
 names.add("Alice");
 
 String name = names.get(0);
-\end{verbatim}
+\end{lstlisting}
 
 The compiler verifies that:
 
@@ -2645,18 +2308,18 @@ The compiler verifies that:
 
 \end{itemize}
 
-After the generic verification phase, the implementation no longer
-depends on the explicit parameter \texttt{String}. However, the
-soundness argument of the type system is based on the fact that all
-possible uses of the generic abstraction have already been checked.
+After the generic verification phase, the implementation no longer depends
+on the explicit parameter \texttt{String}. However, the soundness argument
+of the type system is based on the fact that all possible uses of the
+generic abstraction have already been checked.
 
 Consequently, Java separates the concepts of:
 
 \begin{itemize}
 
     \item
-    \textit{static type correctness}, which is guaranteed by generic
-    type checking;
+    \textit{static type correctness}, which is guaranteed by generic type
+    checking;
 
     \item
     \textit{type representation}, which is determined after the generic
@@ -2669,13 +2332,13 @@ responsibility for correctness entirely to compile-time verification.
 
 \subsection{Reification-Based Type Safety in C++ Templates}
 
-C++ templates adopt a different approach based on type reification.
-Instead of removing type parameters after checking, the compiler
-instantiates templates using concrete type arguments.
+C++ templates adopt a different approach based on type reification. Instead
+of removing type parameters after checking, the compiler instantiates
+templates using concrete type arguments.
 
 Consider:
 
-\begin{verbatim}
+\begin{lstlisting}[language=C++]
 template <typename T>
 class Box {
 
@@ -2693,17 +2356,17 @@ public:
         return value;
     }
 };
-\end{verbatim}
+\end{lstlisting}
 
 A concrete use:
 
-\begin{verbatim}
+\begin{lstlisting}[language=C++]
 Box<int> integerBox;
 
 integerBox.set(10);
 
 int value = integerBox.get();
-\end{verbatim}
+\end{lstlisting}
 
 causes the compiler to analyse the template using the concrete type
 \texttt{int}. Every operation involving \texttt{T} is therefore checked
@@ -2711,25 +2374,26 @@ against the actual instantiated type.
 
 If an invalid operation is attempted:
 
-\begin{verbatim}
+\begin{lstlisting}[language=C++]
 Box<int> box;
 
 box.set("text");
-\end{verbatim}
+\end{lstlisting}
 
-the compiler rejects the program because the instantiated type
-\texttt{int} does not accept a string value.
+the compiler rejects the program because the instantiated type \texttt{int}
+does not accept a string value.
 
 From the perspective of type safety, C++ templates preserve the complete
-type information during template instantiation. The compiler verifies
-the correctness of each concrete specialization directly rather than
-checking an abstract erased representation.
+type information during template instantiation. The compiler verifies the
+correctness of each concrete specialization directly rather than checking an
+abstract erased representation.
 
 \subsection{Comparison of Java Generics and C++ Templates}
+\label{sec:java_cpp_type_safety_comparison}
 
-Java Generics and C++ Templates both provide compile-time guarantees
-through parametric polymorphism, but they preserve type information in
-different ways.
+Java Generics and C++ Templates both provide compile-time guarantees through
+parametric polymorphism, but they preserve type information in different
+ways.
 
 Java follows the model:
 
@@ -2758,8 +2422,8 @@ Instantiation with concrete type
 Static type checking of specialization
 \end{verbatim}
 
-The compiler retains the concrete type throughout template processing
-and verifies operations directly on the instantiated form.
+The compiler retains the concrete type throughout template processing and
+verifies operations directly on the instantiated form.
 
 Therefore, the fundamental distinction is not whether type safety is
 provided, but how the type system associates abstract parameters with
@@ -2767,6 +2431,205 @@ concrete types. Java achieves safety through static verification before
 erasure, whereas C++ achieves safety through compile-time reification of
 concrete types.
 
+% =====================================================================
+
+\section{Reflection and Runtime Type Information}
+
+The implementation of parametric polymorphism in Java is fundamentally based
+on \emph{type erasure}. Unlike languages adopting a reified representation of
+generic types, the Java compiler translates every parameterized type into a
+non-generic representation before bytecode generation. During compilation,
+each type parameter is replaced by its upper bound if one is declared, or by
+\texttt{java.lang.Object} otherwise. In addition, the compiler automatically
+inserts the necessary type casts to preserve static type safety and
+generates bridge methods when required to maintain binary compatibility
+under inheritance and method overriding.
+
+Consequently, generic type parameters exist exclusively within the static
+type system enforced by the compiler. The generated JVM bytecode contains no
+runtime distinction between different instantiations of the same generic
+declaration. For example, the declarations \texttt{List<String>} and
+\texttt{List<Integer>} are both translated into the same runtime
+representation corresponding to the raw type \texttt{java.util.List}. The
+Java Virtual Machine therefore executes a single runtime implementation
+regardless of the concrete type arguments that were present in the source
+program.
+
+This compilation strategy implies that parameterized type arguments are not
+represented as independent runtime entities. The JVM preserves metadata
+describing the generic declaration itself through the class file's
+\emph{Signature} attribute, allowing reflective APIs to reconstruct generic
+declarations under specific circumstances. However, the runtime
+representation of ordinary object instances contains only the erased type,
+meaning that dynamically allocated objects do not retain the concrete type
+arguments with which they were instantiated.
+
+\subsection{Reflection and RTTI Limitations}
+
+Java's Runtime Type Information (RTTI) mechanism is centered on the
+\texttt{java.lang.Class} object associated with every loaded class. Since
+all parameterized instantiations of a generic class are erased to the same
+runtime type, reflection operates exclusively on the erased representation
+rather than on the original parameterized form.
+
+A direct consequence is that parameterized generic types cannot participate
+in runtime type tests. The Java Language Specification explicitly prohibits
+expressions such as
+
+\begin{lstlisting}[language=Java]
+obj instanceof List<String>
+\end{lstlisting}
+
+because the runtime system has no information capable of distinguishing
+\texttt{List<String>} from \texttt{List<Integer>}. Allowing such expressions
+would incorrectly suggest that the JVM could recover type arguments that no
+longer exist after compilation.
+
+Similarly, the \texttt{getClass()} method always returns the runtime class
+corresponding to the erased type. Two objects instantiated with different
+generic arguments therefore produce identical runtime class descriptors.
+
+\begin{lstlisting}[language=Java]
+import java.util.*;
+
+public class ReflectionExample {
+
+    public static void main(String[] args) {
+
+        List<String> strings = new ArrayList<>();
+        List<Integer> integers = new ArrayList<>();
+
+        System.out.println(strings.getClass());
+        System.out.println(integers.getClass());
+
+        System.out.println(strings.getClass()
+                == integers.getClass());
+
+        // Compilation error:
+        // if (strings instanceof List<String>) { }
+    }
+
+}
+\end{lstlisting}
+
+The program produces equivalent runtime class objects for both lists,
+demonstrating that the generic arguments have been removed during
+compilation. The comparison evaluates to \texttt{true} because both
+variables reference instances of the same erased runtime class.
+
+Reflection APIs such as \texttt{Class}, \texttt{Method}, and \texttt{Field}
+therefore identify only erased runtime types during ordinary object
+inspection. Although generic declarations remain partially accessible
+through reflective interfaces such as \texttt{java.lang.reflect.Type} and
+\texttt{ParameterizedType}, this information originates from generic
+signatures stored in class metadata rather than from the runtime
+representation of individual object instances. Consequently, reflection
+cannot determine the concrete type argument associated with an arbitrary
+generic object unless that information has been preserved explicitly by the
+programmer.
+
+\subsection{Type Tokens as an Explicit Runtime Representation}
+
+Because type erasure removes concrete generic arguments from ordinary
+runtime objects, Java libraries frequently employ \emph{type tokens} to
+preserve type information explicitly. A type token consists of passing a
+\texttt{Class<T>} object alongside the generic value, thereby making the
+runtime type available independently of the erased generic parameter.
+
+The following example illustrates this approach.
+
+\begin{lstlisting}[language=Java]
+public class Box<T> {
+
+    private final Class<T> type;
+    private final T value;
+
+    public Box(Class<T> type, T value) {
+        this.type = type;
+        this.value = value;
+    }
+
+    public Class<T> getType() {
+        return type;
+    }
+
+    public T getValue() {
+        return value;
+    }
+
+    public static void main(String[] args) {
+
+        Box<String> box = new Box<>(String.class, "Hello");
+
+        System.out.println(box.getType().getName());
+
+        if (box.getType() == String.class) {
+            System.out.println("String detected.");
+        }
+    }
+
+}
+\end{lstlisting}
+
+The runtime type information in this example is not recovered from the
+generic parameter itself but from the explicitly supplied
+\texttt{Class<String>} object. This pattern is extensively employed by
+serialization frameworks, dependency injection containers, persistence
+libraries, and reflection-based infrastructures that require runtime
+knowledge of application types despite Java's erased implementation of
+generics.
+
+\subsection{Comparison with C++ Template RTTI}
+
+The reflection semantics of Java differ fundamentally from those of C++
+because the two languages adopt distinct implementation strategies for
+parametric polymorphism.
+
+C++ templates are implemented through \emph{monomorphization}. During
+compilation, every template specialization generates an independent
+concrete type with its own layout, member functions, and associated runtime
+type metadata. Consequently, specializations such as \texttt{std::vector<int>}
+and \texttt{std::vector<double>} constitute distinct runtime types rather
+than different views of a shared implementation.
+
+When Run-Time Type Information is enabled, the C++ runtime associates each
+polymorphic specialization with its own RTTI structures. Facilities such as
+\texttt{typeid} and \texttt{dynamic\_cast} therefore operate on specialized
+concrete types generated by template instantiation. Each specialization
+possesses an independent \texttt{std::type\_info} object corresponding to
+its unique runtime identity.
+
+Java follows the opposite approach. All parameterized instantiations of a
+generic declaration are translated into a single erased runtime class
+represented by one shared \texttt{java.lang.Class} object. Reflection
+therefore exposes the identity of the generic declaration after erasure
+rather than the original parameterized instantiation appearing in the
+source code.
+
+The distinction is summarized as follows:
+
+\begin{itemize}
+    \item Java implements parametric polymorphism through type erasure,
+          causing all parameterized instantiations of a generic class to
+          share a single runtime type.
+
+    \item Java reflection and RTTI operate exclusively on erased runtime
+          classes, preventing direct runtime discrimination between
+          different generic arguments.
+
+    \item C++ implements templates through monomorphization, generating
+          distinct concrete types for every specialization.
+
+    \item C++ RTTI associates independent runtime metadata with each
+          specialization, enabling facilities such as \texttt{typeid} and
+          \texttt{dynamic\_cast} to distinguish specialized template types
+          directly.
+\end{itemize}
+
+These contrasting implementation strategies illustrate the fundamental
+trade-off between preserving runtime type identity through reification, as
+in C++, and reducing runtime type diversity through type erasure, as
+adopted by the Java Virtual Machine.
 % =====================================================================
 % CHAPTER: C# GENERICS
 % =====================================================================
@@ -2982,34 +2845,32 @@ generic information, but the placement of the instantiation event: generic types
 materialized by the runtime system when execution requires them, with the JIT compiler
 acting as the specialization mechanism.
 
+% =====================================================================
 
 \section{Runtime Representation}
 
-C\# generics provide a runtime implementation of parametric polymorphism based on 
-\emph{reification}. In a reified generic system, information about generic type 
-parameters is preserved after compilation and remains available to the execution 
-environment. This design differs fundamentally from the two alternative approaches 
-adopted by Java and C++.
+C\# generics provide a runtime implementation of parametric polymorphism based on
+\emph{reification}. In a reified generic system, information about generic type
+parameters is preserved after compilation and remains available to the execution
+environment.
 
-From a theoretical perspective, parametric polymorphism allows a program component 
-to operate independently from the concrete types on which it is instantiated. A 
+From a theoretical perspective, parametric polymorphism allows a program component
+to operate independently from the concrete types on which it is instantiated. A
 generic definition can be represented as:
 
 \[
 G\langle T\rangle
 \]
 
-where $T$ is a type variable that can later be replaced by a concrete type argument. 
-However, the concept of parametric polymorphism does not define how generic 
-abstractions are represented at runtime. The implementation requires decisions about 
+where $T$ is a type variable that can later be replaced by a concrete type argument.
+However, the concept of parametric polymorphism does not define how generic
+abstractions are represented at runtime. The implementation requires decisions about
 metadata representation, code generation, object layout, and execution mechanisms.
 
-The CLR implements generics through a hybrid model that combines runtime reification 
-with selective specialization. Generic definitions are preserved inside compiled 
-assemblies, while the final executable representation is generated dynamically by 
-the Just-In-Time (JIT) compiler. Therefore, unlike C++ templates, generic code is not 
-fully expanded during compilation, and unlike Java generics, generic parameters are 
-not removed before execution.
+The CLR implements generics through a hybrid model that combines runtime reification
+with selective specialization. Generic definitions are preserved inside compiled
+assemblies, while the final executable representation is generated dynamically by
+the Just-In-Time (JIT) compiler.
 
 Conceptually, the C\# compilation pipeline can be represented as:
 
@@ -3027,20 +2888,19 @@ $
 $
 \end{adjustbox}
 
-This architecture allows the runtime to preserve generic type identity while 
-deciding dynamically whether a particular instantiation requires a specialized 
+This architecture allows the runtime to preserve generic type identity while
+deciding dynamically whether a particular instantiation requires a specialized
 implementation or whether an existing implementation can be shared.
-
 
 \subsection{CLR Execution Engine and CIL Metadata Representation}
 
-The first stage of the CLR generic implementation occurs during compilation. The C\# 
-compiler translates source code into \emph{Common Intermediate Language} (CIL) and 
-generates metadata according to the Common Language Infrastructure (CLI) specification 
+The first stage of the CLR generic implementation occurs during compilation. The C\#
+compiler translates source code into \emph{Common Intermediate Language} (CIL) and
+generates metadata according to the Common Language Infrastructure (CLI) specification
 defined by ECMA-335.
 
-Unlike Java bytecode after type erasure, the generated assembly preserves explicit 
-information about generic declarations. A generic type is represented as an open 
+Unlike Java bytecode after type erasure, the generated assembly preserves explicit
+information about generic declarations. A generic type is represented as an open
 generic definition containing formal type parameters.
 
 For example:
@@ -3051,18 +2911,18 @@ For example:
 
 is stored as a generic type definition rather than as a concrete implementation.
 
-The CLR metadata system contains dedicated structures for representing generic 
+The CLR metadata system contains dedicated structures for representing generic
 relationships. The most relevant metadata tables include:
 
 \begin{itemize}
     \item \texttt{GenericParam}, which stores information about generic parameters;
-    \item \texttt{GenericParamConstraint}, which stores constraints associated with 
+    \item \texttt{GenericParamConstraint}, which stores constraints associated with
     generic parameters;
     \item \texttt{TypeSpec}, which represents constructed types;
     \item \texttt{MethodSpec}, which represents constructed generic methods.
 \end{itemize}
 
-These structures allow the CLR loader and execution engine to reconstruct the 
+These structures allow the CLR loader and execution engine to reconstruct the
 relationship between a generic definition and its concrete arguments.
 
 For example, the runtime can represent:
@@ -3073,35 +2933,14 @@ For example, the runtime can represent:
 \texttt{List<int>}
 \]
 
-as an explicit construction relationship.
-
-This differs from Java's type-erasure model, where:
-
-\[
-\texttt{List<String>}
-\]
-
-and:
-
-\[
-\texttt{List<Integer>}
-\]
-
-are both transformed into the same runtime class representation:
-
-\[
-\texttt{List}
-\]
-
-The JVM therefore loses generic type identity during execution, while the CLR 
-maintains it through runtime metadata.
-
+as an explicit construction relationship, preserved as part of the runtime type
+system rather than resolved away as in a type-erasure model.
 
 \subsection{Runtime Instantiation and JIT Compilation}
 
-A fundamental characteristic of CLR generics is that instantiation occurs at runtime 
-rather than during the initial compilation phase. The compiler emits generic 
-definitions, while the CLR creates concrete representations when a closed constructed 
+A fundamental characteristic of CLR generics is that instantiation occurs at runtime
+rather than during the initial compilation phase. The compiler emits generic
+definitions, while the CLR creates concrete representations when a closed constructed
 type is required.
 
 A generic definition:
@@ -3136,30 +2975,18 @@ or:
 \texttt{Dictionary<Guid,Object>}
 \]
 
-The CLR execution engine resolves these constructed types and provides the necessary 
-information to the JIT compiler. The JIT compiler then generates native machine code 
-according to the characteristics of the supplied type arguments.
-
-This differs from C++ template instantiation, where:
-
-\[
-Compiler(G\langle int\rangle)
-=
-MachineCode_{int}
-\]
-
-occurs during compilation. In C++, the runtime only observes the final native 
-artifacts. In contrast, the CLR retains the generic abstraction and performs the 
-instantiation process as part of runtime execution.
-
+The CLR execution engine resolves these constructed types and provides the necessary
+information to the JIT compiler. The JIT compiler then generates native machine code
+according to the characteristics of the supplied type arguments, performing this
+instantiation step as part of runtime execution rather than during compilation.
 
 \subsection{Value-Type Specialization}
 
-When a generic type is instantiated with a value type, the CLR generally produces a 
-specialized native implementation for that concrete type. Value types such as 
-\texttt{int}, \texttt{double}, or user-defined structures have their own memory 
-layouts and representation requirements. Consequently, sharing a single machine-code 
-implementation between unrelated value types would require additional abstraction 
+When a generic type is instantiated with a value type, the CLR generally produces a
+specialized native implementation for that concrete type. Value types such as
+\texttt{int}, \texttt{double}, or user-defined structures have their own memory
+layouts and representation requirements. Consequently, sharing a single machine-code
+implementation between unrelated value types would require additional abstraction
 mechanisms.
 
 For example:
@@ -3174,7 +3001,7 @@ and:
 \texttt{List<double>}
 \]
 
-require different representations of their stored elements. Therefore, the JIT 
+require different representations of their stored elements. Therefore, the JIT
 compiler generates specialized code:
 
 \[
@@ -3191,20 +3018,15 @@ JIT(\texttt{List<double>})
 NativeCode_{double}
 \]
 
-The generated implementations contain concrete type information and operate directly 
-on the corresponding value representation.
-
-This behavior resembles C++ template monomorphization at the level of generated 
-machine code. However, the architectural difference is that C++ performs this 
-transformation statically during compilation, while the CLR performs specialization 
-inside the runtime environment.
-
+The generated implementations contain concrete type information and operate directly
+on the corresponding value representation, produced by the CLR at runtime rather than
+by the compiler ahead of execution.
 
 \subsection{Reference-Type Code Sharing}
 
-Generic instantiations based on reference types follow a different execution strategy. 
-Because all reference types share a common object-reference representation inside the 
-CLR, the runtime can reuse the same native implementation for multiple generic 
+Generic instantiations based on reference types follow a different execution strategy.
+Because all reference types share a common object-reference representation inside the
+CLR, the runtime can reuse the same native implementation for multiple generic
 instantiations.
 
 For example:
@@ -3243,22 +3065,21 @@ the CLR can generate a shared implementation:
 NativeCode_{reference}
 \]
 
-where runtime-specific information is supplied through additional execution-engine 
+where runtime-specific information is supplied through additional execution-engine
 structures.
 
-This mechanism provides a balance between specialization and code reuse. Unlike C++ 
-templates, the CLR does not generate an independent implementation for every 
-reference-type instantiation. Unlike Java erasure, however, the runtime still knows 
-the exact generic type arguments and can preserve type safety.
-
+This mechanism provides a balance between specialization and code reuse: the CLR
+avoids generating an independent implementation for every reference-type
+instantiation, while still retaining the exact generic type arguments needed to
+preserve type safety at runtime.
 
 \subsection{Runtime Dictionaries and Method Tables}
 
-To support shared generic implementations, the CLR uses runtime data structures that 
-provide information about concrete generic arguments. These structures are commonly 
+To support shared generic implementations, the CLR uses runtime data structures that
+provide information about concrete generic arguments. These structures are commonly
 described as generic dictionaries or runtime generic contexts.
 
-When shared machine code executes, operations requiring type-specific information 
+When shared machine code executes, operations requiring type-specific information
 can access these runtime structures to resolve:
 
 \begin{itemize}
@@ -3268,21 +3089,18 @@ can access these runtime structures to resolve:
     \item interface implementations.
 \end{itemize}
 
-This mechanism is conceptually related to dictionary passing techniques used in 
-implementations of parametric polymorphism. The generated code remains generic, 
-while additional runtime information supplies the missing concrete type details.
+This mechanism is conceptually related to dictionary passing techniques used in
+implementations of parametric polymorphism. The generated code remains generic,
+while additional runtime information supplies the missing concrete type details --
+a mechanism that has no equivalent in either C++ template instantiation, where all
+parameters are resolved before execution, or Java's type-erasure model, where
+generic parameters are removed before bytecode execution rather than resolved at
+run time.
 
-The execution model therefore differs from C++ virtual tables and RTTI. C++ 
-templates do not require runtime generic dictionaries because all template 
-parameters have already been resolved before execution. Conversely, Java erasure does 
-not maintain such information because generic parameters are removed before bytecode 
-execution.
+\subsection{Runtime Type Identity}
 
-
-\subsection{Runtime Type Identity and Reflection}
-
-A defining property of CLR reification is that constructed generic types maintain 
-their runtime identity. The CLR considers different generic instantiations as distinct 
+A defining property of CLR reification is that constructed generic types maintain
+their runtime identity. The CLR considers different generic instantiations as distinct
 runtime types.
 
 Therefore:
@@ -3292,15 +3110,6 @@ RuntimeType(\texttt{List<int>})
 \neq
 RuntimeType(\texttt{List<string>})
 \]
-
-The reflection system can retrieve generic information through runtime type objects, 
-allowing programs to inspect:
-
-\begin{itemize}
-    \item generic type definitions;
-    \item concrete type arguments;
-    \item generic constraints.
-\end{itemize}
 
 This capability is fundamentally different from Java, where:
 
@@ -3314,11 +3123,12 @@ RuntimeType(\texttt{List<Integer>})
 
 after erasure.
 
-C++ occupies a different position. Concrete template specializations may participate 
-in RTTI if they correspond to runtime types, but the original template definition is 
-not preserved as a runtime entity. The executable contains information about concrete 
-types rather than about the generic abstraction that produced them.
-
+C++ occupies a different position. Concrete template specializations may participate
+in RTTI if they correspond to runtime types, but the original template definition is
+not preserved as a runtime entity. The executable contains information about concrete
+types rather than about the generic abstraction that produced them. The reflection
+system built on top of this runtime type identity is discussed in
+Section~\ref{sec:csharp_reflection}.
 
 \subsection{Architectural Comparison}
 
@@ -3346,250 +3156,9 @@ Generic runtime object & Yes & No & No \\
 \caption{Comparison of generic runtime representation models.}
 \end{table}
 
-\section{Reflection}
-Unlike languages based on type erasure, the Common Language Runtime (CLR) implements
-a reified model of generics, where generic type information is preserved as part of
-the runtime representation of types. During compilation, C\# source code is translated
-into Common Intermediate Language (CIL) instructions together with a rich metadata
-representation stored inside the assembly. Generic declarations, constraints, and
-instantiation relationships are encoded explicitly in this metadata and remain
-available during program execution.
+% =====================================================================
 
-A generic type declaration compiled into CIL is represented through metadata tables
-that preserve the association between a generic type definition and its parameters.
-For example, the declaration:
-
-\begin{verbatim}
-class Container<T>
-{
-}
-\end{verbatim}
-
-is not transformed into a non-generic runtime entity. Instead, the CLR maintains a
-generic type definition with an explicit parameter placeholder. When a concrete
-instantiation such as:
-
-\begin{verbatim}
-Container<int>
-Container<string>
-\end{verbatim}
-
-is requested, the runtime creates a closed constructed type whose metadata maintains
-the correspondence between the generic parameter and the concrete type argument.
-
-This mechanism is commonly referred to as \emph{generic reification}, because the
-abstract structure of the generic type remains represented in the runtime type
-system. Consequently, both open generic types, where type parameters are not yet
-bound, and closed constructed types, where every parameter has been substituted by a
-concrete runtime type, can be inspected through the reflection subsystem.
-
-The CLR exposes this information through the
-\texttt{System.Type} abstraction. A runtime type object contains intrinsic identity
-information describing the represented entity, including whether the type is generic,
-whether it represents a generic definition or a constructed instance, and which
-runtime types are associated with its generic parameters.
-
-For example, the following distinctions are maintained by the runtime:
-
-\begin{itemize}
-    \item \texttt{typeof(List<>)} represents an open generic type definition.
-    \item \texttt{typeof(List<int>)} represents a closed constructed generic type.
-    \item \texttt{typeof(List<int>).GetGenericArguments()} returns the concrete
-    runtime type argument associated with the instantiation.
-\end{itemize}
-
-Therefore, reflection over C\# generics operates on actual runtime type entities rather
-than on erased compile-time abstractions.
-
-\subsection{Runtime Inspection of Generic Types Using System.Reflection}
-
-The following example demonstrates how the reflection API can dynamically inspect a
-generic object, verify whether its runtime type is generic, identify the generic type
-definition, and retrieve the concrete type arguments used for instantiation.
-
-\begin{verbatim}
-using System;
-using System.Collections.Generic;
-
-class ReflectionExample
-{
-    static void InspectType(object instance)
-    {
-        Type runtimeType = instance.GetType();
-
-        Console.WriteLine("Runtime type: " + runtimeType);
-
-        if (runtimeType.IsGenericType)
-        {
-            Console.WriteLine("The inspected type is generic.");
-
-            Type genericDefinition =
-                runtimeType.GetGenericTypeDefinition();
-
-            Console.WriteLine(
-                "Generic definition: " + genericDefinition);
-
-            Type[] arguments =
-                runtimeType.GetGenericArguments();
-
-            Console.WriteLine("Generic arguments:");
-
-            foreach (Type argument in arguments)
-            {
-                Console.WriteLine(argument.FullName);
-            }
-        }
-        else
-        {
-            Console.WriteLine("The inspected type is not generic.");
-        }
-    }
-
-    static void Main()
-    {
-        List<int> values = new List<int>();
-
-        InspectType(values);
-    }
-}
-\end{verbatim}
-
-In this example, the call to \texttt{GetType()} retrieves the CLR runtime type
-descriptor associated with the object instance. The method
-\texttt{IsGenericType} verifies whether the runtime entity corresponds to a generic
-type. If this condition is satisfied, \texttt{GetGenericTypeDefinition()} extracts the
-original generic declaration, while \texttt{GetGenericArguments()} retrieves the
-concrete runtime types used to construct the closed generic instance.
-
-The result of the inspection is therefore equivalent to observing the following
-runtime relationship:
-
-\[
-\texttt{List<int>}
-\rightarrow
-\texttt{List<>}
-+
-\texttt{int}
-\]
-
-where both the generic declaration and the concrete type substitution remain
-available through reflection.
-
-\subsection{Comparison with C++ Templates and Java Generics}
-
-The reflection capabilities of C\# generics differ fundamentally from the runtime
-models adopted by C++ templates and Java generics. The distinction concerns the
-availability of generic type information after compilation and the possibility of
-recovering concrete type parameters through runtime introspection.
-
-\subsubsection{C++ Templates: Compile-Time Monomorphization and Limited RTTI}
-
-C++ templates follow a compile-time monomorphization model. A template definition
-acts as a compile-time pattern from which the compiler generates specialized
-entities for each concrete instantiation. The relationship between a template
-parameter and its instantiated type is therefore resolved during compilation rather
-than represented as a generic runtime object.
-
-For example:
-
-\begin{verbatim}
-template<typename T>
-class Container
-{
-};
-
-Container<int> a;
-Container<double> b;
-\end{verbatim}
-
-does not produce a runtime generic type equivalent to the CLR representation of
-\texttt{Container<T>}. Instead, the compiler materializes concrete types associated
-with the instantiated arguments. After compilation, the executable contains the
-resulting concrete classes but does not generally preserve a runtime representation
-of the original template abstraction.
-
-The C++ Runtime Type Information (RTTI) mechanism provides limited type
-introspection through facilities such as \texttt{typeid} and
-\texttt{std::type\_info}. RTTI can identify the dynamic type of polymorphic objects
-and expose implementation-defined type information, but it does not provide a
-reflection system capable of enumerating template parameters or reconstructing the
-template instantiation relationship.
-
-Consequently, an expression such as:
-
-\begin{verbatim}
-typeid(Container<int>)
-\end{verbatim}
-
-can identify the resulting concrete type, but standard C++ RTTI cannot query the
-template argument \texttt{int} as a runtime metadata element. The association between
-the template and its parameters exists primarily as a compile-time property.
-
-\subsubsection{Java Generics: Type Erasure and Residual Metadata}
-
-Java generics adopt a fundamentally different strategy based on type erasure. During
-compilation, generic type parameters are removed from the runtime representation and
-replaced according to erasure rules, typically by their upper bounds. The Java Virtual
-Machine therefore executes code where generic parameters are not represented as
-runtime type identities.
-
-For example:
-
-\begin{verbatim}
-List<String> names = new ArrayList<>();
-\end{verbatim}
-
-is compiled into a representation equivalent to a non-parameterized collection type
-from the perspective of runtime object identity. The JVM can identify that the object
-is an instance of \texttt{ArrayList}, but the concrete parameter
-\texttt{String} is not retained as part of the object's runtime type information.
-
-Java reflection can inspect generic declarations when metadata has been preserved in
-class files through structures such as the \texttt{Signature} attribute. However,
-this information describes declarations rather than runtime object instantiations.
-For example, reflection can determine that a class was declared as:
-
-\begin{verbatim}
-class Box<T>
-\end{verbatim}
-
-but it cannot directly recover the concrete argument used by an arbitrary runtime
-object:
-
-\begin{verbatim}
-Box<String>
-\end{verbatim}
-
-because the instantiated parameter is not part of the runtime type identity.
-
-Therefore, Java reflection operates on residual generic metadata associated with
-declarations, whereas C\# reflection operates on reified runtime type entities.
-
-\subsection{Comparative Summary of Runtime Generic Reflection}
-
-Considering only runtime metadata availability and type introspection capabilities,
-the three approaches can be summarized as follows:
-
-\begin{itemize}
-    \item \textbf{C\# Generics}: generic parameters are reified by the CLR. Both open
-    generic definitions and closed constructed types retain runtime metadata and can
-    be inspected through \texttt{System.Reflection}.
-
-    \item \textbf{C++ Templates}: template parameters are resolved through
-    compile-time monomorphization. Standard RTTI identifies concrete runtime types
-    but does not expose template parameter metadata.
-
-    \item \textbf{Java Generics}: generic parameters are erased from runtime type
-    identity. Reflection can access declaration-level generic information but cannot
-    directly inspect concrete type arguments of runtime instances.
-\end{itemize}
-
-The CLR generic model therefore provides a reflection system in which generic type
-structure remains part of the runtime type universe, whereas C++ and Java represent
-opposite design points: compile-time expansion without generic runtime metadata in
-C++, and runtime abstraction through type erasure in Java.
-
-\section{Performance}
+\section{Performance Characteristics}
 
 C\# generics adopt a runtime reification model implemented by the .NET Common
 Language Runtime (CLR). Unlike Java Generics, where generic information is
@@ -3934,6 +3503,8 @@ type sharing. In terms of execution performance, C\# approaches the efficiency
 of C++ templates for value-oriented workloads while providing a more flexible
 runtime model than Java erased generics.
 
+% =====================================================================
+
 \section{Type Safety}
 
 Type safety represents one of the fundamental properties of a sound type system.
@@ -4227,5 +3798,251 @@ expressiveness of the type system while preserving the fundamental property that
 well-typed programs cannot perform operations outside the set allowed by their
 declared types.
 
+% =====================================================================
+
+\section{Reflection and Runtime Type Information}
+\label{sec:csharp_reflection}
+
+Unlike languages based on type erasure, the Common Language Runtime (CLR) implements
+a reified model of generics, where generic type information is preserved as part of
+the runtime representation of types. During compilation, C\# source code is translated
+into Common Intermediate Language (CIL) instructions together with a rich metadata
+representation stored inside the assembly. Generic declarations, constraints, and
+instantiation relationships are encoded explicitly in this metadata and remain
+available during program execution.
+
+A generic type declaration compiled into CIL is represented through metadata tables
+that preserve the association between a generic type definition and its parameters.
+For example, the declaration:
+
+\begin{lstlisting}[language=CSharp]
+class Container<T>
+{
+}
+\end{lstlisting}
+
+is not transformed into a non-generic runtime entity. Instead, the CLR maintains a
+generic type definition with an explicit parameter placeholder. When a concrete
+instantiation such as:
+
+\begin{lstlisting}[language=CSharp]
+Container<int>
+Container<string>
+\end{lstlisting}
+
+is requested, the runtime creates a closed constructed type whose metadata maintains
+the correspondence between the generic parameter and the concrete type argument.
+
+This mechanism is commonly referred to as \emph{generic reification}, because the
+abstract structure of the generic type remains represented in the runtime type
+system. Consequently, both open generic types, where type parameters are not yet
+bound, and closed constructed types, where every parameter has been substituted by a
+concrete runtime type, can be inspected through the reflection subsystem.
+
+The CLR exposes this information through the
+\texttt{System.Type} abstraction. A runtime type object contains intrinsic identity
+information describing the represented entity, including whether the type is generic,
+whether it represents a generic definition or a constructed instance, and which
+runtime types are associated with its generic parameters.
+
+For example, the following distinctions are maintained by the runtime:
+
+\begin{itemize}
+    \item \texttt{typeof(List<>)} represents an open generic type definition.
+    \item \texttt{typeof(List<int>)} represents a closed constructed generic type.
+    \item \texttt{typeof(List<int>).GetGenericArguments()} returns the concrete
+    runtime type argument associated with the instantiation.
+\end{itemize}
+
+Therefore, reflection over C\# generics operates on actual runtime type entities rather
+than on erased compile-time abstractions.
+
+\subsection{Runtime Inspection of Generic Types Using System.Reflection}
+
+The following example demonstrates how the reflection API can dynamically inspect a
+generic object, verify whether its runtime type is generic, identify the generic type
+definition, and retrieve the concrete type arguments used for instantiation.
+
+\begin{lstlisting}[language=CSharp]
+using System;
+using System.Collections.Generic;
+
+class ReflectionExample
+{
+    static void InspectType(object instance)
+    {
+        Type runtimeType = instance.GetType();
+
+        Console.WriteLine("Runtime type: " + runtimeType);
+
+        if (runtimeType.IsGenericType)
+        {
+            Console.WriteLine("The inspected type is generic.");
+
+            Type genericDefinition =
+                runtimeType.GetGenericTypeDefinition();
+
+            Console.WriteLine(
+                "Generic definition: " + genericDefinition);
+
+            Type[] arguments =
+                runtimeType.GetGenericArguments();
+
+            Console.WriteLine("Generic arguments:");
+
+            foreach (Type argument in arguments)
+            {
+                Console.WriteLine(argument.FullName);
+            }
+        }
+        else
+        {
+            Console.WriteLine("The inspected type is not generic.");
+        }
+    }
+
+    static void Main()
+    {
+        List<int> values = new List<int>();
+
+        InspectType(values);
+    }
+}
+\end{lstlisting}
+
+In this example, the call to \texttt{GetType()} retrieves the CLR runtime type
+descriptor associated with the object instance. The method
+\texttt{IsGenericType} verifies whether the runtime entity corresponds to a generic
+type. If this condition is satisfied, \texttt{GetGenericTypeDefinition()} extracts the
+original generic declaration, while \texttt{GetGenericArguments()} retrieves the
+concrete runtime types used to construct the closed generic instance.
+
+The result of the inspection is therefore equivalent to observing the following
+runtime relationship:
+
+\[
+\texttt{List<int>}
+\rightarrow
+\texttt{List<>}
++
+\texttt{int}
+\]
+
+where both the generic declaration and the concrete type substitution remain
+available through reflection.
+
+\subsection{Comparison with C++ Templates and Java Generics}
+
+The reflection capabilities of C\# generics differ fundamentally from the runtime
+models adopted by C++ templates and Java generics. The distinction concerns the
+availability of generic type information after compilation and the possibility of
+recovering concrete type parameters through runtime introspection.
+
+\subsubsection{C++ Templates: Compile-Time Monomorphization and Limited RTTI}
+
+C++ templates follow a compile-time monomorphization model. A template definition
+acts as a compile-time pattern from which the compiler generates specialized
+entities for each concrete instantiation. The relationship between a template
+parameter and its instantiated type is therefore resolved during compilation rather
+than represented as a generic runtime object.
+
+For example:
+
+\begin{lstlisting}[language=C++]
+template<typename T>
+class Container
+{
+};
+
+Container<int> a;
+Container<double> b;
+\end{lstlisting}
+
+does not produce a runtime generic type equivalent to the CLR representation of
+\texttt{Container<T>}. Instead, the compiler materializes concrete types associated
+with the instantiated arguments. After compilation, the executable contains the
+resulting concrete classes but does not generally preserve a runtime representation
+of the original template abstraction.
+
+The C++ Runtime Type Information (RTTI) mechanism provides limited type
+introspection through facilities such as \texttt{typeid} and
+\texttt{std::type\_info}. RTTI can identify the dynamic type of polymorphic objects
+and expose implementation-defined type information, but it does not provide a
+reflection system capable of enumerating template parameters or reconstructing the
+template instantiation relationship.
+
+Consequently, an expression such as:
+
+\begin{lstlisting}[language=C++]
+typeid(Container<int>)
+\end{lstlisting}
+
+can identify the resulting concrete type, but standard C++ RTTI cannot query the
+template argument \texttt{int} as a runtime metadata element. The association between
+the template and its parameters exists primarily as a compile-time property.
+
+\subsubsection{Java Generics: Type Erasure and Residual Metadata}
+
+Java generics adopt a fundamentally different strategy based on type erasure. During
+compilation, generic type parameters are removed from the runtime representation and
+replaced according to erasure rules, typically by their upper bounds. The Java Virtual
+Machine therefore executes code where generic parameters are not represented as
+runtime type identities.
+
+For example:
+
+\begin{lstlisting}[language=Java]
+List<String> names = new ArrayList<>();
+\end{lstlisting}
+
+is compiled into a representation equivalent to a non-parameterized collection type
+from the perspective of runtime object identity. The JVM can identify that the object
+is an instance of \texttt{ArrayList}, but the concrete parameter
+\texttt{String} is not retained as part of the object's runtime type information.
+
+Java reflection can inspect generic declarations when metadata has been preserved in
+class files through structures such as the \texttt{Signature} attribute. However,
+this information describes declarations rather than runtime object instantiations.
+For example, reflection can determine that a class was declared as:
+
+\begin{lstlisting}[language=Java]
+class Box<T>
+\end{lstlisting}
+
+but it cannot directly recover the concrete argument used by an arbitrary runtime
+object:
+
+\begin{lstlisting}[language=Java]
+Box<String>
+\end{lstlisting}
+
+because the instantiated parameter is not part of the runtime type identity.
+
+Therefore, Java reflection operates on residual generic metadata associated with
+declarations, whereas C\# reflection operates on reified runtime type entities.
+
+\subsection{Comparative Summary of Runtime Generic Reflection}
+
+Considering only runtime metadata availability and type introspection capabilities,
+the three approaches can be summarized as follows:
+
+\begin{itemize}
+    \item \textbf{C\# Generics}: generic parameters are reified by the CLR. Both open
+    generic definitions and closed constructed types retain runtime metadata and can
+    be inspected through \texttt{System.Reflection}.
+
+    \item \textbf{C++ Templates}: template parameters are resolved through
+    compile-time monomorphization. Standard RTTI identifies concrete runtime types
+    but does not expose template parameter metadata.
+
+    \item \textbf{Java Generics}: generic parameters are erased from runtime type
+    identity. Reflection can access declaration-level generic information but cannot
+    directly inspect concrete type arguments of runtime instances.
+\end{itemize}
+
+The CLR generic model therefore provides a reflection system in which generic type
+structure remains part of the runtime type universe, whereas C++ and Java represent
+opposite design points: compile-time expansion without generic runtime metadata in
+C++, and runtime abstraction through type erasure in Java.
 
 \end{document}
