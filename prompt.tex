@@ -334,6 +334,27 @@ were previously three separate, per-language prompts (C++, Java, C\#) into a
 single comparative prompt covering all three languages together, so that a
 single generation directly produces the cross-language comparison.
 
+\vspace{0.5cm}
+\noindent\textbf{Methodological Note on Prompt Construction and Verification:}\\
+To ensure the accuracy of the generated analysis, the prompt engineering strategy utilized a decoupled approach. Specifically, 
+individual prompts were tailored for each language (C++, Java, and C\#) across five core analytical categories: 
+\begin{enumerate}
+    \item Timing of instantiation
+    \item Runtime representation
+    \item Performance implications
+    \item Type safety
+    \item Reflection capabilities
+\end{enumerate}
+
+Because multiple distinct queries targeted different facets of the same language, the model's outputs naturally contained
+edundant technical information. This redundancy was intentional; it served as the critical first step in the verification 
+process, allowing for the cross-referencing of the model'overlapping sections and rs responses 
+to ensure internal consistency before synthesizing the final master prompt.
+
+To simplify the analysis and improve readability within this document, these isolated queries were subsequently merged. 
+The resulting unified master prompt dictates the exact structure, 
+constraints, and content parameters used to 
+generate the comprehensive comparison presented in the following sections.
 % =====================================================================
 \section{Prompt 1: Overview of Parametric Polymorphism}
 % =====================================================================
