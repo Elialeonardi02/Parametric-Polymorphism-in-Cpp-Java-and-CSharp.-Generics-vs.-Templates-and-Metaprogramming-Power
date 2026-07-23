@@ -1,8 +1,44 @@
-\documentclass[12pt]{report}
+\documentclass[11pt]{report}
 
 % =====================================================================
 % PREAMBLE
 % =====================================================================
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{amsmath}
+
+% Code listings
+\usepackage{listings}
+\usepackage{xcolor}
+
+\usepackage{mdframed}
+\usepackage{adjustbox}
+\usepackage{hyperref}
+
+% Page geometry
+\geometry{
+    a4paper,
+    top=2.2cm,
+    bottom=2.2cm,
+    left=2.4cm,
+    right=2.4cm
+}
+
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{parskip}
+
+\titlespacing*{\chapter}{0pt}{-20pt}{10pt}
+\titlespacing*{\section}{0pt}{10pt}{4pt}
+\titlespacing*{\subsection}{0pt}{8pt}{3pt}
+\titlespacing*{\subsubsection}{0pt}{6pt}{2pt}
+
+\setlist{itemsep=1pt, topsep=2pt, parsep=0pt}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
@@ -23,26 +59,80 @@
 \usepackage{fancyvrb}
 \usepackage{fvextra}
 
-% Margin-safe verbatim settings: force breaking even on strings with no
-% spaces (long identifiers, texttt-style tokens, etc.) and use a slightly
-% smaller font so long lines never overflow the text width.
-\fvset{
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+
+
+% =====================================================================
+% CODE LISTING STYLE
+% =====================================================================
+
+\definecolor{codebackground}{RGB}{245,245,245}
+
+\lstdefinestyle{cppstyle}{
+    language=C++,
+    backgroundcolor=\color{codebackground},
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\bfseries,
+    commentstyle=\itshape,
+    numbers=left,
+    numberstyle=\tiny,
+    numbersep=8pt,
+    frame=single,
+    framesep=4pt,
     breaklines=true,
-    breakanywhere=true,
-    breaksymbolleft={},
-    fontsize=\small
+    tabsize=4,
+    showstringspaces=false,
+    columns=fullflexible,
+    aboveskip=4pt,
+    belowskip=4pt
 }
 
-\title{Parametric Polymorphism in C++, Java, and C\#:\\Generics vs. Templates and Metaprogramming Power\\[0.5em]\large Prompt Log (Reorganized by Task)}
-\author{Elia Leonardi\\University of Pisa}
-\date{July 2026}
+\lstset{style=cppstyle}
+
+\lstdefinelanguage{CSharp}{
+    language=[Sharp]C,
+    morekeywords={var, async, await, yield, get, set, value, nameof}
+}
+
+% Esempio di stile pulito e accademico per tutti i blocchi di codice
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\bfseries\color{blue!70!black},
+    commentstyle=\itshape\color{green!50!black},
+    stringstyle=\color{red!60!black},
+    showstringspaces=false,
+    numbers=none, % metti 'left' se vuoi i numeri di riga
+    frame=single, % riquadro attorno al codice
+    breaklines=true,
+    aboveskip=4pt,
+    belowskip=4pt
+}
+
+% =====================================================================
+% EXAMPLE BOX STYLE
+% =====================================================================
+
+\newmdenv[
+    leftline=true,
+    rightline=false,
+    topline=false,
+    bottomline=false,
+    linecolor=black,
+    linewidth=2pt,
+    innerleftmargin=12pt,
+    innerrightmargin=8pt,
+    innertopmargin=8pt,
+    innerbottommargin=8pt
+]{examplebox}
+
+
+% =====================================================================
+% MAIN DOCUMENT
+% =====================================================================
 
 \begin{document}
-
-\maketitle
-\clearpage
-\tableofcontents
-\clearpage
+\input{title_page/Frontespizio_prompt_log} % include the translated title page
 
 \chapter{AI Prompt Engineering}
 

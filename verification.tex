@@ -1,8 +1,24 @@
-\documentclass[12pt]{report}
+\documentclass[11pt]{report}
 
 % =====================================================================
-% PREAMBLE (Configuration and Packages)
+% PREAMBLE
 % =====================================================================
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{amsmath}
+
+% Code listings
+\usepackage{listings}
+\usepackage{xcolor}
+
+\usepackage{mdframed}
+\usepackage{adjustbox}
+\usepackage{hyperref}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel} 
@@ -13,20 +29,123 @@
 \usepackage{hyperref}
 \usepackage{fancyvrb}
 \usepackage{fvextra}
-% Eventuali altri pacchetti (es. per il codice sorgente o formule matematiche)
-% \usepackage{listings}
-% \usepackage{amsmath}
 
+% Page geometry
+\geometry{
+    a4paper,
+    top=2.2cm,
+    bottom=2.2cm,
+    left=2.4cm,
+    right=2.4cm
+}
+
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{parskip}
+
+\titlespacing*{\chapter}{0pt}{-20pt}{10pt}
+\titlespacing*{\section}{0pt}{10pt}{4pt}
+\titlespacing*{\subsection}{0pt}{8pt}{3pt}
+\titlespacing*{\subsubsection}{0pt}{6pt}{2pt}
+
+\setlist{itemsep=1pt, topsep=2pt, parsep=0pt}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{hyperref}
+\geometry{a4paper, top=3cm, bottom=3cm, left=3cm, right=3cm}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    filecolor=black,
+    urlcolor=blue,
+    citecolor=black,
+}
+
+\usepackage[expansion=false]{microtype}
+\usepackage{fancyvrb}
+\usepackage{fvextra}
+
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+
+
+% =====================================================================
+% CODE LISTING STYLE
+% =====================================================================
+
+\definecolor{codebackground}{RGB}{245,245,245}
+
+\lstdefinestyle{cppstyle}{
+    language=C++,
+    backgroundcolor=\color{codebackground},
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\bfseries,
+    commentstyle=\itshape,
+    numbers=left,
+    numberstyle=\tiny,
+    numbersep=8pt,
+    frame=single,
+    framesep=4pt,
+    breaklines=true,
+    tabsize=4,
+    showstringspaces=false,
+    columns=fullflexible,
+    aboveskip=4pt,
+    belowskip=4pt
+}
+
+\lstset{style=cppstyle}
+
+\lstdefinelanguage{CSharp}{
+    language=[Sharp]C,
+    morekeywords={var, async, await, yield, get, set, value, nameof}
+}
+
+% Esempio di stile pulito e accademico per tutti i blocchi di codice
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\bfseries\color{blue!70!black},
+    commentstyle=\itshape\color{green!50!black},
+    stringstyle=\color{red!60!black},
+    showstringspaces=false,
+    numbers=none, % metti 'left' se vuoi i numeri di riga
+    frame=single, % riquadro attorno al codice
+    breaklines=true,
+    aboveskip=4pt,
+    belowskip=4pt
+}
+
+% =====================================================================
+% EXAMPLE BOX STYLE
+% =====================================================================
+
+\newmdenv[
+    leftline=true,
+    rightline=false,
+    topline=false,
+    bottomline=false,
+    linecolor=black,
+    linewidth=2pt,
+    innerleftmargin=12pt,
+    innerrightmargin=8pt,
+    innertopmargin=8pt,
+    innerbottommargin=8pt
+]{examplebox}
 
 % =====================================================================
 % MAIN DOCUMENT
 % =====================================================================
 
 \begin{document}
+
 \externaldocument[A-]{report} 
 
 % 1. Title page
-\input{title_page/Frontespizio} % include the translated title page
+\input{title_page/Frontespizio_verification_log.tex}
 \clearpage
 
 % 2. Indice (Table of Contents)
