@@ -3,7 +3,7 @@
 % =====================================================================
 % PREAMBLE
 % =====================================================================
-
+\usepackage[htt]{hyphenat}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
@@ -327,10 +327,13 @@ static compilation and no instantiation mechanism exists at runtime.
 
 \subsection{Template Definition}
 
+
 When the compiler encounters a template definition, it performs the front-end
 stages (lexical analysis, parsing, and the semantic checks possible without
 knowledge of future arguments) and stores a parameterized internal representation,
-without generating executable code:
+without generating executable code.
+\begin{examplebox}
+\textbf{Example.}
 
 \begin{lstlisting}
 template<typename T>
@@ -339,6 +342,7 @@ T get_max(T a, T b)
     return (a > b) ? a : b;
 }
 \end{lstlisting}
+\end{examplebox}
 
 Since the compiler still ignores the concrete meaning of \texttt{T}, it cannot yet
 determine the operations, layout, or instructions required by the final
@@ -462,6 +466,9 @@ generated for each concrete specialization.
 \subsection{Runtime Form of Template Specializations}
 \label{CppTemplates:RuntimeRepresentation:Form}
 
+\begin{examplebox}
+\textbf{Example.}
+
 Consider the following function template:
 
 \begin{lstlisting}[language=C++]
@@ -476,7 +483,10 @@ When the program requires \texttt{add<int>(1,2)} and \texttt{add<double>(1.0,2.0
 the compiler produces two separate functions, \texttt{add<int>(int,int)} and
 \texttt{add<double>(double,double)}, represented at the binary level as independent
 machine-code regions with their own instructions, symbol identity, and entry
-address. The runtime system contains no generic function body carrying a runtime
+address.
+\end{examplebox}
+
+The runtime system contains no generic function body carrying a runtime
 type parameter, only the concrete implementations produced during translation;
 control flow transfers directly to the generated addresses, and the processor
 executes without any awareness that the code originated from a template. 
@@ -489,7 +499,10 @@ before execution.
 
 C++ uses heterogeneous translation, a process known in the C++ standard and
 literature as template instantiation and sometimes informally referred to,
-by analogy with other languages such as Rust, as monomorphization. For example:
+by analogy with other languages such as Rust, as monomorphization.
+
+\begin{examplebox}
+\textbf{Example.}
 
 \begin{lstlisting}[language=C++]
 template <typename T>
@@ -505,7 +518,10 @@ Container<float> b;
 creates two independent specializations, \texttt{Container<int>} and
 \texttt{Container<float>}; the executable contains their concrete
 representations, with no runtime object representing \texttt{Container<T>} since
-the generic abstraction was already resolved during translation. For function
+the generic abstraction was already resolved during translation.
+\end{examplebox}
+
+For function
 templates, each specialization produces a distinct machine-code artifact behaving
 exactly like a function written explicitly for that type, with its own entry
 point invoked through normal control-flow instructions.
@@ -522,11 +538,11 @@ t is defined by the underlying ABI, such as the Itanium C++ ABI  used by GCC and
 \subsection{Final Executable Representation}
 
 After linking, the executable is a collection of concrete compiled entities,
-$Executable = \{Code(P_1), ..., Code(P_n)\}$, where each $P_i$ corresponds to a
+$\text{Executable} = \{\text{Code}(P_1), \allowbreak \dots,  \text{Code}(P_n)\}$, 
+where each $P_i$ corresponds to a
 template specialization. It contains machine instructions for instantiated
 functions, symbols identifying them, relocation information, and optionally
-runtime metadata produced by other C++ mechanisms (Section~\ref{CppTemplates:Reflection}) --
-artifacts no different from those produced by non-template code. During
+runtime metadata produced by other C++ mechanisms artifacts no different from those produced by non-template code. During
 execution the processor never interprets template parameters: a call instruction
 transfers control to a compiled function's address, and the link back to the
 original template source survives only in debugging information or symbol
@@ -554,9 +570,10 @@ The performance characteristics of C++ templates derive directly from
 monomorphization (Section~\ref{CppTemplates:RuntimeRepresentation:Monomorphization}): every instantiation is
 transformed into an independent specialization operating on a concrete type, so
 the executable contains ordinary statically typed functions and classes tailored
-to each instantiated type rather than a universal generic implementation. For
-example:
+to each instantiated type rather than a universal generic implementation.
 
+\begin{examplebox}
+\textbf{Example.}
 \begin{lstlisting}[language=C++]
 template<typename T>
 T max(T a, T b) {
@@ -568,6 +585,7 @@ instantiated with different types generates specialized functions equivalent to
 handwritten \texttt{int max(int,int)} and \texttt{double max(double,double)}
 versions, whose machine code operates directly on concrete data types without
 runtime mechanisms for resolving the generic parameter.
+\end{examplebox}
 
 \subsection{Static Dispatch and Elimination of Runtime Overhead}
 \label{CppTemplates:Performance:DispatchEliminationOverhead}
@@ -577,7 +595,7 @@ since the concrete type of every parameter is known at compile time, function
 calls are resolved before execution, eliminating the indirections required by
 dynamic dispatch. 
 Given \texttt{template<typename T> void process(T\& object) \{
-object.compute(); \}} called with a \texttt{Matrix}, the compiler ù
+object.compute(); \}} called with a \texttt{Matrix}, the compiler
 resolves the type of object statically at
 compile time; if \texttt{Matrix::compute()} is not virtual, the call itself is also
 resolved directly, reducing overhead and exposing further optimization
@@ -601,6 +619,7 @@ overhead and enabling further constant propagation, constant folding,
 dead-code elimination, loop optimization, and strength reduction; the
 \texttt{inline} keyword only permits this substitution by affecting linkage,
 without guaranteeing that the compiler will actually perform it.
+
 Template parameters can also encode compile-time constants -- e.g.\ a
 \texttt{template<int N>} array bound lets the compiler know the exact iteration
 count of a loop and apply loop unrolling. Compile-time specialization also enables branch elimination via
@@ -687,9 +706,12 @@ required to restore the original generic type information.
 
 \subsection{Example: Type Checking Across Specializations}
 \label{CppTemplates:TypeSafety:Example}
-
-The following example illustrates how C++ templates preserve static type
+The following examples illustrates how C++ templates preserve static type
 safety through concrete specialization.
+
+\begin{examplebox}
+\textbf{Example.}
+
 
 \begin{lstlisting}
 #include <string>
@@ -713,6 +735,7 @@ int main()
     // auto z = maximum(3, std::string("hello"));
 }
 \end{lstlisting}
+\end{examplebox}
 
 The function template \texttt{maximum} describes a generic operation that
 can be applied to any type satisfying the required semantic constraints.
@@ -721,9 +744,13 @@ argument deduction determines that the parameter \texttt{T} corresponds to
 the type \texttt{int}. The compiler then creates a specialization equivalent
 to:
 
+\begin{examplebox}
+\textbf{Example.}
+
 \begin{lstlisting}
 int maximum(const int& a, const int& b);
 \end{lstlisting}
+\end{examplebox}
 
 Similarly, the invocation \texttt{maximum(3.5, 8.1)} produces a
 specialization where \texttt{T = double}, and the generated function
@@ -795,9 +822,12 @@ and \texttt{dynamic\_cast}, together with the \texttt{std::type\_info} class.
 The \texttt{typeid} operator obtains runtime type information associated
 with an expression or a type. When applied to an instantiated template
 class, it can identify the concrete specialization generated by the
-compiler. For example:
+compiler.
 
-\begin{verbatim}
+\begin{examplebox}
+\textbf{Example.}
+
+\begin{lstlisting}
 template <typename T>
 class Wrapper {
 };
@@ -807,13 +837,13 @@ Wrapper<double> b;
 
 std::cout << typeid(a).name();
 std::cout << typeid(b).name();
-\end{verbatim}
-
+\end{lstlisting}
 The two objects correspond to different C++ types, namely \texttt{Wrapper<int>}
 and \texttt{Wrapper<double>}. Consequently, the RTTI system treats them as
 distinct runtime types whenever RTTI metadata is generated for these
 entities. The resulting \texttt{std::type\_info} objects represent the
 runtime identity of the instantiated classes.
+\end{examplebox}
 
 The information exposed by \texttt{std::type\_info} is intentionally 
 limited.
@@ -833,9 +863,12 @@ succeed, and for typeid applied to an expression to report the dynamic type
 rather than the static type known at compile time.
 
 Template classes can participate in such hierarchies like ordinary C++
-classes. For example:
+classes.
 
-\begin{verbatim}
+\begin{examplebox}
+\textbf{Example.}
+
+\begin{lstlisting}
 class Base {
     public:
     virtual ~Base() = default;
@@ -848,7 +881,8 @@ class Derived : public Base {
 Base* ptr = new Derived<int>();
 
 Derived<int>* result = dynamic_cast<Derived<int>*>(ptr);
-\end{verbatim}
+\end{lstlisting}
+\end{examplebox}
 
 During execution, \texttt{dynamic\_cast} uses runtime type information
 associated with the object to verify whether the actual object type
@@ -879,9 +913,14 @@ before program execution.
 RTTI, in contrast, represents a restricted runtime mechanism. It operates
 only on the subset of type information explicitly retained by the C++ object
 model, primarily for polymorphic objects and explicit type identification
-through \texttt{typeid}. For example, a template class such as:
+through \texttt{typeid}.
 
-\begin{verbatim}
+\begin{examplebox}
+\textbf{Example.}
+
+A template class such as:
+
+\begin{lstlisting}
 template<typename T>
 class Base
 {
@@ -890,12 +929,14 @@ public:
 };
 
 Base<int> object;
-\end{verbatim}
-
+\end{lstlisting}
 may generate runtime type information describing \texttt{Base<int>}, but it
 does not generate a runtime descriptor describing the generic definition
 \texttt{Base<T>}, because the generic template abstraction has no runtime
 existence (Section~\ref{CppTemplates:RuntimeRepresentation}).
+\end{examplebox}
+
+
 
 Consequently, RTTI can distinguish between instantiated template types when
 the compiler emits the corresponding runtime metadata, but it cannot
@@ -933,6 +974,9 @@ independent specialization for every concrete type argument.
 
 \subsection{Generic Declaration}
 
+\begin{examplebox}
+\textbf{Example.}
+
 Consider the following generic class:
 
 \begin{lstlisting}[language=Java]
@@ -941,6 +985,7 @@ class Box<T> {
     public T get() { return value; }
 }
 \end{lstlisting}
+\end{examplebox}
 
 The compiler stores a single parameterized representation; unlike C++
 templates, no family of specializations will later be generated from it.
@@ -1024,7 +1069,8 @@ maintained per argument.
 Given \texttt{class Box<T> \{ T value; T get(); \}}, erasure produces
 \texttt{class Box \{ Object value; Object get(); \}}. Formally,
 $Box{<}T{>} \rightarrow Box{<}Object{>}$ for an unbounded variable, so
-$RuntimeType(Box{<}String{>}) = RuntimeType(Box{<}Integer{>}) = Box$: the
+\newline
+$\text{RuntimeType}(\text{\texttt{Box<String>}}) = \text{RuntimeType}(\text{\texttt{Box<Integer>}}) = \text{\texttt{Box}}$: the
 generic parameter plays no role in runtime type identity.
 
 \subsection{Object Layout and Storage}
@@ -1089,7 +1135,7 @@ specialized, type-tailored code.
 \subsection{Memory Representation and Pointer Indirection}
 
 Generic structures operate primarily on references rather than direct
-values. \texttt{ArrayList<Integer>.get(0)} does not store the integer
+values. \texttt{ArrayList<Integer>.}\allowbreak\texttt{get(0)} does not store the integer
 directly; it dereferences an \texttt{Integer} object on the heap. C++
 templates, by contrast, allow direct contiguous storage
 (\texttt{std::vector<int>}), avoiding this indirection and improving cache
@@ -1172,7 +1218,7 @@ parameterization.
 
 \subsection{Bounded Type Parameters}
 
-Bounds such as \texttt{<T extends Comparable<T>>} restrict admissible
+Bounds such as \texttt{<T extends Comparable<T>} restrict admissible
 substitutions to types providing the required operations (here,
 \texttt{compareTo}), and the compiler rejects any instantiation that fails
 to satisfy the bound.
@@ -1273,7 +1319,10 @@ compiler.
 
 The C\# compiler translates a generic declaration into Common Intermediate
 Language (CIL), preserving type parameters as metadata rather than expanding
-them:
+them.
+
+\begin{examplebox}
+\textbf{Example.}
 
 \begin{lstlisting}[language=CSharp]
 class Container<T>
@@ -1281,10 +1330,12 @@ class Container<T>
     public T value;
 }
 \end{lstlisting}
-
 No specialized implementations such as \texttt{Container<int>} or
 \texttt{Container<double>} are generated at this stage; the assembly
 contains a single open generic definition.
+\end{examplebox}
+
+
 
 % ---------------------------------------------------------------------
 
@@ -1367,7 +1418,7 @@ $\rightarrow$ Native Code.
 
 \subsection{CIL Metadata Representation}
 
-The compiler generates CIL and CLI metadata (ECMA-335) preserving explicit
+The compiler generates CIL and CLI metadata preserving explicit
 generic declarations: \texttt{List<T>} is stored as an open generic type
 definition, not a concrete implementation. Dedicated metadata tables --
 \texttt{GenericParam}, \texttt{GenericParamConstraint}, \texttt{TypeSpec},
@@ -1405,7 +1456,7 @@ duplicating code.
 
 Shared implementations rely on runtime generic dictionaries/contexts to
 resolve type descriptors, method addresses, field layouts, and interface
-implementations at execution time -- a dictionary-passing-like mechanism
+implementations at execution time, a dictionary-passing-like mechanism
 with no equivalent in C++ (resolved before execution) or Java (erased
 before execution).
 
@@ -1413,7 +1464,7 @@ before execution).
 \label{CSharpGenerics:RuntimeRepresentation:TypeIdentity}
 
 Constructed generic types retain distinct runtime identity:
-$RuntimeType(\texttt{List<int>}) \neq RuntimeType(\texttt{List<string>})$,
+$\text{RuntimeType}(\texttt{List<int>}) \neq \newline \text{RuntimeType}(\texttt{List<string>})$,
 unlike Java where both erase to the same \texttt{List}. C++ specializations can participate in 
 RTTI as concrete types only within
 polymorphic class hierarchies (i.e., containing at least one virtual
@@ -1469,11 +1520,12 @@ erased execution.
 \label{CSharpGenerics:Performance:ValueType}
 
 For value-type instantiations, elements are stored directly inside the
-containing structure. A \texttt{Buffer<Vector3>} array stores contiguous
+containing structure. A \path{Buffer<Vector3>} array stores contiguous
 structs rather than references, enabling sequential cache-friendly access
-and avoiding boxing entirely, execution cost across the whole collection approximates
-$T_{value}=N(C_{load}+C_{operation})$, with per-element cost closer to specialized
-C++ code than to Java's boxed collections.
+and avoiding boxing entirely. Consequently, the execution cost across the 
+whole collection approximates $T_{\text{value}} = N(C_{\text{load}} + C_{\text{operation}})$, 
+with a per-element cost closer to specialized C++ code than to Java's 
+boxed collections.
 
 \subsection{Reference-Type Instantiations}
 \label{CSharpGenerics:Performance:ReferenceType}
@@ -1549,7 +1601,7 @@ every stored value to be an integer.
 \subsection{Generic Constraints}
 
 A parameter without constraints cannot assume arbitrary members are
-available: \texttt{value.SpecialOperation()} inside
+available:\newline \texttt{value.SpecialOperation()} inside
 \texttt{Processor<T>} is rejected unless a constraint such as
 \texttt{where T : IDisposable} establishes that every valid substitution
 provides \texttt{Dispose()}. Constraints act as additional typing rules
@@ -1603,6 +1655,8 @@ entities rather than erased or compile-time-only abstractions.
 
 \subsection{Runtime Inspection Example}
 
+\begin{examplebox}
+
 \begin{lstlisting}[language=CSharp]
 Type t = instance.GetType();
 if (t.IsGenericType)
@@ -1615,6 +1669,7 @@ if (t.IsGenericType)
 For a \texttt{List<int>} instance, this recovers both the generic
 definition \texttt{List<>} and the concrete argument \texttt{int}:
 $\texttt{List<int>} \rightarrow \texttt{List<>} + \texttt{int}$.
+\end{examplebox}
 
 \subsection{Comparison with C++ RTTI}
 \label{CSharpGenerics:Reflection:ComparisonCpp}
@@ -1698,13 +1753,16 @@ C++ supports compile-time computation through two mechanisms relying on
 different compiler rules: recursive template instantiation, which performs
 computation through generation and substitution of template entities, and
 \texttt{constexpr} evaluation, which relies on direct interpretation of
-valid constant expressions. The following examples assume C++17 or later.
+valid constant expressions. The following examples assume C++20 or later.
 
 \subsection{Recursive Template Metaprogramming}
 \label{Metaprogramming:Compile-TimeComputationCpp:RecursiveTemplateMetaprogrammingExample}
 Traditional template metaprogramming performs computation by recursively
 instantiating templates, each specialization representing a distinct
 compile-time entity:
+
+\begin{examplebox}
+\textbf{Example.}
 
 \begin{lstlisting}[language=C++]
 
@@ -1723,19 +1781,23 @@ struct Factorial<0>
 
 constexpr unsigned result = Factorial<6>::value;
 \end{lstlisting}
-
 Resolving \texttt{Factorial<6>::value} recursively instantiates
 $\texttt{Factorial<6>} \rightarrow \texttt{Factorial<5>} \rightarrow \cdots
 \rightarrow \texttt{Factorial<0>}$, the last specialization terminating the
 recursion. The compiler reduces the instantiated chain to the constant
 $720$ during semantic analysis; no runtime recursive execution is
 generated, since template arguments are fully known during translation.
+\end{examplebox}
+
 
 The same mechanism applies to computations with multiple recursive
 dependencies. A related but structurally different case is the Fibonacci
 sequence, whose naive recursive definition requires each intermediate
 value to be reached through multiple paths in the dependency tree, unlike
 the single linear chain produced by \texttt{Factorial}:
+
+\begin{examplebox}
+\textbf{Example.}
 
 \begin{lstlisting}[language=C++]
 template<unsigned N>
@@ -1748,7 +1810,6 @@ struct Fibonacci
 template<> struct Fibonacci<0> { static constexpr unsigned value = 0; };
 template<> struct Fibonacci<1> { static constexpr unsigned value = 1; };
 \end{lstlisting}
-
 Instantiating \texttt{Fibonacci<10>::value} generates this dependency tree
 implementing $F(n) = F(n-1) + F(n-2)$ until reaching the terminating
 specializations, yielding the constant $55$ before code generation;
@@ -1756,12 +1817,18 @@ redundant re-instantiation of shared intermediate values such as
 \texttt{Fibonacci<8>} is avoided only because the compiler caches each
 distinct specialization once it has been instantiated; the recursive
 structure exists only as a compile-time artifact.
+\end{examplebox}
+
+
 
 \subsection{\texttt{constexpr} Function Evaluation}
 
 Since C++11, the \texttt{constexpr} specifier allows ordinary functions to
 participate in constant expression evaluation without generating
 specialized template entities:
+
+\begin{examplebox}
+\textbf{Example.}
 
 \begin{lstlisting}[language=C++]
 constexpr unsigned factorial(unsigned n)
@@ -1778,6 +1845,9 @@ must be evaluated during translation: the compiler's constant expression
 evaluator interprets the function body directly, producing $720$, which is
 substituted into the program representation. The final executable contains
 no recursive runtime call.
+\end{examplebox}
+
+
 
 Both mechanisms complete the transformation \emph{compile-time expression}
 $\rightarrow$ \emph{constant evaluation} $\rightarrow$ \emph{generated
@@ -1788,7 +1858,7 @@ body against the constant-expression rules of the standard.
 
 % =====================================================================
 
-\section{Compile-Time Overload Selection: SFINAE and Concepts}
+\section{Compile-Time Overload Selection: SFINAE}
 \label{Metaprogramming:Compile-TimeOverloadSelection}
 
 SFINAE (\emph{Substitution Failure Is Not An Error}) enables compile-time
@@ -1796,6 +1866,9 @@ selection of function overloads by controlling whether a template
 declaration participates in overload resolution. The following example uses
 \texttt{std::enable\_if} to select an implementation according to a
 compile-time property of the argument type:
+
+\begin{examplebox}
+\textbf{Example.}
 
 \begin{lstlisting}[language=C++]
 template <typename T>
@@ -1806,18 +1879,23 @@ template <typename T>
 typename std::enable_if<std::is_floating_point<T>::value>::type
 process(T value) { std::cout << "Floating-point: " << value; }
 \end{lstlisting}
-
 During argument substitution, the compiler attempts to instantiate each
 candidate. For \texttt{process(42)}, $T = int$ makes
 \texttt{std::enable\_if<true>::type} well-formed, so the integral overload
 remains viable; the floating-point overload instead produces
 \texttt{std::enable\_if<false>}, which lacks a nested \texttt{type} member,
 so substitution fails and the overload is silently discarded rather than
-triggering a compilation error. This behavior applies only within the
+triggering a compilation error.
+\end{examplebox}
+
+This behavior applies only within the
 immediate context of substitution during template argument deduction.
 
 C++20 Concepts express the same constraints explicitly rather than through
 substitution failure:
+
+\begin{examplebox}
+\textbf{Example.}
 
 \begin{lstlisting}[language=C++]
 #include <concepts>
@@ -1827,12 +1905,12 @@ void process(T value) { std::cout << "Integral: " << value; }
 template <typename T> requires std::floating_point<T>
 void process(T value) { std::cout << "Floating-point: " << value; }
 \end{lstlisting}
-
 The compiler evaluates each \texttt{requires} clause before overload
-resolution, discarding candidates whose constraints are not satisfied --
+resolution, discarding candidates whose constraints are not satisfied,
 providing the same compile-time specialization behavior as SFINAE while
 stating the type requirements directly rather than relying on incidental
 substitution failure.
+\end{examplebox}
 
 % =====================================================================
 
@@ -1842,6 +1920,9 @@ substitution failure.
 Variadic templates, introduced in C++11, allow a template to accept an
 arbitrary number of type or non-type arguments through a parameter pack,
 enabling generic components whose arity is not fixed in advance:
+
+\begin{examplebox}
+\textbf{Example.}
 
 \begin{lstlisting}[language=C++]
 template <typename T>
@@ -1853,17 +1934,22 @@ void print(T first, Ts... rest) {
     print(rest...);
 }
 \end{lstlisting}
-
 The parameter pack \texttt{Ts...} represents an arbitrary type sequence;
 the compiler recursively expands it during instantiation until the
 single-argument base case is reached, with the entire expansion resolved
 at compile time through overload resolution.
+\end{examplebox}
 
-\subsection{Template Parameters}
+
+
+\subsection{Template Template Parameters}
 \label{Metaprogramming:VariadicTemplates:TemplateParameters}
 Template template parameters allow a template to receive another template
 as an argument, enabling higher-order generic programming over families of
 compatible templates rather than over individual types:
+
+\begin{examplebox}
+\textbf{Example.}
 
 \begin{lstlisting}[language=C++]
 template <typename T, template <typename, typename...> class Container>
@@ -1876,12 +1962,14 @@ public:
 Stack<int, std::vector> a;
 Stack<int, std::list>   b;
 \end{lstlisting}
-
 The variadic \texttt{typename...} accounts for the additional defaulted
 template parameters of standard containers such as \texttt{std::vector}
 and \texttt{std::list} (e.g.\ the allocator type), which a template
 template parameter declared with a single \texttt{typename} would not
-match. The compiler substitutes the supplied template argument for
+match.
+\end{examplebox}
+
+ The compiler substitutes the supplied template argument for
 \texttt{Container} and instantiates the resulting specialization,
 preserving compile-time type checking across the abstraction.
 
@@ -1891,6 +1979,9 @@ CRTP is a template-based inheritance technique in which a derived class
 passes itself as the template argument to its base class, enabling static
 polymorphism through compile-time binding rather than runtime dynamic
 dispatch:
+
+\begin{examplebox}
+\textbf{Example.}
 
 \begin{lstlisting}[language=C++]
 template <typename Derived>
@@ -1904,6 +1995,7 @@ public:
     void implementation() { std::cout << "Concrete implementation"; }
 };
 \end{lstlisting}
+\end{examplebox}
 
 The base template is instantiated with the derived type, so calls to
 derived operations are resolved during compilation; the compiler generates
@@ -1918,6 +2010,9 @@ requiring a runtime virtual interface.
 Java generics express bounded polymorphism through explicit type
 constraints restricting admissible type arguments:
 
+\begin{examplebox}
+\textbf{Example.}
+
 \begin{lstlisting}[language=Java]
 public class Calculator<T extends Number> {
     public double square(T value) {
@@ -1925,14 +2020,19 @@ public class Calculator<T extends Number> {
     }
 }
 \end{lstlisting}
-
 The bound \texttt{T extends Number} performs compile-time checking that
 only types satisfying the declared relationship may instantiate the class.
+\end{examplebox}
+
+
 However, this expresses only the operations guaranteed by the bound; it
 cannot introduce conditional compile-time branching based on the concrete
 identity of \texttt{T}, because Java generics are implemented through type
 erasure rather than instantiation-time substitution. Since no specialized
 version of generic code is generated per concrete type, a method such as
+
+\begin{examplebox}
+\textbf{Example.}
 
 \begin{lstlisting}[language=Java]
 public static <T> void process(T value) {
@@ -1943,10 +2043,12 @@ public static <T> void process(T value) {
     }
 }
 \end{lstlisting}
-
 cannot be compiled into distinct versions depending on \texttt{T}: even
 after a runtime \texttt{instanceof} check, the static type of \texttt{value}
-remains \texttt{T}, so any type-specific member access still requires an
+remains \texttt{T}
+\end{examplebox}
+
+So any type-specific member access still requires an
 explicit cast performed by the programmer, not a compiler-generated
 specialization. Any type-dependent behavior must therefore rely on
 mechanisms available only after erasure, such as runtime type information,
@@ -1966,15 +2068,22 @@ clauses combined with static abstract interface members (introduced in
 
 Where a C++ trait pattern conditionally enables an overload via SFINAE:
 
+\begin{examplebox}
+\textbf{Example.}
+
 \begin{lstlisting}[language=C++]
 template<typename T>
 auto add(T a, T b) -> std::enable_if_t<std::is_arithmetic_v<T>, T>
 { return a + b; }
 \end{lstlisting}
+\end{examplebox}
 
 the closest C\# approximation constrains the parameter directly, using the
 standard-library \texttt{INumber<T>} interface introduced together with
 static abstract interface members in .NET 7:
+
+\begin{examplebox}
+\textbf{Example.}
 
 \begin{lstlisting}[language=CSharp]
 static T Add<T>(T a, T b) where T : INumber<T>
@@ -1982,10 +2091,14 @@ static T Add<T>(T a, T b) where T : INumber<T>
     return a + b;
 }
 \end{lstlisting}
+\end{examplebox}
 
 This works because \texttt{INumber<T>} is itself defined in terms of static
 abstract interface members, which allow a trait-like contract to be
 expressed directly:
+
+\begin{examplebox}
+\textbf{Example.}
 
 \begin{lstlisting}[language=CSharp]
 public interface IAddable<TSelf> where TSelf : IAddable<TSelf>
@@ -1993,6 +2106,7 @@ public interface IAddable<TSelf> where TSelf : IAddable<TSelf>
     static abstract TSelf operator +(TSelf x, TSelf y);
 }
 \end{lstlisting}
+\end{examplebox}
 
 The compiler validates the presence of required static members during
 generic instantiation, conceptually resembling C++ concepts, though more
@@ -2021,6 +2135,9 @@ declared bounds.
 This lets C++ detect structural capabilities -- whether a type happens to
 provide a given member -- without an explicit interface:
 
+\begin{examplebox}
+\textbf{Example.}
+
 \begin{lstlisting}[language=C++]
 template <typename T>
 auto process(T value) -> decltype(value.serialize(), void())
@@ -2029,6 +2146,7 @@ auto process(T value) -> decltype(value.serialize(), void())
 template <typename T>
 void process(T) { /* fallback */ }
 \end{lstlisting}
+\end{examplebox}
 
 If \texttt{T} provides \texttt{serialize()}, the first overload is
 selected; otherwise substitution of \texttt{value.serialize()} fails and
@@ -2038,14 +2156,21 @@ inheritance relationship involved.
 Java and C\# cannot express this directly, since generic bodies must
 already be valid for every admissible argument:
 
+\begin{examplebox}
+\textbf{Example.}
+
 \begin{lstlisting}[language=Java]
 static <T> void process(T value) {
     value.serialize(); // compilation error: no guarantee T has serialize()
 }
 \end{lstlisting}
+\end{examplebox}
 
 The only available option is to encode the requirement explicitly through
 bounded polymorphism:
+
+\begin{examplebox}
+\textbf{Example.}
 
 \begin{lstlisting}[language=CSharp]
 interface IManualSerializable { void Serialize(); }
@@ -2053,6 +2178,7 @@ interface IManualSerializable { void Serialize(); }
 static void Process<T>(T value) where T : IManualSerializable
     => value.Serialize();
 \end{lstlisting}
+\end{examplebox}
 
 but such a constraint must be declared ahead of time and cannot be
 inferred from the structural properties of an arbitrary type. The

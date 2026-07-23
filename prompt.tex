@@ -95,18 +95,38 @@
     morekeywords={var, async, await, yield, get, set, value, nameof}
 }
 
-% Esempio di stile pulito e accademico per tutti i blocchi di codice
+% Clean, academic style for all code blocks
 \lstset{
     basicstyle=\ttfamily\footnotesize,
     keywordstyle=\bfseries\color{blue!70!black},
     commentstyle=\itshape\color{green!50!black},
     stringstyle=\color{red!60!black},
     showstringspaces=false,
-    numbers=none, % metti 'left' se vuoi i numeri di riga
-    frame=single, % riquadro attorno al codice
+    numbers=none, % set to 'left' if line numbers are desired
+    frame=single, % frame around the code
     breaklines=true,
     aboveskip=4pt,
     belowskip=4pt
+}
+
+% =====================================================================
+% VERBATIM STYLE FOR PROMPTS (uniform, margin-safe)
+% =====================================================================
+
+% Ensures every \begin{Verbatim} block used for prompts wraps long lines
+% instead of overflowing the page margins, and keeps a consistent visual
+% style (small monospaced font, light background, thin frame) across the
+% whole document.
+\DefineVerbatimEnvironment{PromptVerbatim}{Verbatim}{
+    breaklines=true,
+    breakanywhere=true,
+    breaksymbolleft=,
+    fontsize=\small,
+    frame=single,
+    framesep=3mm,
+    xleftmargin=0pt,
+    xrightmargin=0pt,
+    samepage=false
 }
 
 % =====================================================================
@@ -135,44 +155,53 @@
 \input{title_page/Frontespizio_prompt_log} % include the translated title page
 
 \chapter{AI Prompt Engineering}
+\label{AIPromptEngineering}
 
-To ensure the technical accuracy of the generated content and strictly adhere
-to the project guidelines, this report was developed using a \textbf{two-phase
-prompting strategy}: prompt improvement and prompt execution. A fundamental
-principle of this methodology is strict context isolation: both the refinement
-of the prompts and the generation of the final outputs are treated as completely
-independent operations.
+To ensure the technical accuracy of the generated content and its adherence
+to the project guidelines, this report was developed using a
+\textbf{two-phase prompting strategy}: prompt improvement and prompt
+execution. A fundamental principle of this methodology is strict context
+isolation, under which prompt refinement and content generation are treated
+as entirely separate operations, each carried out without knowledge of the
+other's context.
 
 \section{Architect Chat}
+\label{AIPromptEngineering:ArchitectChat}
 
-An initial ``Architect Chat'' was utilized to plan and outline the optimal
-sequence of prompts, ensuring that all project requirements were systematically
-addressed before any content generation began.
+An initial ``Architect Chat'', run with Gemini Pro 3.1 Extended, was used to
+plan and outline the optimal sequence of prompts, ensuring that all project
+requirements were systematically addressed before any content generation
+began. This planning stage produced the list of prompts later refined and
+executed in the two phases described below, but did not itself generate any
+content included in the report.
 
 \section{Prompt Engineering Phases}
+\label{AIPromptEngineering:Phases}
 
 \subsection{Prompt Improvement}
+\label{AIPromptEngineering:Phases:PromptImprovement}
 
-The first phase focuses on prompt refinement. During this stage, the initial
-prompts are iteratively improved to align with the project guidelines and
-maintain a rigorous academic standard. Crucially, the generation of each
-improved prompt is an independent operation. The AI is tasked solely with
-rewriting and optimizing the prompt's structure, without executing it or
-carrying over context from unrelated topics.
+The first phase focuses on prompt refinement. During this stage, the
+initial prompts produced by the Architect Chat are iteratively rewritten to
+align with the project guidelines and to maintain a rigorous academic
+standard. Each prompt is refined independently: the AI model is tasked
+solely with improving the prompt's structure and clarity, without executing
+it and without carrying over context from unrelated topics or previous
+prompts.
 
 \subsection{Prompt Execution}
+\label{AIPromptEngineering:Phases:PromptExecution}
 
-The second phase involves the execution of the refined prompts to generate the
-final output. To ensure the integrity of the results, each execution is treated
-as a strictly independent operation, performed in an isolated context (e.g., a
-completely new session). This strict separation guarantees that the generated
-content relies exclusively on the explicit instructions provided in the finalized
-prompt, preventing any bias or ``context leakage'' from the improvement phase.
-Furthermore, during this execution phase, the AI model is explicitly instructed
-to provide the source references and documentation used to formulate its
-responses, ensuring traceability and reliability.
+The second phase involves executing the refined prompts to generate the
+final content, using Claude Sonnet 5 in a new, isolated session for each
+prompt. This isolation ensures that the generated content relies
+exclusively on the explicit instructions contained in the finalized prompt,
+without any context leakage from the improvement phase or from other
+prompts. During execution, the model is also explicitly instructed to
+report the source references and documentation used to formulate its
+response.
 
-\section{Prompt 0: Configure Prompt Engineering (Task 1 -- Language Implementation)}
+\section{Prompt 0: Configure Prompt Engineering (Task 1)}
 \label{Prompt 0 Task1}
 
 To ensure the generation of rigorous academic sections, this methodology
@@ -189,7 +218,7 @@ Below is the complete text of the Master Prompt used to orchestrate
 the prompt engineering phase for Task 1 (language implementation of parametric
 polymorphism):
 
-\begin{Verbatim}
+\begin{PromptVerbatim}
 System Persona:
 
 Act as a Senior Prompt Engineer specialized in designing rigorous prompts
@@ -320,9 +349,9 @@ Writing Style Constraint
 Output Structure
 
 No additional text must appear before or after the generated master prompt.
-\end{Verbatim}
+\end{PromptVerbatim}
 
-\section{Prompt 0bis: Configure Prompt Engineering (Task 2 -- Metaprogramming)}
+\section{Prompt 0bis: Configure Prompt Engineering (Task 2)}
 \label{Prompt 0 Task2}
 
 For Task 2 (metaprogramming across C++, Java, and C\#), a second Master
@@ -330,7 +359,7 @@ Prompt was used. Its purpose is identical to the one described above, but it
 is specialized to produce a single \emph{section} of an existing chapter
 (rather than a standalone report), given one focused instruction as input.
 
-\begin{Verbatim}
+\begin{PromptVerbatim}
 System Persona:
 
 Act as a Senior Prompt Engineer specialized in designing rigorous prompts
@@ -419,7 +448,7 @@ Return only the generated master prompt, formatted as ready-to-use text
 and organized using the following headings: System Persona, Goal,
 Requirements, Writing Style Constraint, Output Structure. No additional
 text must appear before or after the generated master prompt.
-\end{Verbatim}
+\end{PromptVerbatim}
 
 % =====================================================================
 \chapter{Task 1 -- Language Implementation of Parametric Polymorphism}
@@ -473,23 +502,75 @@ referenced thereafter.
 \noindent\textbf{Goal:} Generate an overview of Parametric Polymorphism and ad-hoc polymorphism, giving details of type erasure compared with generics and monomorphization, and comparing differences between source code, bytecode, and binary code.
 
 \vspace{0.5em}
-\noindent\textbf{Prompt:}
-\begin{itemize}
-    \item Provide an exhaustive theoretical background on parametric polymorphism.
-    \item Define and thoroughly explain Christopher Strachey's distinction between parametric polymorphism and ad-hoc polymorphism.
-    \item Detail the two primary implementation strategies discussed in the literature:
-    \begin{enumerate}
-        \item Homogeneous translation (type erasure), detailing how it results in one compiled representation for all instantiations.
-        \item Heterogeneous translation (reification/monomorphization), detailing how it results in separate code generated per instantiated type.
-    \end{enumerate}
-    \item Analyze type erasure versus reified generics as the core axis of comparison.
-    \item Analyze compile-time versus runtime characteristics as the second axis of comparison, specifically examining when instantiation happens and what type information survives into the compiled binary or bytecode.
-    \item The entire document must be written in professional, compilation-ready LaTeX code.
-\end{itemize}
+\noindent\textbf{Prompt}:
+
+\begin{PromptVerbatim}
+System Persona:
+
+Act as a world-class computer scientist and academic researcher specialized
+in programming language theory, type systems, and the historical foundations
+of polymorphism.
+
+Goal:
+
+Produce an exhaustive, publication-grade theoretical overview of parametric
+polymorphism and ad-hoc polymorphism, comparing type erasure against
+reified generics and monomorphization, and explaining how these strategies
+manifest differently across source code, bytecode, and binary code.
+
+Requirements:
+
+- Provide an exhaustive theoretical background on parametric polymorphism.
+- Define and thoroughly explain Christopher Strachey's distinction between
+  parametric polymorphism and ad-hoc polymorphism.
+- Detail the two primary implementation strategies discussed in the
+  literature:
+  1. Homogeneous translation (type erasure), detailing how it results in
+     one compiled representation for all instantiations.
+  2. Heterogeneous translation (reification/monomorphization), detailing
+     how it results in separate code generated per instantiated type.
+- Analyze type erasure versus reified generics as the core axis of
+  comparison.
+- Analyze compile-time versus runtime characteristics as the second axis
+  of comparison, specifically examining when instantiation happens and
+  what type information survives into the compiled binary or bytecode.
+
+Writing Style Constraint:
+
+Maintain a formal, objective, and precise academic writing style consistent
+with programming language theory literature. Avoid first-person pronouns.
+Provide technically detailed explanations rather than high-level summaries.
+
+Output Structure:
+
+The entire document must be written in professional, compilation-ready
+LaTeX code, organized into clearly labeled sections covering the
+theoretical background, the Strachey distinction, the two translation
+strategies, and the comparative analysis.
+\end{PromptVerbatim}
 
 \vspace{0.5em}
-\noindent\textbf{Resources}: \\
-The generation of the technical report was supported by the following academic and technical references. The theoretical background was derived from foundational works on type systems and polymorphism, including Strachey's original classification of polymorphism, Cardelli and Wegner's analysis of type abstraction and polymorphism, and Pierce's formal treatment of parametric polymorphism and type systems \cite{strachey1967,cardelli1985,pierce2002,pierce2005}. The analysis of generic implementation strategies, including homogeneous translation, type erasure, heterogeneous translation, reification, and monomorphization, was based on research concerning generic programming implementations and runtime systems, including the .NET Common Language Runtime and Java generic mechanisms \cite{kennedy2001,bracha1998,bracha2004,ecma334_2023,ecma335_2024,jls2024,jvms2024}. The comparison between compile-time and runtime characteristics was supported by compiler literature and modern programming language implementation documentation \cite{cooper2022,appel1998,aho2022,rust2024,rust_monomorphization,cpp_templates2017,swift_generics2019}.
+\noindent\textbf{Sources}:
+\begin{itemize}
+    \item \textbf{Strachey, ``Fundamental Concepts in Programming Languages''} \cite{strachey1967} -- used for the original classification of parametric and ad-hoc polymorphism.
+    \item \textbf{Cardelli and Wegner, ``On Understanding Types, Data Abstraction, and Polymorphism''} \cite{cardelli1985} -- used for the analysis of type abstraction and forms of polymorphism.
+    \item \textbf{Pierce, \emph{Types and Programming Languages}} \cite{pierce2002} -- used for the formal treatment of parametric polymorphism and type systems.
+    \item \textbf{Pierce, \emph{Advanced Topics in Types and Programming Languages}} \cite{pierce2005} -- used for advanced insights into type systems.
+    \item \textbf{Kennedy and Syme, ``Design and Implementation of Generics for the .NET CLR''} \cite{kennedy2001} -- used for the description of runtime reification in the CLR.
+    \item \textbf{Bracha et al., ``Making the Future Safe for the Past''} \cite{bracha1998} -- used for the type erasure mechanism introduced in Java generics.
+    \item \textbf{Bracha, \emph{Generics in the Java Programming Language}} \cite{bracha2004} -- used for the technical documentation of Java erasure.
+    \item \textbf{ECMA-334: C\# Language Specification} \cite{ecma334_2023} -- used as a normative reference for C\# generics.
+    \item \textbf{ECMA-335: Common Language Infrastructure} \cite{ecma335_2024} -- used for the runtime representation of generics in the CLR.
+    \item \textbf{The Java Language Specification} \cite{jls2024} -- used as a normative reference for Java generics.
+    \item \textbf{The Java Virtual Machine Specification} \cite{jvms2024} -- used for the bytecode representation resulting from erasure.
+    \item \textbf{Cooper and Torczon, \emph{Engineering a Compiler}} \cite{cooper2022} -- used for general compilation context.
+    \item \textbf{Appel, \emph{Modern Compiler Implementation}} \cite{appel1998} -- used for general compilation context.
+    \item \textbf{Aho et al., \emph{Compilers: Principles, Techniques, and Tools}} \cite{aho2022} -- used for compiler theory.
+    \item \textbf{Official Rust documentation} \cite{rust2024} -- used for a comparison on monomorphization in other languages.
+    \item \textbf{Rust documentation on monomorphization} \cite{rust_monomorphization} -- used to detail the monomorphization mechanism.
+    \item \textbf{Vandevoorde, Josuttis, Gregor, \emph{C++ Templates: The Complete Guide}} \cite{cpp_templates2017} -- used for the C++ template instantiation model.
+    \item \textbf{Swift documentation on generics} \cite{swift_generics2019} -- used for an additional comparison on generics implementation strategies.
+\end{itemize}
 
 % =====================================================================
 \section{Prompt 2: Instantiation Time -- C++, Java, and C\# Compared}
@@ -501,69 +582,105 @@ The generation of the technical report was supported by the following academic a
 \noindent\textbf{Model:} ChatGPT-5.5
 
 \vspace{0.5em}
-\noindent\textbf{Context:} \\
-This prompt merges what were previously three separate prompts (one per language) on instantiation time into a single comparative prompt, extending the overview generated in Prompt 1 (Section \ref{Prompt 1}).
 
 \vspace{0.5em}
-\noindent\textbf{System Persona} \\
-Act as a world-class computer scientist and principal compiler/runtime engineer specializing in Programming Language Theory (PLT), type systems, and the compiler/virtual-machine execution models of C++, the JVM, and the .NET CLR.
+\noindent\textbf{Prompt}:
+
+\begin{PromptVerbatim}
+System Persona:
+
+Act as a world-class computer scientist and principal compiler/runtime
+engineer specializing in Programming Language Theory (PLT), type systems,
+and the compiler/virtual-machine execution models of C++, the JVM, and the
+.NET CLR.
+
+Goal:
+
+Generate an exhaustive, publication-grade academic report section
+analyzing the instantiation time of parametric polymorphism, contrasting
+three distinct temporal models: C++ compile-time template instantiation,
+Java compile-time type erasure, and C# runtime CLR/JIT instantiation.
+
+Requirements:
+
+- C++ instantiation model: Explain the complete compile-time instantiation
+  pipeline, including template argument deduction, two-phase name lookup,
+  implicit and explicit template instantiation, and monomorphization/
+  specialization. Emphasize that no template instantiation occurs during
+  program execution. Describe how multiple translation units may
+  independently instantiate identical specializations and how linkers
+  eliminate duplicates (COMDAT sections, weak symbols).
+- Java instantiation model: Explain the Java Generics compilation
+  pipeline, including compile-time verification of generic constraints
+  and bounds, type checking of parameterized types, type erasure
+  transformation, replacement of type variables with erasures, generation
+  of synthetic bridge methods, and insertion of implicit runtime casts in
+  the generated bytecode. Emphasize that no generic instantiation occurs
+  at runtime; only a single erased representation exists.
+- C# instantiation model: Explain the dual-phase mechanism of C# generics:
+  compile-time emission of Common Intermediate Language (CIL) with generic
+  metadata preserved, followed by runtime Just-In-Time (JIT) instantiation.
+  Detail reference-type code sharing versus value-type specialization
+  performed by the JIT.
+- Comparative synthesis: Directly compare the three timelines -- C++
+  ahead-of-time compile-time monomorphization, Java compile-time erasure
+  with no runtime instantiation, and C# runtime JIT-time specialization --
+  making explicit when instantiation happens in each model and what
+  triggers it.
+- Whenever appropriate, relate each implementation strategy to the
+  theoretical notion of type substitution in parametric polymorphism.
+- ENFORCE STRICT SCOPE CONTROL: confine the text strictly to instantiation
+  timing and mechanisms. Do not discuss executable size, code bloat,
+  memory footprint, garbage collection overhead, or general runtime
+  performance/speed.
+- Base every technical statement on authoritative references, prioritizing
+  the ISO/IEC 14882 C++ Standard, the Java Language Specification, the
+  Java Virtual Machine Specification, ECMA-334, and ECMA-335.
+- Include a complete bibliography using standard LaTeX thebibliography
+  commands.
+
+Writing Style Constraint:
+
+- Adopt a formal, objective, and precise scientific writing style
+  comparable to ACM or IEEE publications.
+- Use accurate compiler/runtime terminology (e.g., template argument
+  deduction, two-phase lookup, monomorphization, translation unit,
+  COMDAT, type erasure, bridge method, JIT specialization, reification).
+- Avoid first-person pronouns and conversational language.
+- Provide technically detailed explanations rather than high-level
+  summaries.
+
+Output Structure:
+
+The generated document must consist entirely of valid, self-contained,
+compilation-ready LaTeX code, organized as:
+
+1. Introduction: Three Models of Instantiation Time
+2. C++ Templates: Compile-Time Instantiation Pipeline
+3. Java Generics: Compile-Time Type Erasure
+4. C# Generics: Runtime CLR/JIT Instantiation
+5. Comparative Timeline: When Instantiation Happens in Each Language
+6. Conclusion
+\end{PromptVerbatim}
 
 \vspace{0.5em}
-\noindent\textbf{Goal} \\
-Generate an exhaustive, publication-grade academic report section analyzing the \emph{instantiation time} of parametric polymorphism, contrasting three distinct temporal models: C++ compile-time template instantiation, Java compile-time type erasure, and C\# runtime CLR/JIT instantiation.
-
-\vspace{0.5em}
-\noindent\textbf{Requirements}
+\noindent\textbf{Sources}:
 \begin{itemize}
-    \item \textbf{C++ instantiation model:} Explain the complete compile-time instantiation pipeline, including template argument deduction, two-phase name lookup, implicit and explicit template instantiation, and monomorphization/specialization. Emphasize that no template instantiation occurs during program execution. Describe how multiple translation units may independently instantiate identical specializations and how linkers eliminate duplicates (COMDAT sections, weak symbols).
-    \item \textbf{Java instantiation model:} Explain the Java Generics compilation pipeline, including compile-time verification of generic constraints and bounds, type checking of parameterized types, type erasure transformation, replacement of type variables with erasures, generation of synthetic bridge methods, and insertion of implicit runtime casts in the generated bytecode. Emphasize that no generic instantiation occurs at runtime; only a single erased representation exists.
-    \item \textbf{C\# instantiation model:} Explain the dual-phase mechanism of C\# generics: compile-time emission of Common Intermediate Language (CIL) with generic metadata preserved, followed by runtime Just-In-Time (JIT) instantiation. Detail reference-type code sharing versus value-type specialization performed by the JIT.
-    \item \textbf{Comparative synthesis:} Directly compare the three timelines -- C++ ahead-of-time compile-time monomorphization, Java compile-time erasure with no runtime instantiation, and C\# runtime JIT-time specialization -- making explicit when instantiation happens in each model and what triggers it.
-    \item Whenever appropriate, relate each implementation strategy to the theoretical notion of type substitution in parametric polymorphism.
-    \item STRICT SCOPE CONTROL: confine the text strictly to instantiation timing and mechanisms. Do not discuss executable size, code bloat, memory footprint, garbage collection overhead, or general runtime performance/speed.
-    \item Base every technical statement on authoritative references, prioritizing the ISO/IEC 14882 C++ Standard, the Java Language Specification, the Java Virtual Machine Specification, ECMA-334, and ECMA-335.
-    \item Include a complete bibliography using standard LaTeX \texttt{thebibliography} commands.
-\end{itemize}
-
-\vspace{0.5em}
-\noindent\textbf{Writing Style Constraint}
-\begin{itemize}
-    \item Adopt a formal, objective, and precise scientific writing style comparable to ACM or IEEE publications.
-    \item Use accurate compiler/runtime terminology (e.g., \emph{template argument deduction}, \emph{two-phase lookup}, \emph{monomorphization}, \emph{translation unit}, \emph{COMDAT}, \emph{type erasure}, \emph{bridge method}, \emph{JIT specialization}, \emph{reification}).
-    \item Avoid first-person pronouns and conversational language.
-    \item Provide technically detailed explanations rather than high-level summaries.
-\end{itemize}
-
-\vspace{0.5em}
-\noindent\textbf{Output Structure} \\
-The generated document must consist entirely of valid, self-contained, compilation-ready LaTeX code, organized as:
-\begin{enumerate}
-    \item Introduction: Three Models of Instantiation Time
-    \item C++ Templates: Compile-Time Instantiation Pipeline
-    \item Java Generics: Compile-Time Type Erasure
-    \item C\# Generics: Runtime CLR/JIT Instantiation
-    \item Comparative Timeline: When Instantiation Happens in Each Language
-    \item Conclusion
-\end{enumerate}
-
-\vspace{0.5em}
-\noindent\textbf{Primary References}
-\begin{itemize}
-    \item \textbf{ISO/IEC JTC 1/SC 22/WG 21, \emph{ISO/IEC 14882:2020/2024 Programming Languages --- C++}} \cite{iso_cpp2024}.
-    \item \textbf{David Vandevoorde, Nicolai M. Josuttis, and Douglas Gregor, \emph{C++ Templates: The Complete Guide}, 2nd Edition, Addison-Wesley Professional, 2017} \cite{cpp_templates2017}.
-    \item \textbf{Bjarne Stroustrup, \emph{The C++ Programming Language}, 4th Edition, Addison-Wesley Professional, 2013} \cite{stroustrup2013}.
-    \item \textbf{Oracle, \emph{The Java Language Specification, Java SE 24 Edition}} \cite{jls2024}.
-    \item \textbf{Oracle, \emph{The Java Virtual Machine Specification, Java SE 24 Edition}} \cite{jvms2024}.
-    \item \textbf{Gilad Bracha, Martin Odersky, David Stoutamire, and Philip Wadler, ``Making the Future Safe for the Past: Adding Genericity to the Java Programming Language,'' OOPSLA 1998} \cite{bracha1998}.
-    \item \textbf{Gilad Bracha, \emph{Generics in the Java Programming Language}, Sun Microsystems, 2004} \cite{bracha2004}.
-    \item \textbf{Atsushi Igarashi, Benjamin C. Pierce, and Philip Wadler, ``Featherweight Java: A Minimal Core Calculus for Java and GJ,'' TOPLAS 2001} \cite{igarashi2001}.
-    \item \textbf{Ecma International, \emph{ECMA-334: C\# Language Specification}, 2023} \cite{ecma334_2023}.
-    \item \textbf{Ecma International, \emph{ECMA-335: Common Language Infrastructure (CLI)}, 2024} \cite{ecma335_2024}.
-    \item \textbf{Andrew Kennedy and Don Syme, ``Design and Implementation of Generics for the .NET Common Language Runtime,'' PLDI, ACM, 2001} \cite{kennedy2001}.
-    \item \textbf{Jeffrey Richter, \emph{CLR via C\#}, 4th Edition, Microsoft Press, 2012} \cite{richter2012}.
-    \item \textbf{Benjamin C. Pierce, \emph{Types and Programming Languages}, MIT Press, 2002} \cite{pierce2002}.
-    \item \textbf{Alfred V. Aho, Monica S. Lam, Ravi Sethi, and Jeffrey D. Ullman, \emph{Compilers: Principles, Techniques, and Tools}, 3rd Edition, Pearson, 2022} \cite{aho2022}.
-    \item \textbf{Keith D. Cooper and Linda Torczon, \emph{Engineering a Compiler}, 3rd Edition, Morgan Kaufmann, 2022} \cite{cooper2022}.
+    \item \textbf{ISO/IEC 14882:2020/2024, Programming Languages --- C++} \cite{iso_cpp2024} -- used as a normative reference for template instantiation.
+    \item \textbf{Vandevoorde, Josuttis, Gregor, \emph{C++ Templates: The Complete Guide}} \cite{cpp_templates2017} -- used for the template deduction and instantiation pipeline.
+    \item \textbf{Stroustrup, \emph{The C++ Programming Language}} \cite{stroustrup2013} -- used for the general C++ compilation model.
+    \item \textbf{The Java Language Specification, Java SE 24} \cite{jls2024} -- used for the type erasure mechanism.
+    \item \textbf{The Java Virtual Machine Specification, Java SE 24} \cite{jvms2024} -- used for the bytecode representation resulting from erasure.
+    \item \textbf{Bracha et al., ``Making the Future Safe for the Past''} \cite{bracha1998} -- used for the introduction of generics in Java.
+    \item \textbf{Bracha, \emph{Generics in the Java Programming Language}} \cite{bracha2004} -- used for the implementation details of erasure.
+    \item \textbf{Igarashi, Pierce, Wadler, ``Featherweight Java''} \cite{igarashi2001} -- used for the formal model of Java generics.
+    \item \textbf{ECMA-334: C\# Language Specification} \cite{ecma334_2023} -- used as a normative reference for C\# generics.
+    \item \textbf{ECMA-335: Common Language Infrastructure} \cite{ecma335_2024} -- used for the JIT instantiation mechanism.
+    \item \textbf{Kennedy and Syme, ``Design and Implementation of Generics for the .NET CLR''} \cite{kennedy2001} -- used for the JIT sharing/specialization mechanism.
+    \item \textbf{Richter, \emph{CLR via C\#}} \cite{richter2012} -- used for the runtime behavior of the CLR.
+    \item \textbf{Pierce, \emph{Types and Programming Languages}} \cite{pierce2002} -- used for the theoretical concept of type substitution.
+    \item \textbf{Aho et al., \emph{Compilers: Principles, Techniques, and Tools}} \cite{aho2022} -- used for general compilation context.
+    \item \textbf{Cooper and Torczon, \emph{Engineering a Compiler}} \cite{cooper2022} -- used for general compilation context.
 \end{itemize}
 
 % =====================================================================
@@ -576,50 +693,84 @@ The generated document must consist entirely of valid, self-contained, compilati
 \noindent\textbf{Model:} ChatGPT-5.5
 
 \vspace{0.5em}
-\noindent\textbf{System Persona} \\
-Act as a world-class computer scientist and principal compiler/runtime engineer specializing in Programming Language Theory (PLT), compiler backends (GCC/Clang), the Java Virtual Machine, and the .NET Common Language Runtime.
+\noindent\textbf{Prompt}:
+
+\begin{PromptVerbatim}
+System Persona:
+
+Act as a world-class computer scientist and principal compiler/runtime
+engineer specializing in Programming Language Theory (PLT), compiler
+backends (GCC/Clang), the Java Virtual Machine, and the .NET Common
+Language Runtime.
+
+Goal:
+
+Generate an exhaustive, publication-grade academic report section
+analyzing the instantiation time of parametric polymorphism, contrasting
+three distinct temporal models: C++ compile-time template instantiation,
+Java compile-time type erasure, and C# runtime CLR/JIT instantiation.
+
+Requirements:
+
+- C++: Explain heterogeneous translation (monomorphization) as producing
+  distinct, independent native machine code artifacts per instantiated
+  type. Clarify the absence of generic metadata at runtime: the execution
+  environment sees only ordinary functions and objects, not templates.
+  Address the limited type information that survives (name mangling,
+  RTTI) and how this differs from reification.
+- Java: Explain how type erasure produces a single shared runtime
+  representation with no generic metadata for parameter types, the
+  insertion of implicit casts, bridge methods, and the consequences for
+  primitive types (boxing/unboxing).
+- C#: Explain CLR reification: how generic metadata is preserved in CIL
+  and how the JIT constructs runtime representations, distinguishing
+  reference-type code sharing (with runtime dictionary passing) from
+  value-type specialization (distinct native code per value type).
+- Comparative synthesis: Directly contrast the three runtime
+  representations along the axis of metadata presence and code-artifact
+  granularity: C++ (no metadata, per-type native code), Java (shared
+  erased representation, no metadata), C# (preserved metadata, partial
+  code sharing).
+- ENFORCE STRICT SCOPE CONTROL: confine the text strictly to runtime
+  representation and memory/metadata structure. Do not discuss
+  compilation times, code-bloat metrics, manual memory management, or
+  CPU cache performance.
+- Base every technical statement on authoritative references (ISO C++
+  Standard, JLS, JVMS, ECMA-335, and established compiler/runtime
+  literature).
+- Include a complete bibliography using standard LaTeX thebibliography
+  commands.
+
+Writing Style Constraint:
+
+As defined for the instantiation-time section, with terminology adapted
+to runtime representation (monomorphization, name mangling, RTTI, type
+erasure, bridge method, reification, generic dictionary, CIL metadata).
+
+Output Structure:
+
+1. Introduction: Three Models of Runtime Representation
+2. C++: Monomorphized Native Code and Absence of Generic Metadata
+3. Java: Erased Shared Representation
+4. C#: Reified CLR Representation and JIT-Constructed Types
+5. Comparative Analysis: Metadata Presence and Code-Artifact Granularity
+6. References
+\end{PromptVerbatim}
 
 \vspace{0.5em}
-\noindent\textbf{Goal} \\
-Generate an exhaustive, publication-grade academic report section titled ``Runtime Representation of Parametric Polymorphism in C++, Java, and C\#'', analyzing what exists in memory and in the executing environment after compilation/loading for each language.
-
-\vspace{0.5em}
-\noindent\textbf{Requirements}
+\noindent\textbf{Sources}:
 \begin{itemize}
-    \item \textbf{C++:} Explain heterogeneous translation (monomorphization) as producing distinct, independent native machine code artifacts per instantiated type. Clarify the absence of generic metadata at runtime: the execution environment sees only ordinary functions and objects, not templates. Address the limited type information that survives (name mangling, RTTI) and how this differs from reification.
-    \item \textbf{Java:} Explain how type erasure produces a single shared runtime representation with no generic metadata for parameter types, the insertion of implicit casts, bridge methods, and the consequences for primitive types (boxing/unboxing).
-    \item \textbf{C\#:} Explain CLR reification: how generic metadata is preserved in CIL and how the JIT constructs runtime representations, distinguishing reference-type code sharing (with runtime dictionary passing) from value-type specialization (distinct native code per value type).
-    \item \textbf{Comparative synthesis:} Directly contrast the three runtime representations along the axis of metadata presence and code-artifact granularity: C++ (no metadata, per-type native code), Java (shared erased representation, no metadata), C\# (preserved metadata, partial code sharing).
-    \item STRICT SCOPE CONTROL: confine the text strictly to runtime representation and memory/metadata structure. Do not discuss compilation times, code-bloat metrics, manual memory management, or CPU cache performance.
-    \item Base every technical statement on authoritative references (ISO C++ Standard, JLS, JVMS, ECMA-335, and established compiler/runtime literature).
-    \item Include a complete bibliography using standard LaTeX \texttt{thebibliography} commands.
-\end{itemize}
-
-\vspace{0.5em}
-\noindent\textbf{Writing Style Constraint / Output Structure:} as defined in Prompt 2 (\S\ref{Prompt 2 Instantiation}), with terminology adapted to runtime representation (\emph{monomorphization}, \emph{name mangling}, \emph{RTTI}, \emph{type erasure}, \emph{bridge method}, \emph{reification}, \emph{generic dictionary}, \emph{CIL metadata}) and section titles:
-\begin{enumerate}
-    \item Introduction: Three Models of Runtime Representation
-    \item C++: Monomorphized Native Code and Absence of Generic Metadata
-    \item Java: Erased Shared Representation
-    \item C\#: Reified CLR Representation and JIT-Constructed Types
-    \item Comparative Analysis: Metadata Presence and Code-Artifact Granularity
-    \item References
-\end{enumerate}
-
-\vspace{0.5em}
-\noindent\textbf{Primary References}
-\begin{itemize}
-    \item \textbf{David Vandevoorde, Nicolai M. Josuttis, and Douglas Gregor, \emph{C++ Templates: The Complete Guide}, 2nd Edition, 2017} \cite{cpp_templates2017}.
-    \item \textbf{ISO/IEC JTC 1/SC 22/WG 21, \emph{ISO/IEC 14882:2024 Programming Languages --- C++}} \cite{iso_cpp2024}.
-    \item \textbf{Bjarne Stroustrup, \emph{The C++ Programming Language}, 4th Edition, 2013} \cite{stroustrup2013}.
-    \item \textbf{Stanley B. Lippman, \emph{Inside the C++ Object Model}, Addison-Wesley Professional, 1996} \cite{lippman1996}.
-    \item \textbf{The Itanium C++ ABI Project, \emph{Itanium C++ ABI Specification}} \cite{itanium_abi}.
-    \item \textbf{Oracle, \emph{The Java Language Specification, Java SE 24 Edition}} \cite{jls2024}.
-    \item \textbf{Oracle, \emph{The Java Virtual Machine Specification, Java SE 24 Edition}} \cite{jvms2024}.
-    \item \textbf{Gilad Bracha, \emph{Generics in the Java Programming Language}, Sun Microsystems, 2004} \cite{bracha2004}.
-    \item \textbf{Ecma International, \emph{ECMA-335: Common Language Infrastructure (CLI)}, 2024} \cite{ecma335_2024}.
-    \item \textbf{Andrew Kennedy and Don Syme, ``Design and Implementation of Generics for the .NET Common Language Runtime,'' PLDI, 2001} \cite{kennedy2001}.
-    \item \textbf{Jeffrey Richter, \emph{CLR via C\#}, 4th Edition, 2012} \cite{richter2012}.
+    \item \textbf{Vandevoorde, Josuttis, Gregor, \emph{C++ Templates: The Complete Guide}} \cite{cpp_templates2017} -- used for the monomorphization model.
+    \item \textbf{ISO/IEC 14882:2024, Programming Languages --- C++} \cite{iso_cpp2024} -- used as a normative reference.
+    \item \textbf{Stroustrup, \emph{The C++ Programming Language}} \cite{stroustrup2013} -- used for the C++ object model.
+    \item \textbf{Lippman, \emph{Inside the C++ Object Model}} \cite{lippman1996} -- used for the internal representation of C++ objects.
+    \item \textbf{Itanium C++ ABI Specification} \cite{itanium_abi} -- used for name mangling and RTTI.
+    \item \textbf{The Java Language Specification, Java SE 24} \cite{jls2024} -- used for the erasure mechanism.
+    \item \textbf{The Java Virtual Machine Specification, Java SE 24} \cite{jvms2024} -- used for the bytecode representation.
+    \item \textbf{Bracha, \emph{Generics in the Java Programming Language}} \cite{bracha2004} -- used for bridge methods and boxing.
+    \item \textbf{ECMA-335: Common Language Infrastructure} \cite{ecma335_2024} -- used for CLR reification.
+    \item \textbf{Kennedy and Syme, ``Design and Implementation of Generics for the .NET CLR''} \cite{kennedy2001} -- used for reference-type/value-type code sharing.
+    \item \textbf{Richter, \emph{CLR via C\#}} \cite{richter2012} -- used for JIT runtime behavior.
 \end{itemize}
 
 % =====================================================================
@@ -632,44 +783,82 @@ Generate an exhaustive, publication-grade academic report section titled ``Runti
 \noindent\textbf{Model:} ChatGPT-5.5
 
 \vspace{0.5em}
-\noindent\textbf{System Persona} \\
-Act as a Senior Computer Science Researcher and Expert in Programming Language Theory, Compiler Design, JVM Architecture, and .NET CLR Architecture.
+\noindent\textbf{Prompt}:
+
+\begin{PromptVerbatim}
+System Persona:
+
+Act as a Senior Computer Science Researcher and Expert in Programming
+Language Theory, Compiler Design, JVM Architecture, and .NET CLR
+Architecture.
+
+Goal:
+
+Generate a comprehensive, technically rigorous academic section analyzing
+and directly comparing the execution performance characteristics of C++
+templates (compile-time monomorphization), Java generics (type erasure),
+and C# generics (runtime reification with JIT specialization).
+
+Requirements:
+
+- Establish continuity with the following preceding theoretical context:
+  "Both implementation strategies preserve static type safety, although
+  they achieve this objective differently. In implementations based on
+  type erasure, generic correctness is verified entirely during
+  compilation. Although type parameters disappear from the generated
+  executable, compiler-inserted casts preserve the guarantees established
+  by the static type system. Implementations based on reified generics
+  retain complete type information throughout compilation and generate
+  type-specific implementations directly."
+- C++: Detail the performance advantages of monomorphization: static
+  dispatch, elimination of boxing/unboxing, and facilitation of
+  aggressive compiler optimizations such as inlining.
+- Java: Detail the runtime overheads introduced by type erasure: pointer
+  indirection, mandatory boxing/unboxing for primitive types, impacts on
+  heap allocation and data locality. Discuss JIT-level mitigations
+  (escape analysis, inline caching, devirtualization) only insofar as
+  they mitigate generic-specific overhead.
+- C#: Detail the distinct performance behavior of value-type
+  specialization (per-type native code, no boxing) versus reference-type
+  sharing (single implementation, dictionary-passed type handles) under
+  JIT compilation.
+- Comparative synthesis: Directly compare static dispatch/AOT
+  optimization (C++), erasure-induced boxing overhead (Java), and the
+  hybrid value/reference-type performance profile (C#).
+- ENFORCE STRICT SCOPE CONTROL: confine the analysis to execution
+  performance, runtime throughput, memory layout, and cache behavior. Do
+  not digress into compilation times, language ergonomics, or general
+  garbage collection mechanics unless directly tied to generic-structure
+  throughput.
+- Rely on authoritative sources: ISO C++ Standard, JLS, JVMS, ECMA-335,
+  C# Language Specification, and established compiler literature.
+  Include consistent citations and a final bibliography.
+
+Writing Style Constraint:
+
+As defined for the instantiation-time section, with terminology adapted
+to performance analysis (static dispatch, boxing overhead, data locality,
+reification, monomorphization, type erasure, JIT specialization, cache
+lines).
+
+Output Structure:
+
+1. Introduction: Performance as a Consequence of Implementation Strategy
+2. C++: Static Dispatch and Compile-Time Optimization
+3. Java: Type Erasure and Boxing Overhead
+4. C#: Value-Type Specialization vs. Reference-Type Sharing
+5. Comparative Analysis: Throughput, Memory Layout, and Cache Behavior
+6. References
+\end{PromptVerbatim}
 
 \vspace{0.5em}
-\noindent\textbf{Goal} \\
-Generate a comprehensive, technically rigorous academic section analyzing and directly comparing the execution performance characteristics of C++ templates (compile-time monomorphization), Java generics (type erasure), and C\# generics (runtime reification with JIT specialization).
-
-\vspace{0.5em}
-\noindent\textbf{Requirements}
+\noindent\textbf{Sources}:
 \begin{itemize}
-    \item Establish continuity with the following preceding theoretical context: ``Both implementation strategies preserve static type safety, although they achieve this objective differently. In implementations based on type erasure, generic correctness is verified entirely during compilation. Although type parameters disappear from the generated executable, compiler-inserted casts preserve the guarantees established by the static type system. Implementations based on reified generics retain complete type information throughout compilation and generate type-specific implementations directly.''
-    \item \textbf{C++:} Detail the performance advantages of monomorphization: static dispatch, elimination of boxing/unboxing, and facilitation of aggressive compiler optimizations such as inlining.
-    \item \textbf{Java:} Detail the runtime overheads introduced by type erasure: pointer indirection, mandatory boxing/unboxing for primitive types, impacts on heap allocation and data locality. Discuss JIT-level mitigations (escape analysis, inline caching, devirtualization) only insofar as they mitigate generic-specific overhead.
-    \item \textbf{C\#:} Detail the distinct performance behavior of value-type specialization (per-type native code, no boxing) versus reference-type sharing (single implementation, dictionary-passed type handles) under JIT compilation.
-    \item \textbf{Comparative synthesis:} Directly compare static dispatch/AOT optimization (C++), erasure-induced boxing overhead (Java), and the hybrid value/reference-type performance profile (C\#).
-    \item STRICT SCOPE CONTROL: confine the analysis to execution performance, runtime throughput, memory layout, and cache behavior. Do not digress into compilation times, language ergonomics, or general garbage collection mechanics unless directly tied to generic-structure throughput.
-    \item Rely on authoritative sources: ISO C++ Standard, JLS, JVMS, ECMA-335, C\# Language Specification, and established compiler literature. Include consistent citations and a final bibliography.
-\end{itemize}
-
-\vspace{0.5em}
-\noindent\textbf{Writing Style Constraint / Output Structure:} as defined in Prompt 2 (\S\ref{Prompt 2 Instantiation}), with terminology adapted to performance analysis (\emph{static dispatch}, \emph{boxing overhead}, \emph{data locality}, \emph{reification}, \emph{monomorphization}, \emph{type erasure}, \emph{JIT specialization}, \emph{cache lines}) and section titles:
-\begin{enumerate}
-    \item Introduction: Performance as a Consequence of Implementation Strategy
-    \item C++: Static Dispatch and Compile-Time Optimization
-    \item Java: Type Erasure and Boxing Overhead
-    \item C\#: Value-Type Specialization vs. Reference-Type Sharing
-    \item Comparative Analysis: Throughput, Memory Layout, and Cache Behavior
-    \item References
-\end{enumerate}
-
-\vspace{0.5em}
-\noindent\textbf{Primary References}
-\begin{itemize}
-    \item \textbf{David Vandevoorde, Nicolai M. Josuttis, and Douglas Gregor, \emph{C++ Templates: The Complete Guide}, 2nd Edition, 2017} \cite{cpp_templates2017}.
-    \item \textbf{Steven S. Muchnick, \emph{Advanced Compiler Design and Implementation}, Morgan Kaufmann, 1997} \cite{muchnick1997compiler}.
-    \item \textbf{Oracle, \emph{The Java Language Specification, Java SE 21/24 Edition}} \cite{JavaLanguageSpecification}.
-    \item \textbf{ECMA International, \emph{ECMA-335: Common Language Infrastructure (CLI)}, 2012/2024} \cite{ecma335_2024}.
-    \item \textbf{Microsoft Corporation, \emph{C\# Language Specification}, 2023} \cite{CSharpSpec}.
+    \item \textbf{Vandevoorde, Josuttis, Gregor, \emph{C++ Templates: The Complete Guide}} \cite{cpp_templates2017} -- used for the performance advantages of monomorphization.
+    \item \textbf{Muchnick, \emph{Advanced Compiler Design and Implementation}} \cite{muchnick1997compiler} -- used for compiler optimizations (inlining, static dispatch).
+    \item \textbf{The Java Language Specification, Java SE 21/24} \cite{jls2024} -- used for boxing/unboxing behavior.
+    \item \textbf{ECMA-335: Common Language Infrastructure} \cite{ecma335_2024} -- used for JIT specialization of value types.
+    \item \textbf{Microsoft Corporation, C\# Language Specification} \cite{CSharpSpec} -- used as a normative reference for C\# generics.
 \end{itemize}
 
 % =====================================================================
@@ -682,45 +871,78 @@ Generate a comprehensive, technically rigorous academic section analyzing and di
 \noindent\textbf{Model:} ChatGPT-5.5
 
 \vspace{0.5em}
-\noindent\textbf{System Persona} \\
-Act as an expert academic researcher and computer scientist specializing in programming language theory, compiler design, and cross-language generic type-system semantics.
+\noindent\textbf{Prompt}:
+
+\begin{PromptVerbatim}
+System Persona:
+
+Act as an expert academic researcher and computer scientist specializing
+in programming language theory, compiler design, and cross-language
+generic type-system semantics.
+
+Goal:
+
+Generate an exhaustive, academic-grade LaTeX section analyzing static
+type safety across C++ templates (reified generics via monomorphization),
+Java generics (type erasure), and C# generics (reified generics via CLR).
+
+Requirements:
+
+- Integrate the following theoretical premise as the foundation: "Both
+  implementation strategies preserve static type safety, although they
+  achieve this objective differently. In implementations based on type
+  erasure, generic correctness is verified entirely during compilation.
+  Although type parameters disappear from the generated executable,
+  compiler-inserted casts preserve the guarantees established by the
+  static type system. Implementations based on reified generics retain
+  complete type information throughout compilation and generate
+  type-specific implementations directly. Since each specialization
+  corresponds to a concrete type, correctness is preserved without
+  requiring erased representations or implicit runtime casts."
+- C++: Detail how templates enforce type safety at compile time via
+  monomorphization, retaining complete type information, with a simple
+  explanatory code example.
+- Java: Detail how type erasure verifies generic correctness entirely at
+  compile time via compiler-inserted casts, with a simple explanatory
+  code example.
+- C#: Detail how reified generics retain complete type information
+  throughout compilation and generate type-specific implementations, with
+  a simple explanatory code example.
+- Relate each code example directly to the theoretical concepts of
+  reification, erasure, and concrete type specialization.
+- Rely on authoritative academic or technical sources (ISO/IEC 14882,
+  JLS, ECMA-335, and peer-reviewed PLT literature).
+- ENFORCE STRICT SCOPE CONTROL: confine the text strictly to type-safety
+  mechanisms and the theoretical strategies of implementation. Do not
+  digress into memory footprint, hardware performance, code bloat,
+  compilation times, or garbage collection overhead.
+
+Writing Style Constraint:
+
+As defined for the instantiation-time section, adapted to type safety,
+distinguishing theoretical concepts (parametric polymorphism) from
+implementation mechanisms (monomorphization, erasure, reification), with
+code examples formatted using the standard listings package.
+
+Output Structure:
+
+1. Introduction: Type Safety Under Different Implementation Strategies
+2. C++: Type Safety via Reified Templates
+3. Java: Type Safety via Type Erasure
+4. C#: Type Safety via CLR Reification
+5. Comparative Synthesis
+6. References
+\end{PromptVerbatim}
 
 \vspace{0.5em}
-\noindent\textbf{Goal} \\
-Generate an exhaustive, academic-grade LaTeX section analyzing static type safety across C++ templates (reified generics via monomorphization), Java generics (type erasure), and C\# generics (reified generics via CLR).
-
-\vspace{0.5em}
-\noindent\textbf{Requirements}
+\noindent\textbf{Sources}:
 \begin{itemize}
-    \item Integrate the following theoretical premise as the foundation: ``Both implementation strategies preserve static type safety, although they achieve this objective differently. In implementations based on type erasure, generic correctness is verified entirely during compilation. Although type parameters disappear from the generated executable, compiler-inserted casts preserve the guarantees established by the static type system. Implementations based on reified generics retain complete type information throughout compilation and generate type-specific implementations directly. Since each specialization corresponds to a concrete type, correctness is preserved without requiring erased representations or implicit runtime casts.''
-    \item \textbf{C++:} Detail how templates enforce type safety at compile time via monomorphization, retaining complete type information, with a simple explanatory code example.
-    \item \textbf{Java:} Detail how type erasure verifies generic correctness entirely at compile time via compiler-inserted casts, with a simple explanatory code example.
-    \item \textbf{C\#:} Detail how reified generics retain complete type information throughout compilation and generate type-specific implementations, with a simple explanatory code example.
-    \item Relate each code example directly to the theoretical concepts of reification, erasure, and concrete type specialization.
-    \item Rely on authoritative academic or technical sources (ISO/IEC 14882, JLS, ECMA-335, and peer-reviewed PLT literature).
-    \item STRICT SCOPE CONTROL: confine the text strictly to type-safety mechanisms and the theoretical strategies of implementation. Do not digress into memory footprint, hardware performance, code bloat, compilation times, or garbage collection overhead.
-\end{itemize}
-
-\vspace{0.5em}
-\noindent\textbf{Writing Style Constraint / Output Structure:} as defined in Prompt 2 (\S\ref{Prompt 2 Instantiation}), adapted to type safety, distinguishing theoretical concepts (parametric polymorphism) from implementation mechanisms (monomorphization, erasure, reification), with code examples formatted using the standard \texttt{listings} package, and section titles:
-\begin{enumerate}
-    \item Introduction: Type Safety Under Different Implementation Strategies
-    \item C++: Type Safety via Reified Templates
-    \item Java: Type Safety via Type Erasure
-    \item C\#: Type Safety via CLR Reification
-    \item Comparative Synthesis
-    \item References
-\end{enumerate}
-
-\vspace{0.5em}
-\noindent\textbf{Primary References}
-\begin{itemize}
-    \item \textbf{David Vandevoorde, Nicolai M. Josuttis, and Douglas Gregor, \emph{C++ Templates: The Complete Guide}, 2nd Edition, 2017} \cite{vandevoorde2017cpptemplates}.
-    \item \textbf{Bjarne Stroustrup, \emph{The C++ Programming Language}, 4th Edition, 2013} \cite{stroustrup2013cpp}.
-    \item \textbf{Benjamin C. Pierce, \emph{Types and Programming Languages}, MIT Press, 2002} \cite{pierce2002types}.
-    \item \textbf{James Gosling et al., \emph{The Java Language Specification}} \cite{gosling2014java}.
-    \item \textbf{Microsoft Corporation, \emph{C\# Language Specification}} \cite{CSharpSpec}.
-    \item \textbf{ECMA International, \emph{ECMA-335: Common Language Infrastructure (CLI)}} \cite{ecma335_2024}.
+    \item \textbf{Vandevoorde, Josuttis, Gregor, \emph{C++ Templates: The Complete Guide}} \cite{cpp_templates2017} -- used for the type-safety model of templates.
+    \item \textbf{Stroustrup, \emph{The C++ Programming Language}} \cite{stroustrup2013} -- used for static type checking in C++.
+    \item \textbf{Pierce, \emph{Types and Programming Languages}} \cite{pierce2002} -- used for the theoretical treatment of type safety.
+    \item \textbf{Gosling et al., The Java Language Specification} \cite{gosling2014java} -- used for the mechanism of compiler-inserted casts.
+    \item \textbf{Microsoft Corporation, C\# Language Specification} \cite{CSharpSpec} -- used for the reification model of C\# generics.
+    \item \textbf{ECMA-335: Common Language Infrastructure} \cite{ecma335_2024} -- used for runtime type verification in the CLR.
 \end{itemize}
 
 % =====================================================================
@@ -733,44 +955,75 @@ Generate an exhaustive, academic-grade LaTeX section analyzing static type safet
 \noindent\textbf{Model:} ChatGPT-5.5
 
 \vspace{0.5em}
-\noindent\textbf{System Persona} \\
-Act as a Senior Research Scientist in Programming Language Theory, Compiler Architecture, and Type Systems, with expertise in C++ RTTI, Java reflection, and .NET \texttt{System.Reflection}.
+\noindent\textbf{Prompt}:
+
+\begin{PromptVerbatim}
+System Persona:
+
+Act as a Senior Research Scientist in Programming Language Theory,
+Compiler Architecture, and Type Systems, with expertise in C++ RTTI, Java
+reflection, and .NET System.Reflection.
+
+Goal:
+
+Generate a rigorous, technical-academic report section analyzing
+reflection and RTTI capabilities across C++, Java, and C#, grounded in the
+theoretical premise that runtime availability of generic type information
+depends directly on the chosen representation strategy: type-erased
+implementations discard most generic information, while reified
+implementations preserve it for runtime introspection.
+
+Requirements:
+
+- C++: Detail the application and behavior of standard RTTI mechanisms
+  (typeid, std::type_info, dynamic_cast) on instantiated template
+  classes/functions, and how monomorphization preserves concrete type
+  information per specialization.
+- Java: Detail how type erasure constrains reflection: why instanceof
+  against parameterized types is disallowed, why getClass() yields an
+  identical reference across structurally distinct generic
+  instantiations, and how the type-token pattern (Class<T>) is used as a
+  workaround. Include a compilation-ready Java code example.
+- C#: Detail how CLR reification preserves generic metadata for full
+  runtime introspection via System.Reflection, including IsGenericType
+  and GetGenericArguments(). Include a compilation-ready C# code example.
+- Comparative synthesis: Directly contrast the three reflection models
+  along the axis of metadata availability: C++ (per-specialization RTTI,
+  no generic-level metadata), Java (single shared Class object, no
+  parameter recovery without workarounds), C# (full runtime introspection
+  of type arguments).
+- ENFORCE STRICT SCOPE CONTROL: confine the text strictly to reflection,
+  metadata availability, and type introspection capabilities. Do not
+  discuss memory footprint, hardware performance, code bloat, or garbage
+  collection overhead.
+- Base every technical statement on authoritative references and avoid
+  fabricated citations.
+
+Writing Style Constraint:
+
+As defined for the instantiation-time section, adapted to reflection and
+RTTI terminology (RTTI, type erasure, reification, type token,
+monomorphization, generic metadata).
+
+Output Structure:
+
+1. Introduction: Reflection as a Function of Representation Strategy
+2. C++: RTTI on Monomorphized Templates
+3. Java: Type Erasure and Reflection Limitations
+4. C#: Full Runtime Introspection via CLR Reification
+5. Comparative Analysis
+6. References
+\end{PromptVerbatim}
 
 \vspace{0.5em}
-\noindent\textbf{Goal} \\
-Generate a rigorous, technical-academic report section analyzing reflection and RTTI capabilities across C++, Java, and C\#, grounded in the theoretical premise that runtime availability of generic type information depends directly on the chosen representation strategy: type-erased implementations discard most generic information, while reified implementations preserve it for runtime introspection.
-
-\vspace{0.5em}
-\noindent\textbf{Requirements}
+\noindent\textbf{Sources}:
 \begin{itemize}
-    \item \textbf{C++:} Detail the application and behavior of standard RTTI mechanisms (\texttt{typeid}, \texttt{std::type\_info}, \texttt{dynamic\_cast}) on instantiated template classes/functions, and how monomorphization preserves concrete type information per specialization.
-    \item \textbf{Java:} Detail how type erasure constrains reflection: why \texttt{instanceof} against parameterized types is disallowed, why \texttt{getClass()} yields an identical reference across structurally distinct generic instantiations, and how the type-token pattern (\texttt{Class<T>}) is used as a workaround. Include a compilation-ready Java code example.
-    \item \textbf{C\#:} Detail how CLR reification preserves generic metadata for full runtime introspection via \texttt{System.Reflection}, including \texttt{IsGenericType} and \texttt{GetGenericArguments()}. Include a compilation-ready C\# code example.
-    \item \textbf{Comparative synthesis:} Directly contrast the three reflection models along the axis of metadata availability: C++ (per-specialization RTTI, no generic-level metadata), Java (single shared \texttt{Class} object, no parameter recovery without workarounds), C\# (full runtime introspection of type arguments).
-    \item STRICT SCOPE CONTROL: confine the text strictly to reflection, metadata availability, and type introspection capabilities. Do not discuss memory footprint, hardware performance, code bloat, or garbage collection overhead.
-    \item Base every technical statement on authoritative references and avoid fabricated citations.
-\end{itemize}
-
-\vspace{0.5em}
-\noindent\textbf{Writing Style Constraint / Output Structure:} as defined in Prompt 2 (\S\ref{Prompt 2 Instantiation}), adapted to reflection and RTTI terminology (\emph{RTTI}, \emph{type erasure}, \emph{reification}, \emph{type token}, \emph{monomorphization}, \emph{generic metadata}), with section titles:
-\begin{enumerate}
-    \item Introduction: Reflection as a Function of Representation Strategy
-    \item C++: RTTI on Monomorphized Templates
-    \item Java: Type Erasure and Reflection Limitations
-    \item C\#: Full Runtime Introspection via CLR Reification
-    \item Comparative Analysis
-    \item References
-\end{enumerate}
-
-\vspace{0.5em}
-\noindent\textbf{Primary References}
-\begin{itemize}
-    \item \textbf{Bjarne Stroustrup, \emph{The C++ Programming Language}, 4th Edition, 2013} \cite{stroustrup2013cpp}.
-    \item \textbf{David Vandevoorde, Nicolai M. Josuttis, and Douglas Gregor, \emph{C++ Templates: The Complete Guide}, 2nd Edition, 2017} \cite{vandevoorde2017templates}.
-    \item \textbf{cppreference.com, \emph{C++ Language Reference: RTTI and typeid}} \cite{cppreference}.
-    \item \textbf{Oracle Corporation, \emph{The Java Language Specification}} \cite{jls}.
-    \item \textbf{Oracle Corporation, \emph{The Java Virtual Machine Specification}} \cite{jvms}.
-    \item \textbf{Jeffrey Richter, \emph{CLR via C\#: A Developer's Tour of the Common Language Runtime}, 4th Edition, 2012} \cite{richter2012clr}.
+    \item \textbf{Stroustrup, \emph{The C++ Programming Language}} \cite{stroustrup2013} -- used for the RTTI mechanism in C++.
+    \item \textbf{Vandevoorde, Josuttis, Gregor, \emph{C++ Templates: The Complete Guide}} \cite{cpp_templates2017} -- used for RTTI applied to instantiated templates.
+    \item \textbf{cppreference.com, C++ Language Reference: RTTI and typeid} \cite{cppreference} -- used for the syntax and behavior of typeid and dynamic\_cast.
+    \item \textbf{Oracle, The Java Language Specification} \cite{jls2024} -- used for the limitations of instanceof on parameterized types.
+    \item \textbf{Oracle, The Java Virtual Machine Specification} \cite{jvms2024} -- used for the behavior of getClass() under erasure.
+    \item \textbf{Richter, \emph{CLR via C\#}} \cite{richter2012} -- used for introspection via System.Reflection in the CLR.
 \end{itemize}
 
 % =====================================================================
@@ -802,8 +1055,8 @@ repeated verbatim.
 
 \noindent\textbf{Model:} ChatGPT-5.5
 
-\noindent\textbf{Prompt:}
-\begin{Verbatim}
+\noindent\textbf{Prompt}:
+\begin{PromptVerbatim}
 System Persona:
 
 Act as an expert in programming language theory and advanced C++ software engineering.
@@ -845,13 +1098,14 @@ Maintain a formal, objective, and precise technical writing style consistent wit
 Output Structure:
 
 Output only the raw Markdown content for this specific section. Use appropriate subsection headings (e.g., `###` or `####`) to organize the examples and explanations. Do not include a top-level title for the chapter. Return exactly the text of the section and nothing else.
-\end{Verbatim}
+\end{PromptVerbatim}
 
 \noindent\textbf{Sources:}
 \begin{itemize}
-\item The description of \textbf{template instantiation}, recursive template specialization, and compile-time computation through template-based metaprogramming is based on \cite{vandevoorde2017cpp} and the ISO C++ language specification \cite{iso14882}.
-\item The explanation of \textbf{\texttt{constexpr}} functions, constant expression evaluation, and the requirement that \texttt{constexpr} expressions must be evaluated during translation is derived from the C++ standard \cite{iso14882} and the technical documentation provided by \cite{cppreference_constexpr}.
-\item The discussion of general C++ template mechanisms, including template arguments, specialization, and the template instantiation process, is supported by \cite{cppreference_templates} and \cite{vandevoorde2017cpp}.
+\item \textbf{Vandevoorde, Josuttis, Gregor, \emph{C++ Templates: The Complete Guide}} \cite{cpp_templates2017} -- used for template instantiation and recursive compile-time metaprogramming.
+\item \textbf{ISO/IEC 14882, C++ Language Specification} \cite{iso14882} -- used as a normative reference for template instantiation.
+\item \textbf{cppreference.com, documentation on \texttt{constexpr}} \cite{cppreference_constexpr} -- used for the evaluation of constant expressions at compile time.
+\item \textbf{cppreference.com, documentation on templates} \cite{cppreference_templates} -- used for template arguments and the specialization process.
 \end{itemize}
 
 % =====================================================================
@@ -862,8 +1116,8 @@ Output only the raw Markdown content for this specific section. Use appropriate 
 
 \noindent\textbf{Model:} ChatGPT-5.5
 
-\noindent\textbf{Prompt} \emph{(Section-Level Framing, Writing Style Constraint, and Output Structure as in Prompt 1 above):}
-\begin{Verbatim}
+\noindent\textbf{Prompt}:
+\begin{PromptVerbatim}
 System Persona:
 
 Act as an expert technical writer and programming language theorist specialized in C++ metaprogramming and compile-time polymorphism.
@@ -886,13 +1140,13 @@ Requirements:
 Output Structure:
 
 Use standard Markdown code blocks for the C++ code examples.
-\end{Verbatim}
+\end{PromptVerbatim}
 
 \noindent\textbf{Sources:}
 \begin{itemize}
-    \item \textbf{Stroustrup~\cite{stroustrup2013cpp}}: used for the description of template-based compile-time polymorphism, overload resolution involving function templates, and the general role of template substitution mechanisms in C++.
-    \item \textbf{cppreference.com~\cite{cppreference}}: used for the precise behavior of \texttt{std::enable\_if}, type traits such as \texttt{std::is\_integral} and \texttt{std::is\_floating\_point}, and the C++20 Concepts syntax based on constrained templates.
-    \item \textbf{ISO/IEC 14882:2020~\cite{iso14882cpp20}}: used as the normative reference for SFINAE rules, template argument substitution, immediate context rules, overload resolution, and the C++20 constraint system.
+    \item \textbf{Stroustrup, \emph{The C++ Programming Language}} \cite{stroustrup2013} -- used for compile-time polymorphism based on templates.
+    \item \textbf{cppreference.com} \cite{cppreference} -- used for the behavior of \texttt{std::enable\_if} and C++20 Concepts syntax.
+    \item \textbf{ISO/IEC 14882:2020} \cite{iso14882} -- used as a normative reference for SFINAE rules and the C++20 constraint system.
 \end{itemize}
 
 % =====================================================================
@@ -901,17 +1155,19 @@ Use standard Markdown code blocks for the C++ code examples.
 
 \noindent\textbf{Goal}: Generate a detailed academic section of other core C++ template metaprogramming techniques: variadic templates, template template parameters, and CRTP (Curiously Recurring Template Pattern). For each, give a short example and explain what class of problems it solves that plain function/class templates cannot.
 
-\noindent\textbf{Prompt} \emph{(Section-Level Framing, Writing Style Constraint, and Output Structure as in Prompt 1, \S2.1):}
-\begin{Verbatim}
-System Persona
+\noindent\textbf{Model:} ChatGPT-5.5
+
+\noindent\textbf{Prompt}:
+\begin{PromptVerbatim}
+System Persona:
 
 Act as a technical-academic writer specialized in programming language theory and advanced C++ software engineering.
 
-Goal
+Goal:
 
 Write a single, highly focused section for a larger chapter on parametric polymorphism and metaprogramming. The section must explain three specific advanced C++ template metaprogramming techniques: variadic templates, template template parameters, and the Curiously Recurring Template Pattern (CRTP).
 
-Requirements
+Requirements:
 
 * Technical Scope: Focus exclusively on variadic templates, template template parameters, and CRTP. Explicitly exclude discussions of SFINAE, type traits, and constexpr, as these are assumed to be covered elsewhere.
 * Content Execution: For each of the three covered techniques:
@@ -920,13 +1176,13 @@ Requirements
 * Clearly distinguish compile-time mechanisms and state relevant assumptions regarding C++ language/compiler versions (e.g., C++11 for variadic templates) where necessary.
 
 * Strict Scope Control: Do not digress into memory footprint, code bloat, hardware performance benchmarking, or unrelated language comparisons. Address only the mechanisms requested.
-\end{Verbatim}
+\end{PromptVerbatim}
 
 \noindent\textbf{Sources:}
 \begin{itemize}
-\item \cite{vandevoorde2017cpptemplates} provides the main theoretical reference for advanced C++ template metaprogramming, including variadic templates and parameter packs introduced in C++11, template instantiation mechanisms, template template parameters, and advanced template techniques such as the Curiously Recurring Template Pattern (CRTP).
-\item \cite{cppreference} provides a formal and up-to-date reference for C++ language constructs, including template syntax, compiler behavior during template specialization, and standard-defined semantics of template-related mechanisms.
-\item \cite{microsoftcpptemplates} is used as a complementary reference for the practical description of C++ templates, including syntax examples and explanations of variadic templates and template parameter mechanisms.
+\item \textbf{Vandevoorde, Josuttis, Gregor, \emph{C++ Templates: The Complete Guide}} \cite{cpp_templates2017} -- used for variadic templates, template template parameters, and CRTP.
+\item \textbf{cppreference.com} \cite{cppreference} -- used for C++ construct syntax and template specialization.
+\item \textbf{Microsoft, C++ templates documentation} \cite{microsoftcpptemplates} -- used as a complementary reference for practical syntax examples.
 \end{itemize}
 
 % =====================================================================
@@ -937,8 +1193,8 @@ Requirements
 
 \noindent\textbf{Model:} ChatGPT-5.5
 
-\noindent\textbf{Prompt} \emph{(Section-Level Framing, Writing Style Constraint, and Output Structure as in Prompt 1, \S2.1):}
-\begin{Verbatim}
+\noindent\textbf{Prompt}:
+\begin{PromptVerbatim}
 System Persona:
 
 Act as an expert in programming language theory and software engineering, specializing in the comparative analysis of parametric polymorphism and metaprogramming across C++, Java, and C\#.
@@ -953,13 +1209,13 @@ Requirements:
 * Theoretical Explanation: Detail exactly why full compile-time branching on generic types (the equivalent of C++ Substitution Failure Is Not An Error) fails in Java. Connect this limitation mechanically and theoretically to type erasure.
 * Terminology: Use precise technical terminology appropriate for programming language theory (e.g., type erasure, bounded polymorphism, monomorphization, compile-time resolution, bounds checking) where directly relevant.
 * Scope Control: Address only the replication of SFINAE/type-traits in Java. Do not digress into memory footprint, hardware performance, C\# mechanisms, code bloat, garbage collection, or unrelated language comparisons.
-\end{Verbatim}
+\end{PromptVerbatim}
 
 \noindent\textbf{Sources:}
 \begin{itemize}
-\item \cite{bracha1998making} provides the theoretical foundation of Java Generics, including the type erasure implementation model, the separation between compile-time generic type checking and runtime representation, and the limitations of Java parametric polymorphism with respect to type-dependent specialization.
-\item \cite{gosling2014javaspec} provides the formal specification of Java bounded type parameters, including the semantics of \texttt{extends} bounds, compile-time type checking rules for generic classes and methods, and the erasure process applied to generic type parameters.
-\item \cite{vandevoorde2017cpptemplates} provides the theoretical background for C++ template metaprogramming, including template substitution, SFINAE-based overload resolution, type traits, and compile-time specialization mechanisms used as a comparison with the limitations of Java Generics.
+\item \textbf{Bracha et al., ``Making the Future Safe for the Past''} \cite{bracha1998} -- used for the type erasure model and the limitations of parametric polymorphism in Java.
+\item \textbf{Gosling et al., The Java Language Specification} \cite{gosling2014java} -- used for the semantics of the \texttt{extends} constraint and the erasure process.
+\item \textbf{Vandevoorde, Josuttis, Gregor, \emph{C++ Templates: The Complete Guide}} \cite{cpp_templates2017} -- used as a comparison for SFINAE substitution and type traits in C++.
 \end{itemize}
 
 % =====================================================================
@@ -970,12 +1226,14 @@ Requirements:
 
 \noindent\textbf{Model:} ChatGPT-5.5
 
-\noindent\textbf{Prompt} \emph{(Section-Level Framing, Writing Style Constraint, and Output Structure as in Prompt 1, \S2.1):}
-\begin{Verbatim}
+\noindent\textbf{Prompt}:
+\begin{PromptVerbatim}
 System Persona:
+
 Act as an expert academic writer and programming language theorist specializing in the comparative analysis of parametric polymorphism and metaprogramming paradigms.
 
 Goal:
+
 Generate a single, concise, and highly technical section for a larger academic chapter. This section must specifically analyze how C\# approximates C++ SFINAE and type-traits using generic constraints and generic math, while explaining its theoretical limitations.
 
 Requirements:
@@ -991,14 +1249,14 @@ Requirements:
 * Directly tie this limitation to the architectural differences between .NET's runtime reification of generics and C++'s compile-time monomorphization and AST-level substitution.
 
 * Scope Control: address solely the requested C\# replication of SFINAE/traits, generic constraints, generic math, and the reification vs. monomorphization dichotomy. Do not digress into memory footprint, code bloat, execution performance, garbage collection, or unrelated language features.
-\end{Verbatim}
+\end{PromptVerbatim}
 
 \noindent\textbf{Sources:}
 \begin{itemize}
-\item \cite{dotnetgenerics} The Microsoft documentation on C\# generics is used for the description of generic constraints, bounded polymorphism through the `where` clause, and the compile-time validation performed by the C\# type system when generic arguments are instantiated.
-\item \cite{dotnetgenericmath} The Microsoft documentation on .NET Generic Math is used for the analysis of static abstract interface members and interfaces such as `INumber<T>`, which provide trait-like abstractions for expressing type capabilities in generic algorithms.
-\item \cite{vandevoorde2017cpptemplates} The book \emph{C++ Templates: The Complete Guide} is used for the comparison with C++ template metaprogramming, specifically regarding SFINAE, type traits, substitution failure, and compile-time template instantiation through monomorphization.
-\item \cite{ecma335_2024} The ECMA-335 specification is used for the description of the CLR execution model, including the representation of generic types through runtime reification and the role of metadata in preserving generic type information.
+\item \textbf{Microsoft, C\# generics documentation} \cite{dotnetgenerics} -- used for generic constraints and compile-time validation of the \texttt{where} clause.
+\item \textbf{Microsoft, .NET Generic Math documentation} \cite{dotnetgenericmath} -- used for static abstract interface members and interfaces such as \texttt{INumber<T>}.
+\item \textbf{Vandevoorde, Josuttis, Gregor, \emph{C++ Templates: The Complete Guide}} \cite{cpp_templates2017} -- used as a comparison with SFINAE, type traits, and C++ monomorphization.
+\item \textbf{ECMA-335: Common Language Infrastructure} \cite{ecma335_2024} -- used for the CLR execution model and generics reification.
 \end{itemize}
 
 % =====================================================================
@@ -1009,8 +1267,8 @@ Requirements:
 
 \noindent\textbf{Model:} ChatGPT-5.5
 
-\noindent\textbf{Prompt} \emph{(Section-Level Framing, Writing Style Constraint, and Output Structure as in Prompt 1, \S2.1):}
-\begin{Verbatim}
+\noindent\textbf{Prompt}:
+\begin{PromptVerbatim}
 System Persona:
 
 Act as a technical author and programming language theorist writing a highly specialized section for an academic chapter on programming language theory and software engineering.
@@ -1027,13 +1285,13 @@ Requirements:
 * Include concise, precise code examples to illustrate the technique in C++ and explicitly demonstrate why declaration-time checking prevents its equivalent in Java/C\#.
 * Use precise terminology (e.g., instantiation, substitution failure, bounded polymorphism, type erasure, reification) where strictly relevant to the prompt.
 * Clearly distinguish between compile-time and runtime mechanisms as they relate to these type-checking models.
-\end{Verbatim}
+\end{PromptVerbatim}
 
 \noindent\textbf{Sources:}
 \begin{itemize}
-\item \cite{vandevoorde2017cpptemplates} This reference is used as the primary source for the C++ template instantiation model, including delayed type checking of dependent expressions, template substitution, and SFINAE-based overload resolution. The description of compile-time capability detection through substitution failure and structural requirements in templates is based on the template metaprogramming mechanisms discussed in this work.
-\item \cite{bracha2004generics} This reference provides the theoretical background for Java generics, particularly the declaration-time type checking model, bounded polymorphism, and the requirement that all operations performed on a generic type parameter must be justified by its declared bounds. It supports the comparison between Java generic constraints and the structural flexibility provided by C++ template substitution.
-\item \cite{ecma335_2024} This reference is used for the C\# generic type system through the Common Language Infrastructure specification. It provides the formal description of generic parameters, constraints, and compile-time verification rules that restrict generic code to operations guaranteed by declared constraints rather than properties discovered during instantiation.
+\item \textbf{Vandevoorde, Josuttis, Gregor, \emph{C++ Templates: The Complete Guide}} \cite{cpp_templates2017} -- used for the delayed type checking of templates and SFINAE.
+\item \textbf{Bracha, \emph{Generics in the Java Programming Language}} \cite{bracha2004} -- used for the declaration-time checking model of Java generics.
+\item \textbf{ECMA-335: Common Language Infrastructure} \cite{ecma335_2024} -- used for the compile-time verification rules of C\# generics.
 \end{itemize}
 
 % =====================================================================
@@ -1044,8 +1302,8 @@ Requirements:
 
 \noindent\textbf{Model:} ChatGPT-5.5
 
-\noindent\textbf{Prompt} \emph{(Section-Level Framing, Writing Style Constraint, and Output Structure as in Prompt 1, \S2.1):}
-\begin{Verbatim}
+\noindent\textbf{Prompt}:
+\begin{PromptVerbatim}
 System Persona:
 
 Act as an academic technical writer specializing in programming language theory and software architecture.
@@ -1066,14 +1324,14 @@ Requirements:
 * Use accurate terminology (e.g., compile-time, runtime, reflection, AST manipulation, macro expansion) strictly where relevant.
 * Include brief, illustrative code snippets only if strictly necessary to demonstrate a specific structural workaround mechanism; otherwise, rely on rigorous theoretical explanation.
 * Strictly enforce scope control: address only the workarounds and their relationship to the generics system. Do not digress into memory footprint, hardware performance benchmarking, garbage collection overhead, or unrelated architectural comparisons.
-\end{Verbatim}
+\end{PromptVerbatim}
 
 \noindent\textbf{Sources:}
 \begin{itemize}
-\item \cite{oracle_java_compiler_apis} is used as a reference for: Java annotation processing, compiler-based analysis of source elements, and compile-time generation of additional source files. The same reference is also used to describe Java reflection as a runtime mechanism based on class metadata inspection.
-\item \cite{lombok_project} is used as a reference for: Java code generation through compiler extensions, source transformation techniques, and the generation of program elements outside the Java generics mechanism.
-\item \cite{microsoft_code_generation} is used as a reference for: C\# Source Generators based on Roslyn, T4 Text Templates, and their role as external code generation mechanisms separated from the C\# generic type system.
-\item \cite{vandevoorde2017cpp} is used as a reference for: the C++ template instantiation model, compile-time substitution of template parameters, and the integration of metaprogramming capabilities directly into the language construct.
+\item \textbf{Oracle, Java compiler API documentation} \cite{oracle_java_compiler_apis} -- used for annotation processing and reflection as a runtime mechanism.
+\item \textbf{Lombok Project, official documentation} \cite{lombok_project} -- used for code generation via compiler extensions.
+\item \textbf{Microsoft, C\# code generation documentation} \cite{microsoft_code_generation} -- used for Roslyn-based Source Generators and T4 Templates.
+\item \textbf{Vandevoorde, Josuttis, Gregor, \emph{C++ Templates: The Complete Guide}} \cite{cpp_templates2017} -- used for the template instantiation model as native metaprogramming.
 \end{itemize}
 
 % =====================================================================

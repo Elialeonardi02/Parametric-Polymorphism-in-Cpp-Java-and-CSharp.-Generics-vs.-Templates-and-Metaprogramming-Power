@@ -143,7 +143,6 @@
 \begin{document}
 
 \externaldocument[A-]{report} 
-
 % 1. Title page
 \input{title_page/Frontespizio_verification_log.tex}
 \clearpage
@@ -153,30 +152,74 @@
 \clearpage
 
 % 3. Corpo del documento
-\chapter{Introduction}
-For the writing of the report, is use a AI local model with LM studio with qwen2.5-coder-7b-instruct, this
-is helpfull for the intellsense of latex and layout of the report, but it doesn't interfere with the content 
-of the report. The verfication of the report procede in 3 steps.
+\chapter{Verification Process}
+\label{Introduction}
 
-\section{Prompt Output Comparing}
-Every prompt on the same language produce an output that contains a fraction of the information 
-to other prompts of the same language, this repetition helpt to make a first check of eventualy error
-missing or wrong information, eventualy allucinations and in generale the quality of the output.
+For the writing of this report, a local AI model was used through LM Studio,
+namely \texttt{qwen2.5-coder-7b-instruct}. This model was employed mainly as
+a writing assistant for \LaTeX{} syntax and document layout;
+it did not contribute to the technical content of the report, since it was
+run locally with no access to external documentation. 
+A second AI model, Claude Sonnet 5, was instead used to draft and
+verify the technical content itself, and is described in detail in
+Section~\ref{VerificationProcess:AIVerification}.
+
+Because AI-generated technical content can contain subtle inaccuracies,
+the report was verified through four complementary steps, described below.
+
+\section{Prompt Output Comparison}
+\label{VerificationProcess:PromptOutputComparison}
+
+For each language, multiple prompts were issued on overlapping subtopics
+(e.g.\ instantiation time, runtime representation, performance, type
+safety, reflection). Since each prompt's output necessarily overlapped in
+part with the content produced by other prompts on the same language, this
+redundancy allowed a first cross-check: statements repeated consistently
+across independent outputs were treated as more reliable, while
+inconsistencies, contradictions, or claims appearing in only one output were
+flagged for closer inspection. This step also helped surface potential
+hallucinations, since a claim invented by the model in one generation rarely
+reappeared identically in a separately generated output on the same
+subtopic.
+
 \section{Prompt Output Resources}
-Each prompt output is follow by a list of resources that are used to generate the output, 
-as subset of the resources is used to verify the correctness of the output.
-\section{Output Script}
-Generated scripts are verified by running them in a controlled environment, 
-checking for errors, and ensuring they produce the expected results. No AI model is
-involved in this step, as it is a manual verification process.
-\section{AI verification}
-An AI model is used on the resoult of the previous steps of the verification, if there is any error or missing information, 
-the process of verification is repeated until the output is correct and complete. The AI model used for this step Claude Sonnet 5.
+\label{VerificationProcess:PromptOutputResources}
+
+Each prompt output was accompanied by a list of resources (official
+language references, compiler documentation, and specification documents)
+that the model indicated as relevant to the generated content. A subset of
+these resources was then consulted directly to verify the correctness of
+the more technical or easily misstated claims, such as the exact semantics
+of type erasure, the conditions under which the CLR shares or specializes
+generic code, and the scope of C++ RTTI.
+
+\section{Output Script Verification}
+\label{VerificationProcess:OutputScriptVerification}
+
+Where the report included illustrative code, the corresponding scripts were
+compiled and executed in a controlled environment to confirm that they
+behaved as described -- for example, that a given C++ template produced the
+expected specializations, or that a Java generic method triggered the
+expected \texttt{checkcast} behavior. No AI model was involved in this step;
+verification was performed manually, by directly checking compiler output,
+error messages, and program behavior against the claims made in the text.
+
+\section{AI Verification}
+\label{VerificationProcess:AIVerification}
+
+As a final step, Claude Sonnet 5 was used to review the output of the
+previous three steps as a whole, checking for remaining errors, missing
+information, or unsupported claims. Whenever an issue was identified, the
+corresponding section was corrected and the verification process was
+repeated until the output was judged correct and complete.
 
 \vspace{0.5cm}
-\noindent The following chapters contain the verification of the report, there are all the section or subsection where is 
-find an error, missing information, imprecisions or allucinations, with the corrected information and the resources used to verify the correctness
-All the absent section or subsection can be assumed as correct and verified.
+\noindent The following chapters document the verification of the report:
+they list every section or subsection in which an error, missing
+information, imprecision, or hallucination was found, together with the
+corrected information and the resources used to verify its correctness.
+Any section or subsection not listed can be assumed to be correct and
+verified.
 
 
 \chapter{Task 1}
@@ -529,7 +572,7 @@ identification to be available.
 \end{Verbatim}
 Phrasing the virtual-function requirement as a condition for "RTTI-based
 dynamic identification" in general is inconsistent with the chapter's own
-opening example, where \texttt{typeid(a).name()} is applied successfully to
+opening example, where \newline \texttt{typeid(a).name()} is applied successfully to
 \texttt{Wrapper<int>} and \texttt{Wrapper<double>}, neither of which declares
 any virtual function. The requirement of at least one virtual function
 applies specifically to \texttt{dynamic\_cast}, and to \texttt{typeid} only
@@ -570,9 +613,9 @@ cannot coexist as Java source in the first place. The bridge method is a
 compiler-generated, bytecode-level construct, distinguishable from the
 covariant override only by its method descriptor
 (\texttt{()Ljava/lang/Object;} versus \texttt{()Ljava/lang/String;})
-\cite{jvms}; it was introduced specifically to preserve virtual dispatch
+\cite{jvms2024}; it was introduced specifically to preserve virtual dispatch
 under erasure, invoking the specific covariant implementation rather than
-itself \cite{bracha2004generics}. The claim is therefore corrected as
+itself \cite{bracha2004}. The claim is therefore corrected as
 follows:
 
 \begin{Verbatim}[breaklines=true]
@@ -607,7 +650,7 @@ compilation unit. This addresses a narrow subset of the boxing overhead
 described earlier in the section, but it does not restore contiguous,
 specialized storage for generic containers such as \texttt{ArrayList},
 whose internal representation remains an array of \texttt{Object}
-references regardless of JIT optimization \cite{jvms}. Presenting scalar
+references regardless of JIT optimization \cite{jvms2024}. Presenting scalar
 replacement as recovering performance "lost to erasure" in general
 overstates its scope. The claim is therefore corrected as follows:
 \begin{Verbatim}[breaklines=true]
