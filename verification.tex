@@ -54,6 +54,11 @@ involved in this step, as it is a manual verification process.
 An AI model is used on the resoult of the previous steps of the verification, if there is any error or missing information, 
 the process of verification is repeated until the output is correct and complete. The AI model used for this step Claude Sonnet 5.
 
+\vspace{0.5cm}
+\noindent The following chapters contain the verification of the report, there are all the section or subsection where is 
+find an error, missing information, imprecisions or allucinations, with the corrected information and the resources used to verify the correctness
+All the absent section or subsection can be assumed as correct and verified.
+
 
 \chapter{Task 1}
 \section*{\hyperref[A-Introduction]{\ref*{A-Introduction} \nameref*{A-Introduction}}}
@@ -663,7 +668,459 @@ List<string> and List<object>, supplying type-specific information
 through runtime execution-engine structures rather than duplicating code.
 \end{Verbatim}
 
+\subsection*{\hyperref[A-CSharpGenerics:Performance]{\ref*{A-CSharpGenerics:Performance} \nameref*{A-CSharpGenerics:Performance}}}
+\addcontentsline{toc}{subsection}{\ref*{A-CSharpGenerics:Performance} \nameref*{A-CSharpGenerics:Performance}}
 
+\subsubsection*{\hyperref[A-CSharpGenerics:Performance:ValueType]{\ref*{A-CSharpGenerics:Performance:ValueType} \nameref*{A-CSharpGenerics:Performance:ValueType}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-CSharpGenerics:Performance:ValueType} \nameref*{A-CSharpGenerics:Performance:ValueType}}
+
+\noindent\textbf{Imprecisions}:
+
+\begin{Verbatim}[breaklines=true]
+execution cost approximates T_value=N(C_load+C_operation), closer to
+specialized C++ code than to Java's boxed collections.
+\end{Verbatim}
+
+This statement presents an aggregate per-collection cost model
+($T_{value}$, scaled by $N$ elements) as directly comparable to the
+per-operation cost model given later for Java ($T_{Java}$), without making
+the difference in scale explicit; this can mislead the reader into treating
+the two expressions as quantitatively equivalent when they measure
+different units of work. The claim is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+execution cost across the whole collection approximates
+T_value=N(C_load+C_operation), with per-element cost closer to specialized
+C++ code than to Java's boxed collections.
+\end{Verbatim}
+
+\subsubsection*{\hyperref[A-CSharpGenerics:Performance:ReferenceType]{\ref*{A-CSharpGenerics:Performance:ReferenceType} \nameref*{A-CSharpGenerics:Performance:ReferenceType}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-CSharpGenerics:Performance:ReferenceType} \nameref*{A-CSharpGenerics:Performance:ReferenceType}}
+
+\noindent\textbf{Imprecisions}:
+
+\begin{Verbatim}[breaklines=true]
+though, unlike Java, no boxing of primitives is ever required since C#
+retains explicit runtime generic support.
+\end{Verbatim}
+
+This statement is placed within the discussion of reference-type
+instantiations, where boxing is not at issue in any of the three languages
+compared, since reference types are never boxed; the actual contrast with
+Java concerns value-type instantiations, discussed in the preceding
+subsection, not the reference-type case under discussion here
+\cite{kennedy2001}. The claim is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+though C\#'s avoidance of boxing, unlike Java, applies specifically to
+value-type instantiations such as those discussed above, not to
+reference-type instantiations, where none of the three languages requires
+boxing.
+\end{Verbatim}
+
+\subsection*{\hyperref[A-CSharpGenerics:TypeSafety]{\ref*{A-CSharpGenerics:TypeSafety} \nameref*{A-CSharpGenerics:TypeSafety}}}
+\addcontentsline{toc}{subsection}{\ref*{A-CSharpGenerics:TypeSafety} \nameref*{A-CSharpGenerics:TypeSafety}}
+
+\subsubsection*{\hyperref[A-CSharpGenerics:TypeSafety:StaticChecking]{\ref*{A-CSharpGenerics:TypeSafety:StaticChecking} \nameref*{A-CSharpGenerics:TypeSafety:StaticChecking}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-CSharpGenerics:TypeSafety:StaticChecking} \nameref*{A-CSharpGenerics:TypeSafety:StaticChecking}}
+\noindent\textbf{Error}:
+
+\begin{Verbatim}[breaklines=true]
+Given class Box<T> { T value; void Set(T v); T Get(); }, the compiler
+verifies that all values passed to Set match the chosen instantiation:
+Box<int> numbers; numbers.Set("text"); is rejected because Box<int>
+requires every stored value to be an integer.
+\end{Verbatim}
+
+The class declaration as written is not valid C\# syntax: method members
+of a class require a body (or an expression-bodied definition), and
+semicolon-terminated signatures such as \texttt{void Set(T v);} are only
+permitted in interface or abstract member declarations, not in a concrete
+class \cite{ecma334_2023}. The claim is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+Given class Box<T> { private T value; public void Set(T v) { value = v; }
+public T Get() { return value; } }, the compiler verifies that all values
+passed to Set match the chosen instantiation: Box<int> numbers = new
+Box<int>(); numbers.Set("text"); is rejected because Box<int> requires
+every stored value to be an integer.
+\end{Verbatim}
+
+\subsubsection*{\hyperref[A-CSharpGenerics:TypeSafety:Reification]{\ref*{A-CSharpGenerics:TypeSafety:Reification} \nameref*{A-CSharpGenerics:TypeSafety:Reification}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-CSharpGenerics:TypeSafety:Reification} \nameref*{A-CSharpGenerics:TypeSafety:Reification}}
+\noindent\textbf{Imprecisions}:
+
+\begin{Verbatim}[breaklines=true]
+Because C# is reified, Box<int> and Box<string> remain distinct
+constructed types whose invariants cannot cross-contaminate.
+\end{Verbatim}
+
+This statement attributes the compile-time rejection shown earlier
+(Box<int>.Set("text")) to reification, but static type checking of generic
+usage occurs during compilation regardless of the later runtime
+representation; reification instead guarantees that the distinction
+between constructed types such as Box<int> and Box<string> also persists
+as a runtime entity, as already established in the Runtime Representation
+section \cite{kennedy2001}. The claim is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+Box<int> and Box<string> are checked as distinct constructed types already
+at compile time, independently of reification; because C# is reified,
+this distinction also persists at runtime, so their invariants cannot
+cross-contaminate at either stage.
+\end{Verbatim}
+
+
+\subsection*{\hyperref[A-CSharpGenerics:Reflection]{\ref*{A-CSharpGenerics:Reflection} \nameref*{A-CSharpGenerics:Reflection}}}
+\addcontentsline{toc}{subsection}{\ref*{A-CSharpGenerics:Reflection} \nameref*{A-CSharpGenerics:Reflection}}
+
+\subsubsection*{\hyperref[A-CSharpGenerics:Reflection:ComparisonCpp]{\ref*{A-CSharpGenerics:Reflection:ComparisonCpp} \nameref*{A-CSharpGenerics:Reflection:ComparisonCpp}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-CSharpGenerics:Reflection:ComparisonCpp} \nameref*{A-CSharpGenerics:Reflection:ComparisonCpp}}
+\noindent\textbf{Error}:
+
+\begin{Verbatim}[breaklines=true]
+C++ monomorphization resolves template parameters at compile time;
+standard RTTI (typeid, std::type_info) identifies the resulting concrete
+type but cannot query the original template argument as runtime metadata
+-- the template/parameter relationship exists only at compile time.
+\end{Verbatim}
+
+This statement presents RTTI-based identification of the concrete
+instantiated type as a general, unconditional capability of typeid, but
+as established in the C++ chapter's Reflection and Runtime Type
+Information section, typeid reports the dynamic (polymorphic) type only
+when the class hierarchy contains at least one virtual function;
+otherwise it always yields the static type known at compile time
+\cite{cppreference}. The claim is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+C++ monomorphization resolves template parameters at compile time;
+standard RTTI (typeid, std::type_info) can identify the resulting concrete
+type only when the class hierarchy is polymorphic (i.e., contains at least
+one virtual function), and even then cannot query the original template
+argument as runtime metadata -- the template/parameter relationship exists
+only at compile time.
+\end{Verbatim}
+
+\subsubsection*{\hyperref[A-CSharpGenerics:Reflection:Summary]{\ref*{A-CSharpGenerics:Reflection:Summary} \nameref*{A-CSharpGenerics:Reflection:Summary}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-CSharpGenerics:Reflection:Summary} \nameref*{A-CSharpGenerics:Reflection:Summary}}
+\noindent\textbf{Imprecisions}:
+
+\begin{Verbatim}[breaklines=true]
+C++ resolves parameters at compile time, leaving RTTI to identify only
+concrete specialized types
+\end{Verbatim}
+
+This statement omits the precondition, already established in the C++
+chapter, that RTTI-based dynamic type identification requires a
+polymorphic class hierarchy; without at least one virtual function, typeid
+simply yields the statically known type rather than performing any runtime
+identification \cite{cppreference}. The claim is therefore corrected as
+follows:
+
+\begin{Verbatim}[breaklines=true]
+C++ resolves parameters at compile time, leaving RTTI able to identify only
+concrete specialized types, and only within polymorphic class hierarchies
+\end{Verbatim}
+
+
+\chapter{Task 2}
+\noindent\textbf{Error}:
+
+\begin{Verbatim}[breaklines=true]
+Due to type erasure, generic type parameters are generally not
+available in ordinary runtime objects, reducing the ability to perform
+type-based compile-time transformations.
+\end{Verbatim}
+
+This statement inverts cause and effect: type erasure is a runtime-level
+consequence of Java's generic implementation, not a mechanism that acts on
+compile-time transformation capability. The actual reason Java cannot
+perform type-based compile-time transformations, as the chapter itself
+establishes in the "Bounded Polymorphism in Java" section, is that Java
+generics are implemented through erasure rather than instantiation-time
+substitution, so no specialized version of generic code is ever generated
+per concrete type; the unavailability of generic type parameters in
+runtime objects is a downstream effect of this same implementation choice,
+not its cause \cite{bracha2004}. The claim is therefore corrected as
+follows:
+
+\begin{Verbatim}[breaklines=true]
+Because Java generics are implemented through type erasure rather than
+instantiation-time substitution, no specialized version of generic code is
+generated per concrete type, which prevents type-based compile-time
+transformations; as a further consequence of the same erasure process,
+generic type parameters are also generally unavailable in ordinary runtime
+objects.
+\end{Verbatim}
+
+\section*{\hyperref[A-Metaprogramming:Compile-TimeComputationCpp]{\ref*{A-Metaprogramming:Compile-TimeComputationCpp} \nameref*{A-Metaprogramming:Compile-TimeComputationCpp}}}
+\addcontentsline{toc}{section}{\ref*{A-Metaprogramming:Compile-TimeComputationCpp} \nameref*{A-Metaprogramming:Compile-TimeComputationCpp}}
+
+\subsection*{\hyperref[A-Metaprogramming:Compile-TimeComputationCpp:RecursiveTemplateMetaprogrammingExample]{\ref*{A-Metaprogramming:Compile-TimeComputationCpp:RecursiveTemplateMetaprogrammingExample} \nameref*{A-Metaprogramming:Compile-TimeComputationCpp:RecursiveTemplateMetaprogrammingExample}}}
+\addcontentsline{toc}{subsection}{\ref*{A-Metaprogramming:Compile-TimeComputationCpp:RecursiveTemplateMetaprogrammingExample} \nameref*{A-Metaprogramming:Compile-TimeComputationCpp:RecursiveTemplateMetaprogrammingExample}}
+\noindent\textbf{Imprecisions}:
+\begin{Verbatim}[breaklines=true]
+The same mechanism applies to computations with multiple recursive
+dependencies, such as the Fibonacci sequence: [...] Instantiating
+Fibonacci<10>::value generates the dependency tree implementing
+F(n) = F(n-1) + F(n-2) until reaching the terminating specializations,
+yielding the constant 55 before code generation.
+\end{Verbatim}
+
+Presenting the Fibonacci case as governed by "the same mechanism" as the
+Factorial example obscures a relevant structural difference: unlike the
+linear instantiation chain produced by Factorial, the naive recursive
+expansion of Fibonacci<N> requires each intermediate specialization (e.g.
+Fibonacci<8>) to be reached through multiple independent paths in the
+dependency tree, which would in principle cause redundant instantiation
+work; this is mitigated only because the compiler caches each distinct
+template specialization once instantiated, not because the underlying
+recursive structure avoids duplication \cite{cpp_templates2017}. The claim
+is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+A related but structurally different case is the Fibonacci sequence, whose
+naive recursive definition requires each intermediate value to be reached
+through multiple paths in the dependency tree, unlike the single linear
+chain produced by Factorial: [...] Instantiating Fibonacci<10>::value
+generates this dependency tree implementing F(n) = F(n-1) + F(n-2) until
+reaching the terminating specializations, yielding the constant 55 before
+code generation; redundant re-instantiation of shared intermediate values
+such as Fibonacci<8> is avoided only because the compiler caches each
+distinct specialization once it has been instantiated.
+\end{Verbatim}
+
+\section*{\hyperref[A-Metaprogramming:Compile-TimeOverloadSelection]{\ref*{A-Metaprogramming:Compile-TimeOverloadSelection} \nameref*{A-Metaprogramming:Compile-TimeOverloadSelection}}}
+\addcontentsline{toc}{section}{\ref*{A-Metaprogramming:Compile-TimeOverloadSelection} \nameref*{A-Metaprogramming:Compile-TimeOverloadSelection}}
+
+\begin{Verbatim}[breaklines=true]
+#include <type_traits>
+template <typename T> requires std::integral<T>
+void process(T value) { std::cout << "Integral: " << value; }
+
+template <typename T> requires std::floating_point<T>
+void process(T value) { std::cout << "Floating-point: " << value; }
+\end{Verbatim}
+
+The concepts \texttt{std::integral} and \texttt{std::floating\_point} are
+declared in the \texttt{<concepts>} header, not in \texttt{<type\_traits>}:
+the latter provides the type traits \texttt{std::is\_integral} and
+\texttt{std::is\_floating\_point} used in the preceding SFINAE example, not
+the lowercase concepts of the same name used here \cite{iso_cpp2024}. As
+written, the code would not compile with the single include shown. The
+claim is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+#include <concepts>
+template <typename T> requires std::integral<T>
+void process(T value) { std::cout << "Integral: " << value; }
+
+template <typename T> requires std::floating_point<T>
+void process(T value) { std::cout << "Floating-point: " << value; }
+\end{Verbatim}
+
+\section*{\hyperref[A-Metaprogramming:VariadicTemplates]{\ref*{A-Metaprogramming:VariadicTemplates} \nameref*{A-Metaprogramming:VariadicTemplates}}}
+\addcontentsline{toc}{section}{\ref*{A-Metaprogramming:VariadicTemplates} \nameref*{A-Metaprogramming:VariadicTemplates}}
+
+\subsection*{\hyperref[A-Metaprogramming:VariadicTemplates:TemplateParameters]{\ref*{A-Metaprogramming:VariadicTemplates:TemplateParameters} \nameref*{A-Metaprogramming:VariadicTemplates:TemplateParameters}}}
+\addcontentsline{toc}{subsection}{\ref*{A-Metaprogramming:VariadicTemplates:TemplateParameters} \nameref*{A-Metaprogramming:VariadicTemplates:TemplateParameters}}
+\begin{Verbatim}[breaklines=true]
+template <typename T, template <typename> class Container>
+class Stack {
+    Container<T> data;
+public:
+    void push(const T& value) { data.push_back(value); }
+};
+
+Stack<int, std::vector> a;
+Stack<int, std::list>   b;
+\end{Verbatim}
+
+The template template parameter \texttt{Container} is declared with a
+single type parameter (\texttt{template <typename> class}), but
+\texttt{std::vector} and \texttt{std::list} are declared in the standard
+library with two template parameters, the element type and an allocator
+defaulted to \texttt{std::allocator<T>} \cite{iso_cpp2024}. Prior to the
+relaxed matching rules for default template arguments in template template
+parameters, and inconsistently across compilers even after their adoption,
+this arity mismatch causes the code as written to fail to compile; the
+example does not account for this discrepancy. The claim is therefore
+corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+template <typename T, template <typename, typename...> class Container>
+class Stack {
+    Container<T> data;
+public:
+    void push(const T& value) { data.push_back(value); }
+};
+
+Stack<int, std::vector> a;
+Stack<int, std::list>   b;
+\end{Verbatim}
+
+\section*{\hyperref[A-Metaprogramming:JavaBoundedPolymorphism]{\ref*{A-Metaprogramming:JavaBoundedPolymorphism} \nameref*{A-Metaprogramming:JavaBoundedPolymorphism}}}
+\addcontentsline{toc}{section}{\ref*{A-Metaprogramming:JavaBoundedPolymorphism} \nameref*{A-Metaprogramming:JavaBoundedPolymorphism}}
+
+\noindent\textbf{Error}:
+
+\begin{Verbatim}[breaklines=true]
+Since no specialized version of generic code is generated per concrete
+type, a method such as
+
+public static <T> void process(T value) {
+    // cannot select an implementation based on properties of T
+}
+
+cannot be compiled into distinct versions depending on T.
+\end{Verbatim}
+
+This code example does not demonstrate the limitation it is meant to
+illustrate: the method body contains no operation depending on properties
+of \texttt{T} at all, only a comment stating the claim in prose. A reader
+cannot verify the limitation against this code, since there is nothing in
+it to fail or succeed. The following section ("Instantiation-Time
+Checking") already gives a concrete, verifiable example of this exact
+limitation (\texttt{value.serialize()} failing to compile in Java), making
+this fragment both unverifiable and redundant. The claim is therefore
+corrected by replacing the empty example with a concrete conditional
+operation that actually fails to compile:
+
+\begin{Verbatim}[breaklines=true]
+Since no specialized version of generic code is generated per concrete
+type, a method such as
+
+public static <T> void process(T value) {
+    if (value instanceof Integer) {
+        // still cannot call Integer-specific methods on 'value'
+        // without an explicit cast, since the declared type of
+        // value remains T, not Integer
+    }
+}
+
+cannot be compiled into distinct versions depending on T: even after a
+runtime instanceof check, the static type of value remains T, so any
+type-specific member access still requires an explicit cast performed by
+the programmer, not a compiler-generated specialization.
+\end{Verbatim}
+
+\section*{\hyperref[A-Metaprogramming:CSharpConstrainedGenerics]{\ref*{A-Metaprogramming:CSharpConstrainedGenerics} \nameref*{A-Metaprogramming:CSharpConstrainedGenerics}}}
+\addcontentsline{toc}{section}{\ref*{A-Metaprogramming:CSharpConstrainedGenerics} \nameref*{A-Metaprogramming:CSharpConstrainedGenerics}}
+
+\noindent\textbf{Error}:
+
+\begin{Verbatim}[breaklines=true]
+the closest C# approximation constrains the parameter directly:
+
+static T Add<T>(T a, T b) where T : INumber<T>
+{
+    return a + b;
+}
+
+Static abstract interface members extend this further into a trait-like
+contract:
+
+public interface IAddable<TSelf> where TSelf : IAddable<TSelf>
+{
+    static abstract TSelf operator +(TSelf x, TSelf y);
+}
+\end{Verbatim}
+
+This presents \texttt{INumber<T>} as a simpler or conceptually prior
+approximation that static abstract interface members subsequently "extend
+further," but this ordering is inverted: \texttt{INumber<T>} is itself a
+.NET 7 standard-library interface built directly on top of static abstract
+interface members, using \texttt{static abstract} operators internally to
+express arithmetic constraints \cite{dotnetgenericmath}. It is an applied
+instance of the same mechanism described afterward, not a distinct or
+earlier approximation. The claim is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+the closest C# approximation constrains the parameter directly, using the
+standard-library INumber<T> interface introduced together with static
+abstract interface members in .NET 7:
+
+static T Add<T>(T a, T b) where T : INumber<T>
+{
+    return a + b;
+}
+
+This works because INumber<T> is itself defined in terms of static
+abstract interface members, which allow a trait-like contract to be
+expressed directly:
+
+public interface IAddable<TSelf> where TSelf : IAddable<TSelf>
+{
+    static abstract TSelf operator +(TSelf x, TSelf y);
+}
+\end{Verbatim}
+
+\section*{\hyperref[A-Metaprogramming:InstantiationTimeChecking]{\ref*{A-Metaprogramming:InstantiationTimeChecking} \nameref*{A-Metaprogramming:InstantiationTimeChecking}}}
+\addcontentsline{toc}{section}{\ref*{A-Metaprogramming:InstantiationTimeChecking} \nameref*{A-Metaprogramming:InstantiationTimeChecking}}
+\noindent\textbf{Error}:
+
+\begin{Verbatim}[breaklines=true]
+interface ISerializable { void Serialize(); }
+
+static void Process<T>(T value) where T : ISerializable
+    => value.Serialize();
+\end{Verbatim}
+
+Declaring a custom interface named \texttt{ISerializable} collides with the
+real, well-known \texttt{System.Runtime.Serialization.ISerializable}
+interface in the .NET Base Class Library, which declares a completely
+different member, \texttt{GetObjectData(SerializationInfo,
+StreamingContext)}, not a parameterless \texttt{Serialize()} method
+\cite{ecma335_2024}. Reusing this name for an unrelated, incompatible
+interface in a didactic example risks being mistaken for the standard
+interface by a reader familiar with the .NET framework. The claim is
+therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+interface IManualSerializable { void Serialize(); }
+
+static void Process<T>(T value) where T : IManualSerializable
+    => value.Serialize();
+\end{Verbatim}
+
+\section*{\hyperref[A-Metaprogramming:ExternalMechanisms]{\ref*{A-Metaprogramming:ExternalMechanisms} \nameref*{A-Metaprogramming:ExternalMechanisms}}}
+\addcontentsline{toc}{section}{\ref*{A-Metaprogramming:ExternalMechanisms} \nameref*{A-Metaprogramming:ExternalMechanisms}}
+\subsection*{\hyperref[A-Metaprogramming:ExternalMechanisms:Java]{\ref*{A-Metaprogramming:ExternalMechanisms:Java} \nameref*{A-Metaprogramming:ExternalMechanisms:Java}}}
+\addcontentsline{toc}{subsection}{\ref*{A-Metaprogramming:ExternalMechanisms:Java} \nameref*{A-Metaprogramming:ExternalMechanisms:Java}}
+\noindent\textbf{Imprecisions}:
+
+\begin{Verbatim}[breaklines=true]
+Compile-time generation is instead handled by annotation processors (Java
+Annotation Processing API), which run during compilation, analyze
+annotated source elements through the compiler's language model API, and
+generate auxiliary source files. Libraries such as Lombok extend this
+through direct AST manipulation, injecting methods or constructors that
+developers would otherwise write by hand.
+\end{Verbatim}
+
+This presents Lombok's AST manipulation as a straightforward extension of
+the standard Annotation Processing API, but the standard API is designed
+only to generate new auxiliary source files, not to modify the AST of
+existing ones. Lombok achieves in-place AST manipulation by relying on
+internal, unsupported compiler APIs (\texttt{com.sun.tools.javac}) rather
+than the public annotation processing mechanism described in the same
+sentence, which is why modern JDK versions require explicit
+\texttt{--add-opens} flags to permit this access \cite{lombok_project}.
+The claim is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+Compile-time generation is instead handled by annotation processors (Java
+Annotation Processing API), which run during compilation, analyze
+annotated source elements through the compiler's language model API, and
+generate auxiliary source files. Libraries such as Lombok achieve a
+similar effect through direct AST manipulation, injecting methods or
+constructors that developers would otherwise write by hand; unlike
+standard annotation processors, Lombok relies on internal, unsupported
+compiler APIs to modify existing source rather than only generating new
+files, which is why modern JDK versions require explicit module-access
+flags to permit it.
+\end{Verbatim}
 
 % Se vuoi includere il testo da file separati per mantenere l'ordine:
 % \input{chapters/chapter_1}

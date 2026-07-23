@@ -19,9 +19,19 @@
     citecolor=black,
 }
 
-\usepackage{microtype}
+\usepackage[expansion=false]{microtype}
 \usepackage{fancyvrb}
 \usepackage{fvextra}
+
+% Margin-safe verbatim settings: force breaking even on strings with no
+% spaces (long identifiers, texttt-style tokens, etc.) and use a slightly
+% smaller font so long lines never overflow the text width.
+\fvset{
+    breaklines=true,
+    breakanywhere=true,
+    breaksymbolleft={},
+    fontsize=\small
+}
 
 \title{Parametric Polymorphism in C++, Java, and C\#:\\Generics vs. Templates and Metaprogramming Power\\[0.5em]\large Prompt Log (Reorganized by Task)}
 \author{Elia Leonardi\\University of Pisa}
@@ -89,7 +99,7 @@ Below is the complete text of the Master Prompt used to orchestrate
 the prompt engineering phase for Task 1 (language implementation of parametric
 polymorphism):
 
-\begin{Verbatim}[breaklines=true]
+\begin{Verbatim}
 System Persona:
 
 Act as a Senior Prompt Engineer specialized in designing rigorous prompts
@@ -159,8 +169,8 @@ to:
 - Avoid unsupported claims and clearly identify assumptions.
 - ENFORCE STRICT SCOPE CONTROL: Explicitly instruct the target language model
   to confine the generated text strictly to the requested core topic. The model
-  must actively avoid tangential subjects (e.g., memory footprint, hardware 
-  performance, code bloat, garbage collection overhead, or broader language 
+  must actively avoid tangential subjects (e.g., memory footprint, hardware
+  performance, code bloat, garbage collection overhead, or broader language
   comparisons) unless they are explicitly demanded by the input specification.
 
 Task 4, Reference and Citation Requirements:
@@ -230,7 +240,7 @@ Prompt was used. Its purpose is identical to the one described above, but it
 is specialized to produce a single \emph{section} of an existing chapter
 (rather than a standalone report), given one focused instruction as input.
 
-\begin{Verbatim}[breaklines=true]
+\begin{Verbatim}
 System Persona:
 
 Act as a Senior Prompt Engineer specialized in designing rigorous prompts
@@ -336,8 +346,8 @@ single generation directly produces the cross-language comparison.
 
 \vspace{0.5cm}
 \noindent\textbf{Methodological Note on Prompt Construction and Verification:}\\
-To ensure the accuracy of the generated analysis, the prompt engineering strategy utilized a decoupled approach. Specifically, 
-individual prompts were tailored for each language (C++, Java, and C\#) across five core analytical categories: 
+To ensure the accuracy of the generated analysis, the prompt engineering strategy utilized a decoupled approach. Specifically,
+individual prompts were tailored for each language (C++, Java, and C\#) across five core analytical categories:
 \begin{enumerate}
     \item Timing of instantiation
     \item Runtime representation
@@ -347,14 +357,22 @@ individual prompts were tailored for each language (C++, Java, and C\#) across f
 \end{enumerate}
 
 Because multiple distinct queries targeted different facets of the same language, the model's outputs naturally contained
-edundant technical information. This redundancy was intentional; it served as the critical first step in the verification 
-process, allowing for the cross-referencing of the model'overlapping sections and rs responses 
-to ensure internal consistency before synthesizing the final master prompt.
+redundant technical information. This redundancy was intentional; it served as the critical first step in the verification
+process, allowing for the cross-referencing of the model's overlapping responses to ensure internal consistency before
+synthesizing the final master prompt.
 
-To simplify the analysis and improve readability within this document, these isolated queries were subsequently merged. 
-The resulting unified master prompt dictates the exact structure, 
-constraints, and content parameters used to 
+To simplify the analysis and improve readability within this document, these isolated queries were subsequently merged.
+The resulting unified master prompt dictates the exact structure,
+constraints, and content parameters used to
 generate the comprehensive comparison presented in the following sections.
+
+\noindent\textit{Note on repeated boilerplate:} from Prompt 3 onward, the
+\textbf{Writing Style Constraint} and \textbf{Output Structure} blocks follow
+the same template established in Prompt 2 (\S\ref{Prompt 2 Instantiation}),
+adapted only in terminology and section titles to the specific topic. To avoid
+redundancy, these two blocks are stated in full only once (Prompt 2) and
+referenced thereafter.
+
 % =====================================================================
 \section{Prompt 1: Overview of Parametric Polymorphism}
 % =====================================================================
@@ -488,15 +506,7 @@ Generate an exhaustive, publication-grade academic report section titled ``Runti
 \end{itemize}
 
 \vspace{0.5em}
-\noindent\textbf{Writing Style Constraint}
-\begin{itemize}
-    \item Formal, objective, precise scientific style comparable to ACM/IEEE publications.
-    \item Use accurate terminology: \emph{monomorphization}, \emph{name mangling}, \emph{RTTI}, \emph{type erasure}, \emph{bridge method}, \emph{reification}, \emph{generic dictionary}, \emph{CIL metadata}.
-    \item Avoid first-person pronouns and conversational language.
-\end{itemize}
-
-\vspace{0.5em}
-\noindent\textbf{Output Structure}
+\noindent\textbf{Writing Style Constraint / Output Structure:} as defined in Prompt 2 (\S\ref{Prompt 2 Instantiation}), with terminology adapted to runtime representation (\emph{monomorphization}, \emph{name mangling}, \emph{RTTI}, \emph{type erasure}, \emph{bridge method}, \emph{reification}, \emph{generic dictionary}, \emph{CIL metadata}) and section titles:
 \begin{enumerate}
     \item Introduction: Three Models of Runtime Representation
     \item C++: Monomorphized Native Code and Absence of Generic Metadata
@@ -552,15 +562,7 @@ Generate a comprehensive, technically rigorous academic section analyzing and di
 \end{itemize}
 
 \vspace{0.5em}
-\noindent\textbf{Writing Style Constraint}
-\begin{itemize}
-    \item Formal, objective, rigorous scientific style; no first-person pronouns.
-    \item Precise terminology: \emph{static dispatch}, \emph{boxing overhead}, \emph{data locality}, \emph{reification}, \emph{monomorphization}, \emph{type erasure}, \emph{JIT specialization}, \emph{cache lines}.
-    \item Ground all claims in established compiler theory, VM/CLR specifications, and hardware-interaction mechanics; avoid unsupported assertions.
-\end{itemize}
-
-\vspace{0.5em}
-\noindent\textbf{Output Structure}
+\noindent\textbf{Writing Style Constraint / Output Structure:} as defined in Prompt 2 (\S\ref{Prompt 2 Instantiation}), with terminology adapted to performance analysis (\emph{static dispatch}, \emph{boxing overhead}, \emph{data locality}, \emph{reification}, \emph{monomorphization}, \emph{type erasure}, \emph{JIT specialization}, \emph{cache lines}) and section titles:
 \begin{enumerate}
     \item Introduction: Performance as a Consequence of Implementation Strategy
     \item C++: Static Dispatch and Compile-Time Optimization
@@ -610,15 +612,7 @@ Generate an exhaustive, academic-grade LaTeX section analyzing static type safet
 \end{itemize}
 
 \vspace{0.5em}
-\noindent\textbf{Writing Style Constraint}
-\begin{itemize}
-    \item Formal, objective, scientific writing style; no first-person pronouns.
-    \item Distinguish clearly between theoretical concepts (parametric polymorphism) and implementation mechanisms (monomorphization, erasure, reification).
-    \item Avoid unsupported claims and clearly identify assumptions.
-\end{itemize}
-
-\vspace{0.5em}
-\noindent\textbf{Output Structure}
+\noindent\textbf{Writing Style Constraint / Output Structure:} as defined in Prompt 2 (\S\ref{Prompt 2 Instantiation}), adapted to type safety, distinguishing theoretical concepts (parametric polymorphism) from implementation mechanisms (monomorphization, erasure, reification), with code examples formatted using the standard \texttt{listings} package, and section titles:
 \begin{enumerate}
     \item Introduction: Type Safety Under Different Implementation Strategies
     \item C++: Type Safety via Reified Templates
@@ -627,7 +621,6 @@ Generate an exhaustive, academic-grade LaTeX section analyzing static type safet
     \item Comparative Synthesis
     \item References
 \end{enumerate}
-Format each code example using the standard \texttt{listings} package.
 
 \vspace{0.5em}
 \noindent\textbf{Primary References}
@@ -669,15 +662,7 @@ Generate a rigorous, technical-academic report section analyzing reflection and 
 \end{itemize}
 
 \vspace{0.5em}
-\noindent\textbf{Writing Style Constraint}
-\begin{itemize}
-    \item Formal, objective, highly scientific academic tone; no first-person pronouns.
-    \item Precise terminology: \emph{RTTI}, \emph{type erasure}, \emph{reification}, \emph{type token}, \emph{monomorphization}, \emph{generic metadata}.
-    \item Logical progression from theoretical foundations to technical analysis.
-\end{itemize}
-
-\vspace{0.5em}
-\noindent\textbf{Output Structure}
+\noindent\textbf{Writing Style Constraint / Output Structure:} as defined in Prompt 2 (\S\ref{Prompt 2 Instantiation}), adapted to reflection and RTTI terminology (\emph{RTTI}, \emph{type erasure}, \emph{reification}, \emph{type token}, \emph{monomorphization}, \emph{generic metadata}), with section titles:
 \begin{enumerate}
     \item Introduction: Reflection as a Function of Representation Strategy
     \item C++: RTTI on Monomorphized Templates
@@ -712,6 +697,13 @@ techniques are treated first, followed by dedicated sections analyzing the
 limits of Java and of C\#, and finally the workarounds used in Java and C\#
 to approximate C++ metaprogramming.
 
+\noindent\textit{Note on repeated boilerplate:} all prompts in this chapter
+share the same \textbf{Section-Level Framing} constraints (output is a single
+section of an existing chapter; no standalone introduction, conclusion, or
+bibliography; formal PLT writing style; strict scope control; enforced
+conciseness), stated in full in Prompt 1 and referenced thereafter rather than
+repeated verbatim.
+
 % =====================================================================
 \section{Prompt 1: Concrete C++ Template Examples of Compile-Time Computation}
 % =====================================================================
@@ -721,7 +713,7 @@ to approximate C++ metaprogramming.
 \noindent\textbf{Model:} ChatGPT-5.5
 
 \noindent\textbf{Prompt:}
-\begin{Verbatim}[breaklines=true]
+\begin{Verbatim}
 System Persona:
 
 Act as an expert in programming language theory and advanced C++ software engineering.
@@ -780,8 +772,8 @@ Output only the raw Markdown content for this specific section. Use appropriate 
 
 \noindent\textbf{Model:} ChatGPT-5.5
 
-\noindent\textbf{Prompt:}
-\begin{Verbatim}[breaklines=true]
+\noindent\textbf{Prompt} \emph{(Section-Level Framing, Writing Style Constraint, and Output Structure as in Prompt 1 above):}
+\begin{Verbatim}
 System Persona:
 
 Act as an expert technical writer and programming language theorist specialized in C++ metaprogramming and compile-time polymorphism.
@@ -797,28 +789,13 @@ Requirements:
 * Provide the equivalent working C++ code example utilizing C++20 Concepts.
 * Provide a step-by-step explanation of what "substitution failure" means in this specific context and explicitly detail the mechanism of why it does not result in a hard compile error.
 
-
-* Section-Level Framing (STRICT):
-* Begin directly with the technical content and code. Omit any standalone introduction, motivation, or "in this section we will" framing.
-* Omit any standalone conclusion, summary of the chapter, or forward-looking remarks.
-* Omit any bibliography or reference list; assume citations are handled globally at the end of the full chapter.
-* Assume the reader already has the broader context of parametric polymorphism and does not need general template concepts re-introduced.
-
-
 * Content Constraints:
 * Distinguish clearly that these are compile-time mechanisms.
 * Enforce strict scope control: address only the SFINAE implementation, the C++20 Concepts equivalent, and the explanation of substitution failure. Do not digress into compilation times, memory footprint, code bloat, hardware performance, or other unrelated language comparisons.
-* Enforce conciseness: the section must be as short as fully answering the technical requirements allows. No padding, no restating the question, and no redundant transitions between paragraphs.
-
-
-
-Writing Style Constraint:
-
-Maintain a formal, objective, and precise technical writing style consistent with programming language theory literature. Use precise terminology (e.g., substitution failure, overload resolution set, template instantiation) appropriately. Do not include conversational filler, meta-commentary, explanations of your process, or first-person forms ("I", "we").
 
 Output Structure:
 
-Return only the generated section content, formatted in Markdown. Use appropriate heading levels (e.g., `###` or `####`) suitable for an internal subsection. Use standard Markdown code blocks for the C++ code examples.
+Use standard Markdown code blocks for the C++ code examples.
 \end{Verbatim}
 
 \noindent\textbf{Sources:}
@@ -834,8 +811,8 @@ Return only the generated section content, formatted in Markdown. Use appropriat
 
 \noindent\textbf{Goal}: Generate a detailed academic section of other core C++ template metaprogramming techniques: variadic templates, template template parameters, and CRTP (Curiously Recurring Template Pattern). For each, give a short example and explain what class of problems it solves that plain function/class templates cannot.
 
-\noindent\textbf{Prompt:}
-\begin{Verbatim}[breaklines=true]
+\noindent\textbf{Prompt} \emph{(Section-Level Framing, Writing Style Constraint, and Output Structure as in Prompt 1, \S2.1):}
+\begin{Verbatim}
 System Persona
 
 Act as a technical-academic writer specialized in programming language theory and advanced C++ software engineering.
@@ -846,24 +823,13 @@ Write a single, highly focused section for a larger chapter on parametric polymo
 
 Requirements
 
-* **Contextual Integration:** Treat your output as an internal section of an existing chapter. Assume the reader already understands the broader context of parametric polymorphism across C++, Java, and C\#. Do not re-introduce basic generic programming concepts.
-* **Strict Framing:** Begin directly with the technical explanation. Omit any standalone introduction, motivation, or transitional phrasing (e.g., "In this section, we will explore..."). Omit any conclusion, summary, forward-looking remarks, or bibliography.
-* **Technical Scope:** Focus exclusively on variadic templates, template template parameters, and CRTP. Explicitly exclude discussions of SFINAE, type traits, and constexpr, as these are assumed to be covered elsewhere.
-* **Content Execution:** For each of the three covered techniques:
+* Technical Scope: Focus exclusively on variadic templates, template template parameters, and CRTP. Explicitly exclude discussions of SFINAE, type traits, and constexpr, as these are assumed to be covered elsewhere.
+* Content Execution: For each of the three covered techniques:
 * Provide a short, syntactically correct C++ code example.
 * Explain the specific class of problems the technique solves that plain function or class templates cannot resolve.
 * Clearly distinguish compile-time mechanisms and state relevant assumptions regarding C++ language/compiler versions (e.g., C++11 for variadic templates) where necessary.
 
-
-* **Strict Scope Control:** Do not digress into memory footprint, code bloat, hardware performance benchmarking, or unrelated language comparisons. Address only the mechanisms requested.
-
-Writing Style Constraint
-
-Maintain a formal, objective, and precise technical writing style consistent with programming language theory literature. Use exact terminology (e.g., instantiation, monomorphization, static dispatch) accurately. Enforce extreme conciseness: the section must be as short as possible while fully answering the prompt. Eliminate all padding, restatements of the core objective, and redundant transitions between paragraphs. Do not use first-person pronouns ("I", "we").
-
-Output Structure
-
-Return only the Markdown-formatted text for the section content. Do not include any meta-commentary, title placeholders, or conversational filler before or after the section text.
+* Strict Scope Control: Do not digress into memory footprint, code bloat, hardware performance benchmarking, or unrelated language comparisons. Address only the mechanisms requested.
 \end{Verbatim}
 
 \noindent\textbf{Sources:}
@@ -881,8 +847,8 @@ Return only the Markdown-formatted text for the section content. Do not include 
 
 \noindent\textbf{Model:} ChatGPT-5.5
 
-\noindent\textbf{Prompt:}
-\begin{Verbatim}[breaklines=true]
+\noindent\textbf{Prompt} \emph{(Section-Level Framing, Writing Style Constraint, and Output Structure as in Prompt 1, \S2.1):}
+\begin{Verbatim}
 System Persona:
 
 Act as an expert in programming language theory and software engineering, specializing in the comparative analysis of parametric polymorphism and metaprogramming across C++, Java, and C\#.
@@ -893,22 +859,10 @@ Write a single, concise section of an academic report chapter evaluating the lim
 
 Requirements:
 
-* Section-Level Framing (STRICT): This text is ONE SECTION of an existing, larger chapter. Do NOT write a standalone introduction, motivation, or "in this section we will" framing. Do NOT include a concluding summary, forward-looking remarks, or a bibliography. Assume the reader is already familiar with the broader comparison between C++ templates and Java/C\# generics. Begin directly with the technical analysis.
 * Technical Demonstration: Provide a concise, valid Java code example demonstrating the maximum achievable compile-time constraint mechanism in Java, specifically bounded polymorphism (e.g., `<T Number extends>`).
 * Theoretical Explanation: Detail exactly why full compile-time branching on generic types (the equivalent of C++ Substitution Failure Is Not An Error) fails in Java. Connect this limitation mechanically and theoretically to type erasure.
 * Terminology: Use precise technical terminology appropriate for programming language theory (e.g., type erasure, bounded polymorphism, monomorphization, compile-time resolution, bounds checking) where directly relevant.
 * Scope Control: Address only the replication of SFINAE/type-traits in Java. Do not digress into memory footprint, hardware performance, C\# mechanisms, code bloat, garbage collection, or unrelated language comparisons.
-
-Writing Style Constraint:
-
-* Maintain a formal, objective, and highly precise academic writing style.
-* Enforce strict conciseness: the section must be as short as fully answering the prompt allows. Avoid padding, restating the question, or using redundant transitions.
-* Clearly distinguish between compile-time mechanisms (bounds checking) and runtime realities (erasure) without confusing the two.
-* Do not use first-person pronouns (e.g., "I", "we", "our").
-
-Output Structure:
-
-Output only the raw technical text of the section. Use standard Markdown for formatting and code blocks. Do not include any overarching titles, placeholders, meta-commentary, or structural elements outside of what is strictly necessary to present the required technical content.
 \end{Verbatim}
 
 \noindent\textbf{Sources:}
@@ -926,8 +880,8 @@ Output only the raw technical text of the section. Use standard Markdown for for
 
 \noindent\textbf{Model:} ChatGPT-5.5
 
-\noindent\textbf{Prompt:}
-\begin{Verbatim}[breaklines=true]
+\noindent\textbf{Prompt} \emph{(Section-Level Framing, Writing Style Constraint, and Output Structure as in Prompt 1, \S2.1):}
+\begin{Verbatim}
 System Persona:
 Act as an expert academic writer and programming language theorist specializing in the comparative analysis of parametric polymorphism and metaprogramming paradigms.
 
@@ -936,30 +890,17 @@ Generate a single, concise, and highly technical section for a larger academic c
 
 Requirements:
 
-* **Section-Level Framing (STRICT):** This text is an intermediate section within an existing chapter. Do NOT include an introduction, motivation, or structural framing (e.g., "In this section, we will..."). Do NOT include a conclusion, summary, or forward-looking transition. Do NOT include a bibliography or list of references. Assume the reader already possesses full context regarding the fundamental differences between C++ templates, Java generics, and C\# generics.
-* **Technical Execution:**
+* Technical Execution:
 * Replicate the conceptual equivalent of a C++ SFINAE/type-traits example using C\#.
 * Demonstrate achievable compile-time/type-check-time constraints using C\# bounded polymorphism (`where T : ...`).
 * Illustrate the application of .NET generic math and static abstract interface members to achieve trait-like capabilities.
 
-
-* **Theoretical Analysis:**
+* Theoretical Analysis:
 * Explain why these C\# mechanisms allow it to approach C++ capabilities much more closely than Java does.
 * Explain why C\# inherently cannot support true SFINAE (Substitution Failure Is Not An Error) or arbitrary compile-time computation.
 * Directly tie this limitation to the architectural differences between .NET's runtime reification of generics and C++'s compile-time monomorphization and AST-level substitution.
 
-
-
-Writing Style Constraint:
-
-* Maintain a formal, objective, and precise academic tone consistent with programming language theory literature.
-* Use precise terminology (e.g., bounded polymorphism, reification, monomorphization, substitution failure) strictly where applicable.
-* Clearly distinguish between compile-time validation mechanisms and runtime behavior.
-* Ensure strict scope control: address solely the requested C\# replication of SFINAE/traits, generic constraints, generic math, and the reification vs. monomorphization dichotomy. Do not digress into memory footprint, code bloat, execution performance, garbage collection, or unrelated language features.
-* Enforce absolute conciseness: provide only the information required to fulfill the prompt. Omit conversational padding, restatements of the prompt, and redundant transitional clauses.
-
-Output Structure:
-Provide only the finalized text and code blocks for this specific section. Do not output overarching titles, introductory meta-commentary, conversational filler, or any text outside the bounds of the academic section itself.
+* Scope Control: address solely the requested C\# replication of SFINAE/traits, generic constraints, generic math, and the reification vs. monomorphization dichotomy. Do not digress into memory footprint, code bloat, execution performance, garbage collection, or unrelated language features.
 \end{Verbatim}
 
 \noindent\textbf{Sources:}
@@ -978,8 +919,8 @@ Provide only the finalized text and code blocks for this specific section. Do no
 
 \noindent\textbf{Model:} ChatGPT-5.5
 
-\noindent\textbf{Prompt:}
-\begin{Verbatim}[breaklines=true]
+\noindent\textbf{Prompt} \emph{(Section-Level Framing, Writing Style Constraint, and Output Structure as in Prompt 1, \S2.1):}
+\begin{Verbatim}
 System Persona:
 
 Act as a technical author and programming language theorist writing a highly specialized section for an academic chapter on programming language theory and software engineering.
@@ -994,29 +935,8 @@ Requirements:
 * Explain the direct causal relationship between these checking mechanisms and the limitations placed on metaprogramming in Java and C\#.
 * Detail at least one concrete metaprogramming technique (e.g., SFINAE, or structural/duck typing within templates) that is possible in C++ but impossible in Java/C\# because of this specific constraint.
 * Include concise, precise code examples to illustrate the technique in C++ and explicitly demonstrate why declaration-time checking prevents its equivalent in Java/C\#.
-* Section-Level Framing (STRICT): Your output is strictly ONE SECTION of an existing, larger chapter.
-* Omit any standalone introduction, motivation, or "in this section we will" framing. Begin directly with the technical content.
-* Omit any concluding paragraphs, chapter summaries, or forward-looking transitions.
-* Omit a bibliography or reference list. Assume citations are handled globally at the end of the full chapter.
-* Assume the reader already has the broader context of C++ templates versus Java/C\# generics. Do not re-introduce basic concepts.
-
-
-* Content Constraints:
 * Use precise terminology (e.g., instantiation, substitution failure, bounded polymorphism, type erasure, reification) where strictly relevant to the prompt.
 * Clearly distinguish between compile-time and runtime mechanisms as they relate to these type-checking models.
-* Enforce strict scope control. Do not digress into memory footprint, hardware performance benchmarking, code bloat, garbage collection overhead, or unrelated language comparisons. Address only the type-checking differences and the resulting metaprogramming limitations.
-
-
-
-Writing Style Constraint:
-
-* Maintain a formal, objective, and precise technical writing style consistent with programming language theory literature.
-* Enforce absolute conciseness: the section must be exactly as short as necessary to fully answer the prompt. Include no padding, do not restate the prompt, and avoid redundant transitions between paragraphs.
-* Avoid unsupported claims; state assumptions about language or compiler versions only if strictly necessary to explain the technique.
-
-Output Structure:
-
-Return only the raw text of the generated section, formatted using standard Markdown. Do not include any meta-commentary, introductory remarks, conversational filler, or placeholders. Begin immediately with the first sentence of the section's technical content.
 \end{Verbatim}
 
 \noindent\textbf{Sources:}
@@ -1034,8 +954,8 @@ Return only the raw text of the generated section, formatted using standard Mark
 
 \noindent\textbf{Model:} ChatGPT-5.5
 
-\noindent\textbf{Prompt:}
-\begin{Verbatim}[breaklines=true]
+\noindent\textbf{Prompt} \emph{(Section-Level Framing, Writing Style Constraint, and Output Structure as in Prompt 1, \S2.1):}
+\begin{Verbatim}
 System Persona:
 
 Act as an academic technical writer specializing in programming language theory and software architecture.
@@ -1046,37 +966,16 @@ Write exactly ONE SECTION of an existing comprehensive chapter on parametric pol
 
 Requirements:
 
-* Task 1: Technical Content Specification
+* Technical Content Specification:
 * Detail Java's common workarounds: the use of runtime reflection, compile-time annotation processors, and code generation utilities (e.g., Lombok).
 * Detail C\#'s common workarounds: the use of source generators and T4 templates.
 * Articulate the structural and theoretical reasons why these mechanisms are considered external workarounds layered over or completely separate from the Java and C\# generics systems, contrasting them with the native, intrinsic compile-time evaluation of C++ templates.
 * Clearly differentiate between mechanisms that operate at runtime versus those that operate at compile-time or pre-compilation.
 
-
-* Task 2: Section-Level Framing
-* Output ONLY the body text for this specific section.
-* Omit any standalone introduction, motivation, or prefatory remarks. Do not use phrases such as "In this section we will examine...".
-* Omit any conclusion, summary, or forward-looking remarks to subsequent sections.
-* Omit bibliographies or reference lists entirely.
-* Assume the reader already possesses full theoretical context regarding C++ templates, Java type erasure, and C\# reified generics. Begin directly with the technical exposition of the workarounds.
-
-
-* Task 3: Content Constraints
-* Maintain a formal, objective, and precise technical writing style consistent with programming language theory literature.
+* Content Constraints:
 * Use accurate terminology (e.g., compile-time, runtime, reflection, AST manipulation, macro expansion) strictly where relevant.
 * Include brief, illustrative code snippets only if strictly necessary to demonstrate a specific structural workaround mechanism; otherwise, rely on rigorous theoretical explanation.
 * Strictly enforce scope control: address only the workarounds and their relationship to the generics system. Do not digress into memory footprint, hardware performance benchmarking, garbage collection overhead, or unrelated architectural comparisons.
-* Enforce absolute conciseness: ensure the section is as short as comprehensively answering the prompt allows. Avoid padding, redundant paragraph transitions, or restating the prompt's premises.
-
-
-
-Writing Style Constraint:
-
-Do not include any meta-commentary, explanations, placeholders, or out-of-character text. Do not use first-person pronouns ("I", "we"). Produce only the final text of the requested section.
-
-Output Structure:
-
-Return the technical text of the section directly. Use standard Markdown for logical structuring (such as subheadings for language-specific mechanisms), but do not include a top-level chapter title.
 \end{Verbatim}
 
 \noindent\textbf{Sources:}
