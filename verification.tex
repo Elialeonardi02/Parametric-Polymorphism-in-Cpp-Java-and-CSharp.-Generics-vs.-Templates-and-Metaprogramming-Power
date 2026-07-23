@@ -61,7 +61,7 @@ the process of verification is repeated until the output is correct and complete
 
 \subsection*{\hyperref[A-Introduction:Performance]{\ref*{A-Introduction:Performance} \nameref*{A-Introduction:Performance}}}
 \addcontentsline{toc}{subsection}{\ref*{A-Introduction:Performance} \nameref*{A-Introduction:Performance}}
-\noindent\textbf{Imprecision}:
+\noindent\textbf{Imprecisions}:
 \begin{Verbatim}[breaklines=true]
 Homogeneous implementations generally produce smaller binaries and reduce compilation
 time because generic definitions are compiled only once.
@@ -136,6 +136,533 @@ is required by multiple translation units, each one generates its own copy,
 and it is the linker that discards the duplicates and retains a single
 definition in the final executable.
 \end{Verbatim}
+
+\subsection*{\hyperref[A-CppTemplates:RuntimeRepresentation]{\ref*{A-CppTemplates:RuntimeRepresentation} \nameref*{A-CppTemplates:RuntimeRepresentation}}}
+\addcontentsline{toc}{subsection}{\ref*{A-CppTemplates:RuntimeRepresentation} \nameref*{A-CppTemplates:RuntimeRepresentation}}
+
+noindent\textbf{Error}:
+
+\begin{Verbatim}[breaklines=true]
+Hence the runtime representation of Vector<int> and Vector<double> is not a
+single generic object Vector<T>, but two independent concrete types produced
+before execution.
+\end{Verbatim}
+
+This sentence refers to \texttt{Vector<T>}, a type that never appears anywhere
+in this subsection: the only example actually shown is the function template
+\texttt{add<T>}, instantiated as \texttt{add<int>} and \texttt{add<double>}.
+The conclusion is therefore disconnected from the example that precedes it and
+cannot be verified against it. The claim is corrected by referring to the
+example actually presented:
+
+\begin{Verbatim}[breaklines=true]
+Hence the runtime representation of add<int> and add<double> is not a single
+generic function add<T>, but two independent concrete functions produced
+before execution.
+\end{Verbatim}
+
+\subsubsection*{\hyperref[A-CppTemplates:RuntimeRepresentation:Monomorphization]{\ref*{A-CppTemplates:RuntimeRepresentation:Monomorphization} \nameref*{A-CppTemplates:RuntimeRepresentation:Monomorphization}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-CppTemplates:RuntimeRepresentation:Monomorphization} \nameref*{A-CppTemplates:RuntimeRepresentation:Monomorphization}}
+\noindent\textbf{Imprecisions}:
+
+\begin{Verbatim}[breaklines=true]
+C++ uses heterogeneous translation, commonly called monomorphization.
+\end{Verbatim}
+
+Presenting "monomorphization" as the common C++ terminology is misleading: the
+term originates from and is standard in the Rust community, where it names an
+analogous compile-time specialization process \cite{rust_monomorphization}. In
+the C++ standard and in the reference literature, the same mechanism is
+consistently called \emph{template instantiation}, not monomorphization
+\cite{iso_cpp2024,cpp_templates2017}. The claim is therefore corrected as
+follows:
+
+\begin{Verbatim}[breaklines=true]
+C++ uses heterogeneous translation, a process known in the C++ standard and
+literature as template instantiation and sometimes informally referred to,
+by analogy with other languages such as Rust, as monomorphization.
+\end{Verbatim}
+
+\subsubsection*{\hyperref[A-CppTemplates:RuntimeRepresentation:NameMangling]{\ref*{A-CppTemplates:RuntimeRepresentation:NameMangling} \nameref*{A-CppTemplates:RuntimeRepresentation:NameMangling}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-CppTemplates:RuntimeRepresentation:NameMangling} \nameref*{A-CppTemplates:RuntimeRepresentation:NameManglingSW}}
+\noindent\textbf{Imprecisions}:
+
+\begin{Verbatim}[breaklines=true]
+Compilers encode template arguments into symbol names through name mangling,
+allowing different specializations to coexist in object files and letting
+the linker distinguish entities such as function<int>() and function<double>().
+\end{Verbatim}
+
+This statement describes name mangling as a single, uniform mechanism, but the
+mangling scheme is not standardized across compilers: it is defined by the
+underlying ABI, and different ABIs produce different mangled names for the
+same specialization. The Itanium C++ ABI, used by GCC, Clang, and most
+Unix-like platforms, defines one such scheme, while MSVC on Windows uses a
+different, incompatible mangling scheme \cite{itanium_abi}. The claim is
+therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+Compilers encode template arguments into symbol names through name mangling,
+allowing different specializations to coexist in object files and letting
+the linker distinguish entities such as function<int>() and function<double>();
+the exact mangling scheme is not standardized across compilers but is defined
+by the underlying ABI, such as the Itanium C++ ABI used by GCC and Clang.
+\end{Verbatim}
+
+\subsection*{\hyperref[A-CppTemplates:Performance]{\ref*{A-CppTemplates:Performance} \nameref*{A-CppTemplates:Performance}}}
+\addcontentsline{toc}{subsection}{\ref*{A-CppTemplates:Performance} \nameref*{A-CppTemplates:Performance}}
+\subsubsection*{\hyperref[A-CppTemplates:Performance:DispatchEliminationOverhead]{\ref*{A-CppTemplates:Performance:DispatchEliminationOverhead} \nameref*{A-CppTemplates:Performance:DispatchEliminationOverhead}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-CppTemplates:Performance:DispatchEliminationOverhead} \nameref*{A-CppTemplates:Performance:DispatchEliminationOverhead}}
+\noindent\textbf{Imprecisions}:
+
+\begin{Verbatim}[breaklines=true]
+Given template<typename T> void process(T& object) { object.compute(); }
+called with a Matrix, the compiler resolves the call directly to
+Matrix::compute(), reducing overhead and exposing further optimization
+opportunities.
+\end{Verbatim}
+
+This statement presents call resolution as unconditionally direct, but knowing
+the concrete type \texttt{T} at compile time only guarantees that name lookup
+and overload resolution are resolved statically; it does not by itself prevent
+virtual dispatch. If \texttt{Matrix::compute()} is declared \texttt{virtual}
+within its class hierarchy, the call may still be resolved at runtime through
+the virtual table, even though the type \texttt{T} was fully known during
+template instantiation \cite{stroustrup2013}. The claim is therefore corrected
+as follows:
+
+\begin{Verbatim}[breaklines=true]
+Given template<typename T> void process(T& object) { object.compute(); }
+called with a Matrix, the compiler resolves the type of object statically at
+compile time; if Matrix::compute() is not virtual, the call itself is also
+resolved directly, reducing overhead and exposing further optimization
+opportunities, whereas a virtual compute() would still be dispatched through
+the virtual table at runtime despite the type being known at compile time.
+\end{Verbatim}
+
+\subsubsection*{\hyperref[A-CppTemplates:Performance:Optimization]{\ref*{A-CppTemplates:Performance:Optimization} \nameref*{A-CppTemplates:Performance:Optimization}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-CppTemplates:Performance:Optimization} \nameref*{A-CppTemplates:Performance:Optimization}}
+\noindent\textbf{Imprecisions}:
+
+\begin{Verbatim}[breaklines=true]
+A fundamental example is function inlining: since both implementation and
+argument types are known at compile time, \texttt{template<typename T> inline
+T square(T x) \{ return x*x; \}} called as \texttt{square(5)} can be replaced
+directly by \texttt{5*5}, removing call overhead and enabling further constant
+propagation, constant folding, dead-code elimination, loop optimization, and
+strength reduction.
+\end{Verbatim}
+
+This statement presents inlining and the resulting substitution as a
+guaranteed outcome, but the C++ standard does not require compilers to
+actually inline a function marked \texttt{inline}: the keyword only affects
+linkage rules, and actual inlining remains an optimization decision left to
+the compiler \cite{iso_cpp2024}. The claim is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+A fundamental example is function inlining: since both implementation and
+argument types are known at compile time, \texttt{template<typename T> inline
+T square(T x) \{ return x*x; \}} called as \texttt{square(5)} can, at the
+compiler's discretion, be replaced directly by \texttt{5*5}, removing call
+overhead and enabling further constant propagation, constant folding,
+dead-code elimination, loop optimization, and strength reduction; the
+\texttt{inline} keyword only permits this substitution by affecting linkage,
+without guaranteeing that the compiler will actually perform it.
+\end{Verbatim}
+
+\noindent\textbf{Imprecisions}:
+
+\begin{Verbatim}[breaklines=true]
+Compile-time specialization also enables branch elimination via
+\texttt{if constexpr}, where only the branch matching the selected type is
+emitted, and improves automatic vectorization: because concrete types and
+memory layouts are known, numerical templates such as an element-wise array
+\texttt{add} can be compiled directly into SIMD instructions.
+\end{Verbatim}
+
+This statement presents automatic vectorization as a direct and automatic
+consequence of monomorphization alone, but knowing concrete types and memory
+layouts is necessary, not sufficient: whether SIMD instructions are actually
+emitted depends on the optimizer's capabilities, the compilation flags used,
+the absence of pointer aliasing between the operands, and the target
+architecture \cite{llvm_langref}. The claim is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+Compile-time specialization also enables branch elimination via
+\texttt{if constexpr}, where only the branch matching the selected type is
+emitted, and creates the preconditions for automatic vectorization: because
+concrete types and memory layouts are known, numerical templates such as an
+element-wise array \texttt{add} become eligible for compilation into SIMD
+instructions, although whether vectorization actually occurs still depends
+on the optimizer, the compilation flags, and the absence of pointer aliasing
+between operands.
+\end{Verbatim}
+
+\subsubsection*{\hyperref[A-CppTemplates:Performance:Zero-Overhead]{\ref*{A-CppTemplates:Performance:Zero-Overhead} \nameref*{A-CppTemplates:Performance:Zero-Overhead}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-CppTemplates:Performance:Zero-Overhead} \nameref*{A-CppTemplates:Performance:Zero-Overhead}}
+\noindent\textbf{Imprecisions}:
+
+\begin{Verbatim}[breaklines=true]
+Therefore, template performance is generally dominated by the benefits of
+compile-time specialization, while instruction cache behavior represents the
+main architectural factor capable of reducing these advantages.
+\end{Verbatim}
+
+This statement generalizes as a rule what is only a common case: in codebases
+with extensive template usage over many distinct types, such as header-only
+libraries, code bloat can also increase compilation and linking time, and in
+some cases the resulting instruction cache pressure can outweigh the benefits
+of compile-time specialization rather than merely reducing them
+\cite{cpp_templates2017}. The claim is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+Therefore, template performance is often dominated by the benefits of
+compile-time specialization, while instruction cache behavior represents the
+main architectural factor capable of reducing these advantages; in codebases
+with extensive template usage over many distinct types, however, the
+resulting code bloat can also affect compilation and linking time, and in
+some cases can outweigh the benefits of specialization rather than merely
+reducing them.
+\end{Verbatim}
+
+\subsection*{\hyperref[A-CppTemplates:TypeSafety]{\ref*{A-CppTemplates:TypeSafety} \nameref*{A-CppTemplates:TypeSafety}}}
+\addcontentsline{toc}{subsection}{\ref*{A-CppTemplates:TypeSafety} \nameref*{A-CppTemplates:TypeSafety}}
+\noindent\textbf{Error}:
+
+\begin{Verbatim}[breaklines=true]
+C++ templates adopt a reified implementation strategy based on the template
+instantiation and monomorphization process described in
+Section~\ref{sec:monomorphization}: type parameters are never erased, and
+every instantiation is checked against a concrete, fully specialized
+implementation.
+\end{Verbatim}
+
+This statement is in direct tension with how the document itself defines
+"reified generics" elsewhere: reification is characterized as preserving
+concrete type information \emph{at runtime}, such that runtime reflection or
+RTTI can recover the actual instantiated types. The Runtime Representation
+section of this same chapter states the opposite for C++, explicitly noting
+the "Absence of Generic Metadata": no information about the original template
+or its type parameters survives as a runtime entity. Describing C++ templates
+as "reified" is therefore inconsistent with the standard meaning of the term
+in the parametric polymorphism literature, where reification specifically
+refers to runtime-observable type information \cite{cardelli1985}. C++
+achieves static type safety through compile-time specialization into
+concrete, independently type-checked implementations, not through a runtime
+reification mechanism. The claim is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+C++ templates adopt a specialization-based implementation strategy based on
+the template instantiation and monomorphization process described in
+Section~\ref{sec:monomorphization}: type parameters are never erased before
+compile-time checking, and every instantiation is checked against a concrete,
+fully specialized implementation, even though no corresponding type
+information survives as a runtime entity.
+\end{Verbatim}
+
+\subsection*{\hyperref[A-CppTemplates:Reflection]{\ref*{A-CppTemplates:Reflection} \nameref*{A-CppTemplates:Reflection}}}
+\addcontentsline{toc}{subsection}{\ref*{A-CppTemplates:Reflection} \nameref*{A-CppTemplates:Reflection}}
+\noindent\textbf{Error}:
+\begin{Verbatim}[breaklines=true]
+As introduced in the overview of implementation strategies, the availability
+of generic type information at runtime depends directly on whether the
+implementation follows a type-erasure or a reified model. C++ templates
+follow the reified model described in
+Section~\ref{sec:cpp_template_runtime}: template parameters are not
+represented as a single runtime generic entity, and monomorphization
+preserves the identity of the concrete types used during compilation.
+\end{Verbatim}
+This statement contradicts the conclusion of this very same section, which
+states that "C++ templates therefore preserve generic type information
+through compile-time monomorphization rather than through runtime
+reification." Calling the C++ strategy a "reified model" at the opening of
+the section and then denying runtime reification at its close is an internal
+inconsistency, not merely a terminological imprecision. It is also
+inconsistent with the Runtime Representation section's "Absence of Generic
+Metadata," and with the standard sense of reification in the parametric
+polymorphism literature, where the term denotes runtime-observable type
+information \cite{cardelli1985}. The claim is therefore corrected as
+follows:
+\begin{Verbatim}[breaklines=true]
+As introduced in the overview of implementation strategies, the availability
+of generic type information at runtime depends directly on whether the
+implementation follows a type-erasure or a reified model. C++ templates
+follow neither model in the runtime sense: template parameters are resolved
+through monomorphization described in Section~\ref{sec:cpp_template_runtime},
+which preserves the identity of the concrete types used during compilation,
+but this identity is not represented as a runtime generic entity once
+compilation is complete.
+\end{Verbatim}
+
+\subsubsection*{\hyperref[A-CppTemplates:Reflection:DynamicCast]{\ref*{A-CppTemplates:Reflection:DynamicCast} \nameref*{A-CppTemplates:Reflection:DynamicCast}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-CppTemplates:Reflection:DynamicCast} \nameref*{A-CppTemplates:Reflection:DynamicCast}}
+\noindent\textbf{Error}:
+\begin{Verbatim}[breaklines=true]
+The dynamic_cast operator provides another RTTI mechanism for
+performing safe runtime conversions within polymorphic class hierarchies. A
+class must contain at least one virtual function for RTTI-based dynamic
+identification to be available.
+\end{Verbatim}
+Phrasing the virtual-function requirement as a condition for "RTTI-based
+dynamic identification" in general is inconsistent with the chapter's own
+opening example, where \texttt{typeid(a).name()} is applied successfully to
+\texttt{Wrapper<int>} and \texttt{Wrapper<double>}, neither of which declares
+any virtual function. The requirement of at least one virtual function
+applies specifically to \texttt{dynamic\_cast}, and to \texttt{typeid} only
+when it must report the dynamic (polymorphic) type of an expression rather
+than its static type; \texttt{typeid} on a non-polymorphic type or on a type
+name always succeeds and simply yields the static type \cite{cppreference}.
+The claim is therefore corrected as follows:
+\begin{Verbatim}[breaklines=true]
+The dynamic_cast operator provides another RTTI mechanism for
+performing safe runtime conversions within polymorphic class hierarchies. A
+class must contain at least one virtual function for dynamic_cast to
+succeed, and for typeid applied to an expression to report the dynamic type
+rather than the static type known at compile time.
+\end{Verbatim}
+
+\section*{\hyperref[A-JavaGenerics]{\ref*{A-JavaGenerics} \nameref*{A-JavaGenerics}}}
+\addcontentsline{toc}{section}{\ref*{A-JavaGenerics} \nameref*{A-JavaGenerics}}
+
+\subsection*{\hyperref[A-JavaGenerics:RuntimeRepresentation]{\ref*{A-JavaGenerics:RuntimeRepresentation} \nameref*{A-JavaGenerics:RuntimeRepresentation}}}
+\addcontentsline{toc}{subsection}{\ref*{A-JavaGenerics:RuntimeRepresentation} \nameref*{A-JavaGenerics:RuntimeRepresentation}}
+
+\subsubsection*{\hyperref[A-JavaGenerics:RuntimeRepresentation:BridgeMethods]{\ref*{A-JavaGenerics:RuntimeRepresentation:BridgeMethods} \nameref*{A-JavaGenerics:RuntimeRepresentation:BridgeMethods}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-JavaGenerics:RuntimeRepresentation:BridgeMethods} \nameref*{A-JavaGenerics:RuntimeRepresentation:BridgeMethods}}
+\noindent\textbf{Error}:
+
+\begin{Verbatim}[breaklines=true]
+Erasure can break overriding relationships at the JVM level. Given
+Node<T>.get():T overridden by StringNode.get():String,
+erasure reduces the parent signature to get():Object; the compiler
+therefore generates a synthetic bridge method Object get() { return
+get(); } to preserve polymorphic dispatch.
+\end{Verbatim}
+
+Representing the bridge method as \texttt{Object get() { return get(); }}
+in Java source syntax is misleading: read literally, it is an infinite
+recursive call to itself, and two methods differing only in return type
+cannot coexist as Java source in the first place. The bridge method is a
+compiler-generated, bytecode-level construct, distinguishable from the
+covariant override only by its method descriptor
+(\texttt{()Ljava/lang/Object;} versus \texttt{()Ljava/lang/String;})
+\cite{jvms}; it was introduced specifically to preserve virtual dispatch
+under erasure, invoking the specific covariant implementation rather than
+itself \cite{bracha2004generics}. The claim is therefore corrected as
+follows:
+
+\begin{Verbatim}[breaklines=true]
+Erasure can break overriding relationships at the JVM level. Given
+Node<T>.get():T overridden by StringNode.get():String,
+erasure reduces the parent signature to get():Object; the compiler
+therefore generates a synthetic bridge method, distinguishable from the
+covariant override only at the bytecode level by its descriptor
+()Ljava/lang/Object;, which invokes the specific String get() implementation
+and returns its result as Object, in order to preserve polymorphic dispatch
+through the erased parent signature.
+\end{Verbatim}
+
+\subsection*{\hyperref[A-JavaGenerics:Performance]{\ref*{A-JavaGenerics:Performance} \nameref*{A-JavaGenerics:Performance}}}
+\addcontentsline{toc}{subsection}{\ref*{A-JavaGenerics:Performance} \nameref*{A-JavaGenerics:Performance}}
+
+\subsubsection*{\hyperref[A-JavaGenerics:Performance:Optimization]{\ref*{A-JavaGenerics:Performance:Optimization} \nameref*{A-JavaGenerics:Performance:Optimization}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-JavaGenerics:Performance:Optimization} \nameref*{A-JavaGenerics:Performance:Optimization}}
+\noindent\textbf{Error}:
+\begin{Verbatim}[breaklines=true]
+The HotSpot JVM mitigates these costs through runtime profiling:
+devirtualization, inline caching, and escape analysis (enabling scalar
+replacement of non-escaping allocations) recover some of the performance
+lost to erasure. These optimizations remain speculative and
+profile-dependent, unlike the ahead-of-time specialization guaranteed by
+C++ monomorphization.
+\end{Verbatim}
+Escape analysis and scalar replacement do not generally recover performance
+lost to erasure: they eliminate heap allocation only for objects, including
+boxed primitives, that the JIT proves do not escape the enclosing method or
+compilation unit. This addresses a narrow subset of the boxing overhead
+described earlier in the section, but it does not restore contiguous,
+specialized storage for generic containers such as \texttt{ArrayList},
+whose internal representation remains an array of \texttt{Object}
+references regardless of JIT optimization \cite{jvms}. Presenting scalar
+replacement as recovering performance "lost to erasure" in general
+overstates its scope. The claim is therefore corrected as follows:
+\begin{Verbatim}[breaklines=true]
+The HotSpot JVM mitigates some of these costs through runtime profiling:
+devirtualization and inline caching reduce dispatch overhead, while escape
+analysis enables scalar replacement of non-escaping boxed values,
+eliminating their allocation in specific, provably local cases. These
+optimizations reduce boxing overhead in favorable cases but do not restore
+the contiguous, specialized storage of generic containers, which retain
+their reference-based internal representation regardless of JIT
+optimization, unlike the ahead-of-time specialization guaranteed by C++
+monomorphization.
+\end{Verbatim}
+
+\subsection*{\hyperref[A-JavaGenerics:TypeSafety]{\ref*{A-JavaGenerics:TypeSafety} \nameref*{A-JavaGenerics:TypeSafety}}}
+\addcontentsline{toc}{subsection}{\ref*{A-JavaGenerics:TypeSafety} \nameref*{A-JavaGenerics:TypeSafety}}
+
+\subsubsection*{\hyperref[A-JavaGenerics:TypeSafety:ComparisonCppReification]{\ref*{A-JavaGenerics:TypeSafety:ComparisonCppReification} \nameref*{A-JavaGenerics:TypeSafety:ComparisonCppReification}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-JavaGenerics:TypeSafety:ComparisonCppReification} \nameref*{A-JavaGenerics:TypeSafety:ComparisonCppReification}}
+\noindent\textbf{Error}:
+\begin{Verbatim}[breaklines=true]
+C++ templates preserve type information through reification: each
+instantiation is checked against its concrete type directly, as in
+Box<int> box; box.set("text");, rejected because int does
+not accept a string. Java instead verifies every substitution before
+erasure removes the parameter. The distinction is therefore not whether
+type safety is provided, but at which stage type information is
+consumed: Java achieves safety through static verification prior to
+erasure, while C++ achieves safety through compile-time reification of
+concrete types that persist into the generated representation.
+\end{Verbatim}
+This repeats, in the Java chapter, the same terminological error already
+identified and corrected in the C++ chapter's Reflection and Runtime Type
+Information section, where "reification" was shown to be inconsistent with
+the C++ chapter's own conclusion that generic type information is preserved
+"through compile-time monomorphization rather than through runtime
+reification." Reification, in the parametric polymorphism literature,
+specifically denotes runtime-observable type information
+\cite{cardelli1985}; C++ achieves type safety through compile-time
+specialization checked independently for each instantiation, with no
+corresponding runtime entity surviving into execution. Repeating this
+mischaracterization here also introduces a cross-chapter inconsistency: the
+C++ chapter, once corrected, explicitly denies runtime reification, while
+this section asserts it as the mechanism underlying C++ safety. The claim
+is therefore corrected as follows:
+\begin{Verbatim}[breaklines=true]
+C++ templates preserve type information through compile-time specialization:
+each instantiation is checked against its concrete type directly, as in
+Box<int> box; box.set("text");, rejected because int does
+not accept a string. Java instead verifies every substitution before
+erasure removes the parameter. The distinction is therefore not whether
+type safety is provided, but at which stage type information is
+consumed: Java achieves safety through static verification prior to
+erasure, while C++ achieves safety through compile-time specialization of
+concrete types, checked independently for each instantiation, with no
+corresponding generic entity surviving into the running program.
+\end{Verbatim}
+
+\subsection*{\hyperref[A-JavaGenerics:Reflection]{\ref*{A-JavaGenerics:Reflection} \nameref*{A-JavaGenerics:Reflection}}}
+\addcontentsline{toc}{subsection}{\ref*{A-JavaGenerics:Reflection} \nameref*{A-JavaGenerics:Reflection}}
+
+\subsubsection*{\hyperref[A-JavaGenerics:Reflection:CppTemplate]{\ref*{A-JavaGenerics:Reflection:CppTemplate} \nameref*{A-JavaGenerics:Reflection:CppTemplate}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-JavaGenerics:Reflection:CppTemplate} \nameref*{A-JavaGenerics:Reflection:CppTemplate}}
+\noindent\textbf{Error}:
+\begin{Verbatim}[breaklines=true]
+C++ monomorphization generates an independent concrete type--and
+independent RTTI metadata--for every specialization, so typeid and
+dynamic_cast can distinguish Vector<int> from Vector<double> directly.
+Java's erasure model instead collapses all parameterizations into a single
+Class object, so reflection exposes only the identity of the generic
+declaration after erasure, never the parameterized instantiation present in
+the source. This contrast illustrates the underlying trade-off: C++
+reification preserves runtime type identity per specialization, while Java
+erasure minimizes runtime type diversity at the cost of that same
+visibility.
+\end{Verbatim}
+This is the third occurrence in the document of the same terminological
+error already corrected in the C++ chapter's Reflection and Runtime Type
+Information section and in the Java chapter's Type Safety section:
+describing the C++ mechanism as "reification" contradicts the C++ chapter's
+own conclusion that generic type information is preserved "through
+compile-time monomorphization rather than through runtime reification."
+Reification, in the parametric polymorphism literature, denotes
+runtime-observable type information \cite{cardelli1985}; the RTTI metadata
+described here is a per-specialization by-product of monomorphization and
+polymorphic object layout, not a general runtime reification mechanism, as
+already established in the C++ RTTI section itself. The claim is therefore
+corrected as follows:
+\begin{Verbatim}[breaklines=true]
+C++ monomorphization generates an independent concrete type--and
+independent RTTI metadata--for every specialization, so typeid and
+dynamic_cast can distinguish Vector<int> from Vector<double> directly.
+Java's erasure model instead collapses all parameterizations into a single
+Class object, so reflection exposes only the identity of the generic
+declaration after erasure, never the parameterized instantiation present in
+the source. This contrast illustrates the underlying trade-off: C++
+monomorphization preserves runtime type identity per specialization as a
+by-product of compile-time code generation, while Java erasure minimizes
+runtime type diversity at the cost of that same visibility.
+\end{Verbatim}
+
+\section*{\hyperref[A-CSharpGenerics]{\ref*{A-CSharpGenerics} \nameref*{A-CSharpGenerics}}}
+\addcontentsline{toc}{section}{\ref*{A-CSharpGenerics} \nameref*{A-CSharpGenerics}}
+
+\subsection*{\hyperref[A-CSharpGenerics:RuntimeRepresentation]{\ref*{A-CSharpGenerics:RuntimeRepresentation} \nameref*{A-CSharpGenerics:RuntimeRepresentation}}}
+\addcontentsline{toc}{subsection}{\ref*{A-CSharpGenerics:RuntimeRepresentation} \nameref*{A-CSharpGenerics:RuntimeRepresentation}}
+
+\subsubsection*{\hyperref[A-CSharpGenerics:RuntimeRepresentation:ValueTypeSpecialization]{\ref*{A-CSharpGenerics:RuntimeRepresentation:ValueTypeSpecialization} \nameref*{A-CSharpGenerics:RuntimeRepresentation:ValueTypeSpecialization}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-CSharpGenerics:RuntimeRepresentation:ValueTypeSpecialization} \nameref*{A-CSharpGenerics:RuntimeRepresentation:ValueTypeSpecialization}}
+\noindent\textbf{Imprecisions}:
+
+\begin{Verbatim}[breaklines=true]
+Value types have distinct memory layouts, so the JIT generates specialized
+code per instantiation
+\end{Verbatim}
+
+This statement attributes specialization to the value-type nature itself
+rather than to the actual cause: it is the distinct size and memory layout
+of each value type that forces the JIT to generate separate native code,
+not the value/reference distinction as such \cite{kennedy2001}. The claim
+is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+Because each value type has its own size and memory layout, the JIT
+generates separately specialized native code for each such instantiation:
+JIT(List<int>) = NativeCode_int, JIT(List<double>) = NativeCode_double,
+each operating directly on the corresponding representation.
+\end{Verbatim}
+
+\subsubsection*{\hyperref[A-CSharpGenerics:RuntimeRepresentation:TypeIdentity]{\ref*{A-CSharpGenerics:RuntimeRepresentation:TypeIdentity} \nameref*{A-CSharpGenerics:RuntimeRepresentation:TypeIdentity}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-CSharpGenerics:RuntimeRepresentation:TypeIdentity} \nameref*{A-CSharpGenerics:RuntimeRepresentation:TypeIdentity}}
+\noindent\textbf{Error}:
+
+\begin{Verbatim}[breaklines=true]
+C++ specializations may participate in RTTI as concrete types, but the
+original template definition itself is not preserved as a runtime entity.
+\end{Verbatim}
+
+This statement is inconsistent with the corrected C++ Reflection and
+Runtime Type Information section, where RTTI-based dynamic identification
+(dynamic\_cast, and typeid reporting the dynamic type) was shown to require
+at least one virtual function in the class hierarchy \cite{cppreference};
+presenting RTTI participation here as a general property of C++
+specializations omits that condition. The claim is therefore corrected as
+follows:
+
+\begin{Verbatim}[breaklines=true]
+C++ specializations can participate in RTTI as concrete types only within
+polymorphic class hierarchies (i.e., containing at least one virtual
+function); the original template definition itself is never preserved as
+a runtime entity, regardless of polymorphism.
+\end{Verbatim}
+
+\subsubsection*{\hyperref[A-CSharpGenerics:RuntimeRepresentation:ReferenceTypeCodeSharing]{\ref*{A-CSharpGenerics:RuntimeRepresentation:ReferenceTypeCodeSharing} \nameref*{A-CSharpGenerics:RuntimeRepresentation:ReferenceTypeCodeSharing}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-CSharpGenerics:RuntimeRepresentation:ReferenceTypeCodeSharing} \nameref*{A-CSharpGenerics:RuntimeRepresentation:ReferenceTypeCodeSharing}}
+\noindent\textbf{Imprecisions}:
+\begin{Verbatim}[breaklines=true]
+Because reference types share a uniform object-reference representation,
+the CLR can reuse a single implementation, NativeCode_reference, across
+instantiations such as List<string> and List<object>, supplying
+type-specific information through runtime execution-engine structures
+rather than duplicating code.
+\end{Verbatim}
+
+This statement presents code sharing for reference types as a universal
+property of the CLR as an abstract specification, but this canonicalization
+strategy is a design choice of specific CLR implementations, described as
+such by Kennedy and Syme \cite{kennedy2001} for the Microsoft CLR, and is
+not mandated by the ECMA-335 standard itself \cite{ecma335_2024}. The claim
+is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+Because reference types share a uniform object-reference representation,
+CLR implementations such as the Microsoft CLR can reuse a single compiled
+implementation, NativeCode_reference, across instantiations such as
+List<string> and List<object>, supplying type-specific information
+through runtime execution-engine structures rather than duplicating code.
+\end{Verbatim}
+
 
 
 % Se vuoi includere il testo da file separati per mantenere l'ordine:

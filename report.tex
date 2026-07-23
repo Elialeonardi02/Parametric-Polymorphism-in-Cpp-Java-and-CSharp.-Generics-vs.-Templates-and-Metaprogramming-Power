@@ -438,10 +438,9 @@ the entire process completes during static compilation; when execution begins, n
 instantiation mechanism remains active, and the runtime simply executes machine
 code already generated for every required specialization.
 
-% =====================================================================
-
+% =====================================================================}
 \section{Runtime Representation}
-\label{sec:cpp_template_runtime}
+\label{CppTemplates:RuntimeRepresentation}
 
 C++ templates transform generic source-level abstractions into concrete program
 entities before execution. A template declaration does not itself correspond to a
@@ -458,6 +457,7 @@ the program never invokes a generic representation of $T$, only the machine code
 generated for each concrete specialization.
 
 \subsection{Runtime Form of Template Specializations}
+\label{CppTemplates:RuntimeRepresentation:Form}
 
 Consider the following function template:
 
@@ -476,18 +476,17 @@ machine-code regions with their own instructions, symbol identity, and entry
 address. The runtime system contains no generic function body carrying a runtime
 type parameter, only the concrete implementations produced during translation;
 control flow transfers directly to the generated addresses, and the processor
-executes without any awareness that the code originated from a template. Hence the
-runtime representation of \texttt{Vector<int>} and \texttt{Vector<double>} is not a
-single generic object \texttt{Vector<T>}, but two independent concrete types
-produced before execution.
+executes without any awareness that the code originated from a template. 
+Hence the runtime representation of add<int> and add<double> is not a single
+generic function add<T>, but two independent concrete functions produced
+before execution.
 
 \subsection{Monomorphization}
-\label{sec:monomorphization}
+\label{CppTemplates:RuntimeRepresentation:Monomorphization}
 
-C++ uses heterogeneous translation, commonly called \emph{monomorphization}: the
-compiler substitutes template arguments into the definition and generates a
-concrete function or class implementation for each argument set used by the
-program. For example:
+C++ uses heterogeneous translation, a process known in the C++ standard and
+literature as template instantiation and sometimes informally referred to,
+by analogy with other languages such as Rust, as monomorphization. For example:
 
 \begin{lstlisting}[language=C++]
 template <typename T>
@@ -509,14 +508,13 @@ exactly like a function written explicitly for that type, with its own entry
 point invoked through normal control-flow instructions.
 
 \subsection{Name Mangling}
+\label{CppTemplates:RuntimeRepresentation:NameMangling}
 
 Compilers encode template arguments into symbol names through \emph{name
 mangling}, allowing different specializations to coexist in object files and
 letting the linker distinguish entities such as \texttt{function<int>()} and
-\texttt{function<double>()}. This is purely a compiler/linker mechanism, not
-runtime metadata: once linking completes, the CPU does not interpret mangled
-names, and an executable address identifies machine code without any awareness
-of the source-level template relationship.
+\texttt{function<double>()}; ;the exact mangling scheme is not standardized across compilers b
+t is defined by the underlying ABI, such as the Itanium C++ ABI  used by GCC and Clang.
 
 \subsection{Final Executable Representation}
 
@@ -547,6 +545,7 @@ C++ does provide is discussed in Section~\ref{sec:cpp_reflection}.
 % =====================================================================
 
 \section{Performance Characteristics}
+\label{CppTemplates:Performance}
 
 The performance characteristics of C++ templates derive directly from
 monomorphization (Section~\ref{sec:monomorphization}): every instantiation is
@@ -568,37 +567,50 @@ versions, whose machine code operates directly on concrete data types without
 runtime mechanisms for resolving the generic parameter.
 
 \subsection{Static Dispatch and Elimination of Runtime Overhead}
+\label{CppTemplates:Performance:DispatchEliminationOverhead}
 
 One of the main performance advantages of monomorphization is static dispatch:
 since the concrete type of every parameter is known at compile time, function
 calls are resolved before execution, eliminating the indirections required by
-dynamic dispatch. Given \texttt{template<typename T> void process(T\& object) \{
-object.compute(); \}} called with a \texttt{Matrix}, the compiler resolves the
-call directly to \texttt{Matrix::compute()}, reducing overhead and exposing
-further optimization opportunities. A related consequence is the elimination of
+dynamic dispatch. 
+Given \texttt{template<typename T> void process(T\& object) \{
+object.compute(); \}} called with a \texttt{Matrix}, the compiler ù
+resolves the type of object statically at
+compile time; if \texttt{Matrix::compute()} is not virtual, the call itself is also
+resolved directly, reducing overhead and exposing further optimization
+opportunities, whereas a \texttt{virtual compute()} would still be dispatched through
+the virtual table at runtime despite the type being known at compile time.
+A related consequence is the elimination of
 boxing and unboxing: template-generated code operates directly on the native
 representation of values, so \texttt{std::vector<int>} stores integers in their
 native form without conversion into a generic object wrapper.
 
 \subsection{Compiler Optimization Opportunities}
+\label{CppTemplates:Performance:Optimization}
 
 Because every specialization is fully typed, optimizing compilers apply the same
-techniques used for manually written specialized code. A fundamental example is
-function inlining: since both implementation and argument types are known at
-compile time, \texttt{template<typename T> inline T square(T x) \{ return x*x;
-\}} called as \texttt{square(5)} can be replaced directly by \texttt{5*5},
-removing call overhead and enabling further constant propagation, constant
-folding, dead-code elimination, loop optimization, and strength reduction.
+techniques used for manually written specialized code. 
+A fundamental example is function inlining: since both implementation and
+argument types are known at compile time, \texttt{template<typename T> inline
+T square(T x) \{ return x*x; \}} called as \texttt{square(5)} can, at the
+compiler's discretion, be replaced directly by \texttt{5*5}, removing call
+overhead and enabling further constant propagation, constant folding,
+dead-code elimination, loop optimization, and strength reduction; the
+\texttt{inline} keyword only permits this substitution by affecting linkage,
+without guaranteeing that the compiler will actually perform it.
 Template parameters can also encode compile-time constants -- e.g.\ a
 \texttt{template<int N>} array bound lets the compiler know the exact iteration
-count of a loop and apply loop unrolling. Compile-time specialization also
-enables branch elimination via \texttt{if constexpr}, where only the branch
-matching the selected type is emitted, and improves automatic vectorization:
-because concrete types and memory layouts are known, numerical templates such as
-an element-wise array \texttt{add} can be compiled directly into SIMD
-instructions.
+count of a loop and apply loop unrolling. Compile-time specialization also enables branch elimination via
+\texttt{if constexpr}, where only the branch matching the selected type is
+emitted, and creates the preconditions for automatic vectorization: because
+concrete types and memory layouts are known, numerical templates such as an
+element-wise array \texttt{add} become eligible for compilation into SIMD
+instructions, although whether vectorization actually occurs still depends
+on the optimizer, the compilation flags, and the absence of pointer aliasing
+between operands.
 
 \subsection{Zero-Overhead Abstraction and Trade-offs}
+\label{CppTemplates:Performance:Zero-Overhead}
 
 The combination of static dispatch, direct data representation, and compiler
 optimization enables C++ templates to follow the
@@ -618,15 +630,18 @@ performance-critical applications.
 
 This effect does not originate from additional runtime computation introduced
 by templates, but from the interaction between generated specialized code and
-the processor memory hierarchy. Therefore, template performance is generally
-dominated by the benefits of compile-time specialization, while instruction
-cache behavior represents the main architectural factor capable of reducing
-these advantages.
+the processor memory hierarchy. Therefore, template performance is often dominated by the benefits of
+compile-time specialization, while instruction cache behavior represents the
+main architectural factor capable of reducing these advantages; in codebases
+with extensive template usage over many distinct types, however, the
+resulting code bloat can also affect compilation and linking time, and in
+some cases can outweigh the benefits of specialization rather than merely
+reducing them.
 
 % =====================================================================
 
 \section{Type Safety}
-
+\label{CppTemplates:TypeSafety}
 Static type safety represents one of the fundamental objectives of
 parametric polymorphism. Its purpose is to guarantee that every operation
 performed on a value is compatible with its statically known type before
@@ -635,11 +650,12 @@ during compilation rather than being deferred to runtime.
 
 Different implementations of parametric polymorphism achieve static type
 safety through different mechanisms, as introduced in the overview of
-implementation strategies. C++ templates adopt a reified implementation
-strategy based on the template instantiation and monomorphization process
-described in Section~\ref{sec:monomorphization}: type parameters are never
-erased, and every instantiation is checked against a concrete, fully
-specialized implementation.
+implementation strategies. C++ templates adopt a specialization-based implementation strategy based on
+the template instantiation and monomorphization process described in
+Section~\ref{sec:monomorphization}: type parameters are never erased before
+compile-time checking, and every instantiation is checked against a concrete,
+fully specialized implementation, even though no corresponding type
+information survives as a runtime entity.
 
 From a type system perspective, reification allows the compiler to retain
 complete information about the actual types involved in every specialization.
@@ -667,6 +683,7 @@ rules of the language type system. Therefore, no implicit runtime casts are
 required to restore the original generic type information.
 
 \subsection{Example: Type Checking Across Specializations}
+\label{CppTemplates:TypeSafety:Example}
 
 The following example illustrates how C++ templates preserve static type
 safety through concrete specialization.
@@ -715,10 +732,11 @@ expression must be compatible with the declared return type, and all
 parameter bindings must satisfy the requirements imposed by the C++ type
 system.
 
-The invalid invocation \texttt{maximum(3, std::string("hello"))} cannot
-produce a valid specialization because template argument deduction cannot
-identify a single type for \texttt{T}. The compiler therefore rejects the
-program before executable code is generated. No runtime type inspection,
+The invocation \texttt{maximum(3, std::string("hello"))}, shown commented out above so
+that the rest of the example still compiles, would not produce a valid
+specialization if enabled: template argument deduction cannot identify a
+single type for \texttt{T}, so the compiler would reject the program before
+executable code is generated. No runtime type inspection,
 dynamic cast, or conversion mechanism is involved, because the type
 inconsistency is detected entirely during static analysis.
 
@@ -748,15 +766,16 @@ erased representations or compiler-generated runtime casts.
 % =====================================================================
 
 \section{Reflection and Runtime Type Information}
-\label{sec:cpp_reflection}
+\label{CppTemplates:Reflection}
 
 As introduced in the overview of implementation strategies, the availability
 of generic type information at runtime depends directly on whether the
 implementation follows a type-erasure or a reified model. C++ templates
-follow the reified model described in
-Section~\ref{sec:cpp_template_runtime}: template parameters are not
-represented as a single runtime generic entity, and monomorphization
-preserves the identity of the concrete types used during compilation.
+follow neither model in the runtime sense: template parameters are resolved
+through monomorphization described in Section~\ref{sec:cpp_template_runtime},
+which preserves the identity of the concrete types used during compilation,
+but this identity is not represented as a runtime generic entity once
+compilation is complete.
 However, compile-time type preservation should not be confused with runtime
 reflection. After compilation, the C++ execution environment does not
 generally provide a universal mechanism capable of enumerating arbitrary
@@ -793,7 +812,8 @@ distinct runtime types whenever RTTI metadata is generated for these
 entities. The resulting \texttt{std::type\_info} objects represent the
 runtime identity of the instantiated classes.
 
-The information exposed by \texttt{std::type\_info} is intentionally limited.
+The information exposed by \texttt{std::type\_info} is intentionally 
+limited.
 It allows comparison of runtime type identities through operations such as
 equality comparison and provides an implementation-defined textual
 representation through \texttt{name()}. It does not provide access to
@@ -801,11 +821,13 @@ template arguments, class members, inheritance hierarchies, or source-level
 metadata in the manner of a full reflection system.
 
 \subsection{\texttt{dynamic\_cast} and Polymorphic Template Classes}
+\label{CppTemplates:Reflection:DynamicCast}
 
-The \texttt{dynamic\_cast} operator provides another RTTI mechanism for
+The \texttt{dynamic\_cast} operator  provides another RTTI mechanism for
 performing safe runtime conversions within polymorphic class hierarchies. A
-class must contain at least one virtual function for RTTI-based dynamic
-identification to be available.
+class must contain at least one virtual function for \texttt{dynamic\_cast} to
+succeed, and for typeid applied to an expression to report the dynamic type
+rather than the static type known at compile time.
 
 Template classes can participate in such hierarchies like ordinary C++
 classes. For example:
@@ -885,6 +907,7 @@ reflection system.
 % CHAPTER: JAVA GENERICS
 % =====================================================================
 \chapter{Java Generics}
+\label{JavaGenerics}
 Java implements parametric polymorphism through \emph{generics}, a
 compile-time mechanism that allows classes and methods to be parameterized
 over types while relying on \emph{type erasure} rather than
@@ -983,6 +1006,7 @@ per-argument specialization performed by C++ monomorphization.
 % =====================================================================
 
 \section{Runtime Representation}
+\label{JavaGenerics:RuntimeRepresentation}
 
 Java generics are implemented through type erasure: generic type parameters
 are removed from the executable representation before runtime, and
@@ -1018,12 +1042,17 @@ instruction. The JVM verifies the concrete class of the retrieved object,
 not the existence of the original parameterized type.
 
 \subsection{Bridge Methods}
+\label{JavaGenerics:RuntimeRepresentation:BridgeMethods}
 
 Erasure can break overriding relationships at the JVM level. Given
 \texttt{Node<T>.get():T} overridden by \texttt{StringNode.get():String},
 erasure reduces the parent signature to \texttt{get():Object}; the compiler
-therefore generates a synthetic bridge method \texttt{Object get() \{ return
-get(); \}} to preserve polymorphic dispatch.
+therefore generates a synthetic bridge method, distinguishable from the
+covariant override only at the bytecode level by its descriptor
+\texttt{()Ljava/lang/Object;}, which invokes the specific
+\texttt{String get()} implementation and returns its result as
+\texttt{Object}, in order to preserve polymorphic dispatch through the
+erased parent signature.
 
 \subsection{Primitive Types}
 
@@ -1047,6 +1076,7 @@ increased code size.
 % =====================================================================
 
 \section{Performance Characteristics}
+\label{JavaGenerics:Performance}
 
 The performance profile of Java generics follows directly from type
 erasure: a single shared implementation executes for all parameterizations,
@@ -1085,13 +1115,17 @@ increasing cache misses during traversal relative to the contiguous value
 layout achievable through C++ template instantiation.
 
 \subsection{Adaptive JIT Optimization}
+\label{JavaGenerics:Performance:Optimization}
 
-The HotSpot JVM mitigates these costs through runtime profiling:
-devirtualization, inline caching, and escape analysis (enabling scalar
-replacement of non-escaping allocations) recover some of the performance
-lost to erasure. These optimizations remain speculative and
-profile-dependent, unlike the ahead-of-time specialization guaranteed by
-C++ monomorphization.
+The HotSpot JVM mitigates some of these costs through runtime profiling:
+devirtualization and inline caching reduce dispatch overhead, while escape
+analysis enables scalar replacement of non-escaping boxed values,
+eliminating their allocation in specific, provably local cases. These
+optimizations reduce boxing overhead in favorable cases but do not restore
+the contiguous, specialized storage of generic containers, which retain
+their reference-based internal representation regardless of JIT
+optimization, unlike the ahead-of-time specialization guaranteed by C++
+monomorphization.
 
 \subsection{Comparative Summary}
 
@@ -1118,6 +1152,7 @@ Cache locality & Reduced by object layout & Improved via value layout \\
 % =====================================================================
 
 \section{Type Safety}
+\label{JavaGenerics:TypeSafety}
 
 Java generics extend the static type system with parameterized types,
 guaranteeing that substitutions of a type parameter cannot introduce
@@ -1127,9 +1162,10 @@ operations violating the constraints established at declaration.
 
 Given \texttt{class Box<T> \{ T value; void set(T v); T get(); \}}, the
 compiler treats \texttt{Box<String>} as a type in which every use of
-\texttt{T} must be compatible with \texttt{String}; \texttt{textBox.set(10)}
-is therefore rejected statically, since \texttt{Integer} does not satisfy
-the parameterization.
+\texttt{T} must be compatible with \texttt{String}; given
+\texttt{Box<String> box}, the call \texttt{box.set(10)} is therefore
+rejected statically, since \texttt{Integer} does not satisfy the
+parameterization.
 
 \subsection{Bounded Type Parameters}
 
@@ -1149,21 +1185,23 @@ guaranteed by generic checking, from \emph{type representation}, determined
 only afterward by erasure.
 
 \subsection{Comparison with C++ Reification}
+\label{JavaGenerics:TypeSafety:ComparisonCppReification}
 
-C++ templates preserve type information through reification: each
-instantiation is checked against its concrete type directly, as in
+C++ templates preserve type information through compile-time specialization:
+each instantiation is checked against its concrete type directly, as in
 \texttt{Box<int> box; box.set("text");}, rejected because \texttt{int} does
 not accept a string. Java instead verifies every substitution before
 erasure removes the parameter. The distinction is therefore not whether
 type safety is provided, but at which stage type information is
 consumed: Java achieves safety through static verification prior to
-erasure, while C++ achieves safety through compile-time reification of
-concrete types that persist into the generated representation.
+erasure, while C++ achieves safety through compile-time specialization of
+concrete types, checked independently for each instantiation, with no
+corresponding generic entity surviving into the running program.
 
 % =====================================================================
 
 \section{Reflection and Runtime Type Information}
-
+\label{JavaGenerics:Reflection}
 Java's type-erasure model determines the boundaries of its runtime
 reflection capabilities: since all parameterizations of a generic
 declaration share one erased runtime class, reflection can only observe
@@ -1193,21 +1231,23 @@ frameworks such as serializers and dependency injectors to query the
 concrete type independently of the erased generic parameter.
 
 \subsection{Comparison with C++ Template RTTI}
-
-C++ monomorphization generates an independent concrete type--and
+\label{JavaGenerics:Reflection:CppTemplate}
+C++ monomorphization generates an independent concrete type and
 independent RTTI metadata--for every specialization, so \texttt{typeid} and
 \texttt{dynamic\_cast} can distinguish \texttt{Vector<int>} from
 \texttt{Vector<double>} directly. Java's erasure model instead collapses
 all parameterizations into a single \texttt{Class} object, so reflection
 exposes only the identity of the generic declaration after erasure, never
 the parameterized instantiation present in the source. This contrast
-illustrates the underlying trade-off: C++ reification preserves runtime
-type identity per specialization, while Java erasure minimizes runtime type
-diversity at the cost of that same visibility.
+illustrates the underlying trade-off: C++ monomorphization preserves
+runtime type identity per specialization as a by-product of compile-time
+code generation, while Java erasure minimizes runtime type diversity at the
+cost of that same visibility.
 % =====================================================================
 % CHAPTER: C# GENERICS
 % =====================================================================
 \chapter{C\# Generics}
+\label{CSharpGenerics}
 C\# implements parametric polymorphism through \emph{generics}, adopting a
 runtime-oriented model in which the Common Language Runtime (CLR)
 preserves generic type parameters as metadata and instantiates concrete
@@ -1313,6 +1353,7 @@ specialization mechanism.
 % =====================================================================
 
 \section{Runtime Representation}
+\label{CSharpGenerics:RuntimeRepresentation}
 
 C\# generics implement parametric polymorphism through \emph{reification}:
 generic type information is preserved after compilation and remains
@@ -1340,20 +1381,22 @@ generate instantiations such as \texttt{Dictionary<int,string>} or
 code according to the supplied arguments.
 
 \subsection{Value-Type Specialization}
-
-Value types have distinct memory layouts, so the JIT generates specialized
-code per instantiation:
+\label{CSharpGenerics:RuntimeRepresentation:ValueTypeSpecialization}
+Because each value type has its own size and memory layout, the JIT
+generates separately specialized native code for each such instantiation:
 $JIT(\texttt{List<int>}) = NativeCode_{int}$,
 $JIT(\texttt{List<double>}) = NativeCode_{double}$, each operating directly
 on the corresponding representation.
 
 \subsection{Reference-Type Code Sharing}
+\label{CSharpGenerics:RuntimeRepresentation:ReferenceTypeCodeSharing}
 
 Because reference types share a uniform object-reference representation,
-the CLR can reuse a single implementation, $NativeCode_{reference}$, across
-instantiations such as \texttt{List<string>} and \texttt{List<object>},
-supplying type-specific information through runtime execution-engine
-structures rather than duplicating code.
+CLR implementations such as the Microsoft CLR can reuse a single compiled
+implementation, $NativeCode_{reference}$, across instantiations such as
+\texttt{List<string>} and \texttt{List<object>}, supplying type-specific
+information through runtime execution-engine structures rather than
+duplicating code.
 
 \subsection{Runtime Generic Dictionaries}
 
@@ -1364,12 +1407,15 @@ with no equivalent in C++ (resolved before execution) or Java (erased
 before execution).
 
 \subsection{Runtime Type Identity}
+\label{CSharpGenerics:RuntimeRepresentation:TypeIdentity}
 
 Constructed generic types retain distinct runtime identity:
 $RuntimeType(\texttt{List<int>}) \neq RuntimeType(\texttt{List<string>})$,
-unlike Java where both erase to the same \texttt{List}. C++ specializations
-may participate in RTTI as concrete types, but the original template
-definition itself is not preserved as a runtime entity.
+unlike Java where both erase to the same \texttt{List}. C++ specializations can participate in 
+RTTI as concrete types only within
+polymorphic class hierarchies (i.e., containing at least one virtual
+function); the original template definition itself is never preserved as
+a runtime entity, regardless of polymorphism.
 
 \subsection{Architectural Comparison}
 
@@ -1396,6 +1442,8 @@ Runtime identity & Arguments preserved & Arguments removed & Concrete types only
 % =====================================================================
 
 \section{Performance Characteristics}
+\label{CSharpGenerics:Performance}
+
 
 C\# generics combine runtime reification with JIT compilation: type
 parameters survive into CIL metadata, and the execution strategy depends on
@@ -1410,7 +1458,8 @@ reference type (shared native code):
 \end{cases}
 \]
 
-This hybrid model sits between C++'s full specialization and Java's fully
+This hybrid model, as implemented by common CLR implementations such as
+the Microsoft CLR, sits between C++'s full specialization and Java's fully
 erased execution.
 
 \subsection{Value-Type Instantiations}
