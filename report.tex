@@ -18,6 +18,7 @@
 
 \usepackage{mdframed}
 \usepackage{adjustbox}
+\usepackage{hyperref}
 
 % Page geometry
 \geometry{
@@ -127,8 +128,9 @@
 % =====================================================================
 % INTRODUCTION
 % =====================================================================
-\chapter{Introduction}
 
+\chapter{Introduction}
+\label{Introduction}
 Parametric polymorphism provides a language-independent abstraction, its
 implementation varies considerably among programming languages and compiler
 architectures.
@@ -147,7 +149,7 @@ of parametric polymorphism are typically compared.
 
 
 % ---------------------------------------------------------------------
-
+\label{Introduction: Instantiation Time}
 \section{Instantiation Time}
 
 
@@ -176,7 +178,7 @@ arguments, and all instantiations share the same compiled implementation.
 % ---------------------------------------------------------------------
 
 \section{Runtime Representation}
-
+\label{Introduction:RuntimeRepresentation}
 
 Implementations also differ in how generic types are represented after
 compilation.
@@ -195,9 +197,8 @@ Each generic instantiation may therefore possess its own runtime
 representation, memory layout, and executable instructions.
 
 % ---------------------------------------------------------------------
-
+\label{Introduction: Reflection and Runtime Type Information}
 \section{Reflection and Runtime Type Information}
-
 
 The availability of generic type information at runtime depends directly on the
 chosen representation strategy.
@@ -220,7 +221,7 @@ inspection, specialized serialization, and runtime metadata analysis.
 
 
 % ---------------------------------------------------------------------
-
+\label{Introduction: Type Safety}
 \section{Type Safety}
 
 
@@ -247,14 +248,15 @@ preserved without requiring erased representations or implicit runtime casts.
 % ---------------------------------------------------------------------
 
 \section{Performance}
-
+\label{Introduction:Performance}
 
 The implementation strategy significantly influences both compilation and
 execution performance.
 
-
-Homogeneous implementations generally produce smaller binaries and reduce
-compilation time because generic definitions are compiled only once.
+Homogeneous implementations generally produce smaller binaries because generic definitions
+are compiled only once; compilation time is often reduced as well, although this benefit can
+be partially offset by the additional work required to insert runtime casts, boxing/unboxing
+operations, or bridge methods.
 
 However, the shared representation may require additional indirections,
 boxing, or runtime casts, limiting optimization opportunities.
@@ -274,7 +276,7 @@ code.
 
 
 % ---------------------------------------------------------------------
-
+\label{Introduction: Summary}
 \section{Summary}
 
 
@@ -298,6 +300,7 @@ monomorphization.
 % CHAPTER: C++ TEMPLATES
 % =====================================================================
 \chapter{C++ Templates}
+\label{CppTemplates}
 C++ implements parametric polymorphism through the \emph{template}
 mechanism, a compile-time construct that allows the definition of generic
 classes and functions parameterized over one or more types. Rather than
@@ -310,6 +313,7 @@ model has for performance, static type safety, and the limited runtime
 type information exposed through RTTI.
 
 \section{Instantiation Time}
+\label{CppTemplates:InstantiationTime}
 
 C++ implements parametric polymorphism through the \emph{template} mechanism, which
 adopts a purely compile-time instantiation model. A template is not itself an
@@ -340,6 +344,7 @@ implementation; the definition remains a blueprint awaiting instantiation.
 % ---------------------------------------------------------------------
 
 \subsection{Instantiation Trigger}
+\label{CppTemplates:InstantiationTimeInitializationTrigger}
 
 Instantiation begins when the compiler encounters a concrete use of the template,
 either via explicit argument specification or implicit type deduction:
@@ -361,8 +366,11 @@ Each unique set of arguments constitutes a distinct instantiation, triggered thr
 \emph{implicit instantiation} (performed automatically when required),
 \emph{explicit instantiation} (requested directly by the programmer), or
 \emph{explicit specialization} (a wholly different implementation provided for a
-specific argument combination). In every case, code generation begins only once
-the complete set of arguments is known.
+specific argument combination). In most cases, code generation begins once the complete set of arguments is
+known; the exception is the explicit instantiation declaration (extern
+template), which suppresses code generation in the current translation unit
+even though the arguments are fully known, deferring it to a translation unit
+containing the corresponding explicit instantiation definition.
 
 % ---------------------------------------------------------------------
 
@@ -413,11 +421,15 @@ independent executable implementation; no shared representation is produced that
 could serve multiple template arguments.
 
 \subsection{Completion of the Instantiation Process}
+\label{CppTemplates:InstantiationTimeCompletion}
 
-Instantiation terminates entirely before linking: by the time object files are
-generated, every specialization required by the translation unit already exists
-as compiled code, and the final linked executable contains all of them. The
-lifecycle can be summarized as: parsing the definition, storing it as a
+Instantiation is triggered and resolved entirely during compilation: by the
+time object files are generated, every specialization required by a given
+translation unit already exists as compiled code. When the same instantiation
+is required by multiple translation units, each one generates its own copy,
+and it is the linker that discards the duplicates and retains a single
+definition in the final executable. 
+The lifecycle can be summarized as: parsing the definition, storing it as a
 parameterized representation, triggering instantiation on concrete use,
 substituting arguments, performing semantic analysis, generating IR, optimizing,
 and emitting native code included in the executable before execution begins.

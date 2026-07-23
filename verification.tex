@@ -9,15 +9,21 @@
 \usepackage{graphicx}       % Per inserire immagini e loghi
 \usepackage{geometry}       % Per i margini
 \geometry{a4paper, top=3cm, bottom=3cm, left=3cm, right=3cm}
-
+\usepackage{xr-hyper} 
+\usepackage{hyperref}
+\usepackage{fancyvrb}
+\usepackage{fvextra}
 % Eventuali altri pacchetti (es. per il codice sorgente o formule matematiche)
 % \usepackage{listings}
 % \usepackage{amsmath}
 
+
 % =====================================================================
 % MAIN DOCUMENT
 % =====================================================================
+
 \begin{document}
+\externaldocument[A-]{report} 
 
 % 1. Title page
 \input{title_page/Frontespizio} % include the translated title page
@@ -29,15 +35,113 @@
 
 % 3. Corpo del documento
 \chapter{Introduction}
-This is the introduction of your report. Here you can describe the background, objectives, and structure of your project.
+For the writing of the report, is use a AI local model with LM studio with qwen2.5-coder-7b-instruct, this
+is helpfull for the intellsense of latex and layout of the report, but it doesn't interfere with the content 
+of the report. The verfication of the report procede in 3 steps.
 
-\chapter{Methodology and Implementation}
-This chapter covers the technical details, algorithms, and design choices.
+\section{Prompt Output Comparing}
+Every prompt on the same language produce an output that contains a fraction of the information 
+to other prompts of the same language, this repetition helpt to make a first check of eventualy error
+missing or wrong information, eventualy allucinations and in generale the quality of the output.
+\section{Prompt Output Resources}
+Each prompt output is follow by a list of resources that are used to generate the output, 
+as subset of the resources is used to verify the correctness of the output.
+\section{Output Script}
+Generated scripts are verified by running them in a controlled environment, 
+checking for errors, and ensuring they produce the expected results. No AI model is
+involved in this step, as it is a manual verification process.
+\section{AI verification}
+An AI model is used on the resoult of the previous steps of the verification, if there is any error or missing information, 
+the process of verification is repeated until the output is correct and complete. The AI model used for this step Claude Sonnet 5.
 
-\section{Analysis of the Algorithms}
-You can use sections to divide your chapters into smaller, readable chunks.
+
+\chapter{Task 1}
+\section*{\hyperref[A-Introduction]{\ref*{A-Introduction} \nameref*{A-Introduction}}}
+\addcontentsline{toc}{section}{\ref*{A-Introduction} \nameref*{A-Introduction}}
+
+\subsection*{\hyperref[A-Introduction:Performance]{\ref*{A-Introduction:Performance} \nameref*{A-Introduction:Performance}}}
+\addcontentsline{toc}{subsection}{\ref*{A-Introduction:Performance} \nameref*{A-Introduction:Performance}}
+\noindent\textbf{Imprecision}:
+\begin{Verbatim}[breaklines=true]
+Homogeneous implementations generally produce smaller binaries and reduce compilation
+time because generic definitions are compiled only once.
+\end{Verbatim}
+
+This statement is presented as a general rule, but it is too absolute: the reduction in
+compilation time holds for the type-checking and code-generation phase specific to the
+generic definitions themselves, but it does not account for additional compilation work
+introduced by erasure, such as the insertion of runtime casts, boxing/unboxing operations,
+or bridge methods \cite{bracha2004}. The claim is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+Homogeneous implementations generally produce smaller binaries because generic definitions
+are compiled only once; compilation time is often reduced as well, although this benefit can
+be partially offset by the additional work required to insert runtime casts, boxing/unboxing
+operations, or bridge methods.
+\end{Verbatim}
+
+\section*{\hyperref[A-CppTemplates]{\ref*{A-CppTemplates} \nameref*{A-CppTemplates}}}
+\addcontentsline{toc}{section}{\ref*{A-CppTemplates} \nameref*{A-CppTemplates}}
+
+\subsection*{\hyperref[A-CppTemplates:InstantiationTime]{\ref*{A-CppTemplates:InstantiationTime} \nameref*{A-CppTemplates:InstantiationTime}}}
+\addcontentsline{toc}{subsection}{\ref*{A-CppTemplates:InstantiationTime} \nameref*{A-CppTemplates:InstantiationTime}}
+
+\subsubsection*{\hyperref[A-CppTemplates:InstantiationTimeInitializationTrigger]{\ref*{A-CppTemplates:InstantiationTimeInitializationTrigger} \nameref*{A-CppTemplates:InstantiationTimeInitializationTrigger}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-CppTemplates:InstantiationTimeInitializationTrigger} \nameref*{A-CppTemplates:InstantiationTimeInitializationTrigger}}
+\noindent\textbf{Imprecisions}:
+
+\begin{Verbatim}[breaklines=true]
+In every case, code generation begins only once the complete set of arguments
+is known.
+\end{Verbatim}
+
+This statement is presented as universally true for every instantiation trigger
+mentioned (implicit instantiation, explicit instantiation, explicit specialization),
+but it does not hold for \emph{explicit instantiation declarations} (\texttt{extern
+template}), where the template arguments are fully known yet code generation in
+that translation unit is deliberately suppressed and deferred to another
+translation unit containing the corresponding explicit instantiation definition
+\cite{cpp_templates2017}. The claim is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+In most cases, code generation begins once the complete set of arguments is
+known; the exception is the explicit instantiation declaration (extern
+template), which suppresses code generation in the current translation unit
+even though the arguments are fully known, deferring it to a translation unit
+containing the corresponding explicit instantiation definition.
+\end{Verbatim}
+
+\subsubsection*{\hyperref[A-CppTemplates:InstantiationTimeCompletion]{\ref*{A-CppTemplates:InstantiationTimeCompletion} \nameref*{A-CppTemplates:InstantiationTimeCompletion}}}
+\addcontentsline{toc}{subsubsection}{\ref*{A-CppTemplates:InstantiationTimeCompletion} \nameref*{A-CppTemplates:InstantiationTimeCompletion}}
+\noindent\textbf{Imprecisions}:
+\begin{Verbatim}[breaklines=true]
+Instantiation terminates entirely before linking: by the time object files are
+generated, every specialization required by the translation unit already exists
+as compiled code, and the final linked executable contains all of them.
+\end{Verbatim}
+
+This statement correctly describes what happens within a single translation
+unit, but it obscures the role of the linker when the same instantiation is
+required by multiple translation units: each translation unit independently
+generates its own copy of the specialization, and it is the linker, not the
+compiler, that discards the duplicate copies and retains a single definition in
+the final executable, typically through weak symbols or COMDAT sections
+\cite{itanium_abi}. The claim is therefore corrected as follows:
+
+\begin{Verbatim}[breaklines=true]
+Instantiation is triggered and resolved entirely during compilation: by the
+time object files are generated, every specialization required by a given
+translation unit already exists as compiled code. When the same instantiation
+is required by multiple translation units, each one generates its own copy,
+and it is the linker that discards the duplicates and retains a single
+definition in the final executable.
+\end{Verbatim}
+
 
 % Se vuoi includere il testo da file separati per mantenere l'ordine:
 % \input{chapters/chapter_1}
+
+\bibliographystyle{plain}
+\bibliography{references}
 
 \end{document}

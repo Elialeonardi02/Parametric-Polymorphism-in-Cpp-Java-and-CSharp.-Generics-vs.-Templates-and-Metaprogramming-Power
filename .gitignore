@@ -19,3 +19,17 @@ title_page/main.fls
 title_page/main.fdb_latexmk
 title_page/main.synctex.gz
 title_page/main.log
+verification.aux
+.gitignore
+verification.fls
+verification.fdb_latexmk
+verification.log
+verification.toc
+.gitignore
+verification.synctex.gz
+report.out
+.gitignore
+verification.out
+verification.bbl
+.gitignore
+verification.blg
